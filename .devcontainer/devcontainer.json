@@ -38,5 +38,5 @@
         "source=${localWorkspaceFolder}/cache/foxy/install,target=/home/lava-tube-mapping/install,type=bind",
         "source=${localWorkspaceFolder}/cache/foxy/log,target=/home/lava-tube-mapping/log,type=bind"
     ],
-    "postCreateCommand": "sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R ${env:USERNAME} /home/lava-tube-mapping/"
+    "postCreateCommand": "sudo rosdep update && sudo rosdep check --from-paths src --ignore-src && sudo rosdep install --from-paths src --ignore-src -r -y --rosdistro foxy && sudo chown -R ${env:USERNAME} /home/lava-tube-mapping/"
 }
