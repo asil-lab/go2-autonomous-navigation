@@ -7,6 +7,7 @@ import os
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time", default="false")
     
+    rviz_filepath = os.path.join(get_package_share_directory("go2_description"), "launch", "go2_rviz.rviz")
     urdf_filepath = os.path.join(get_package_share_directory("go2_description") 
                                  + "/urdf/go2_description.urdf")
     with open(urdf_filepath, 'r') as infp:
@@ -26,7 +27,7 @@ def generate_launch_description():
             executable='rviz2',
             name='rviz2',
             output='screen',
-            # arguments=['-d', os.path.join(get_package_share_directory("march_launch"), "rviz", "izzy.rviz")],
+            arguments=['-d', rviz_filepath],
         ),
         Node(
             package='joint_state_publisher_gui',
