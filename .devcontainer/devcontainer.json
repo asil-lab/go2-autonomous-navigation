@@ -1,0 +1,42 @@
+{
+    "name": "Rhizome Lava Tube Mapping ROS2 Container",
+    "privileged": true,
+    "remoteUser": "${env:USERNAME}",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "USERNAME": "${env:USERNAME}"
+        }
+    },
+    "workspaceFolder": "/home/lava-tube-mapping",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/lava-tube-mapping,type=bind",
+    "customizations": {
+        "vscode": {
+            "extensions":[
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-themes",
+                "twxs.cmake",
+                "donjayamanne.python-extension-pack",
+                "eamodio.gitlens",
+                "ms-iot.vscode-ros"
+            ]
+        }
+    },
+    "containerEnv": {
+        "DISPLAY": "unix:0",
+        "ROS_LOCALHOST_ONLY": "1",
+        "ROS_DOMAIN_ID": "42"
+    },
+    "runArgs": [
+        "--net=host",
+        "-e", "DISPLAY=${env:DISPLAY}"
+    ],
+    "mounts": [
+       "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
+        "source=${localWorkspaceFolder}/cache/foxy/build,target=/home/lava-tube-mapping/build,type=bind",
+        "source=${localWorkspaceFolder}/cache/foxy/install,target=/home/lava-tube-mapping/install,type=bind",
+        "source=${localWorkspaceFolder}/cache/foxy/log,target=/home/lava-tube-mapping/log,type=bind"
+    ],
+    "postCreateCommand": "sudo rosdep update && sudo rosdep install --from-paths src --ignore-src -y && sudo chown -R ${env:USERNAME} /home/lava-tube-mapping/"
+}
