@@ -26,10 +26,10 @@ RUN apt-get install -y ros-foxy-ros-ign
 # Install ROS 2 dependencies
 RUN apt-get install -y ros-foxy-rviz2 ros-foxy-joint-state-publisher-gui ros-foxy-robot-state-publisher
 
-# Source aliases
-RUN echo "source /home/lava-tube-mapping/.devcontainer/setup_aliases.sh" >> $HOME/.bashrc && source $HOME/.bashrc
-
 ENV SHELL /bin/bash
+
+# Source aliases
+RUN echo -e "source /home/lava-tube-mapping/.devcontainer/setup_aliases.sh" >> ~/.bashrc
 
 # ********************************************************
 # * Anything else you want to do like clean up goes here *
