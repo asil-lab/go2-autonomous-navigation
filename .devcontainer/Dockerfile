@@ -29,8 +29,10 @@ RUN apt-get install -y ros-foxy-rviz2 ros-foxy-joint-state-publisher-gui ros-fox
 
 ENV SHELL /bin/bash
 
-# Source aliases
+# Source aliases and variables
 RUN echo -e "source /home/lava-tube-mapping/.devcontainer/setup_aliases.sh" >> ~/.bashrc
+RUN export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/lava-tube-mapping/src/go2_simulation/models
+
 
 # ********************************************************
 # * Anything else you want to do like clean up goes here *
