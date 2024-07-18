@@ -1,14 +1,13 @@
 <?xml version="1.0"?>
-
-<robot name="go2" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="go2">
 
     <xacro:arg name="DEBUG" default="false"/>
 
-    <xacro:include filename="$(find go2_description)/xacro/const.xacro"/>
-    <xacro:include filename="$(find go2_description)/xacro/materials.xacro"/>
-    <xacro:include filename="$(find go2_description)/xacro/leg.xacro"/>
-    <!-- <xacro:include filename="$(find go2_description)/xacro/stairs.xacro"/> -->
-    <xacro:include filename="$(find go2_description)/xacro/gazebo.xacro"/>
+    <xacro:include filename="/home/lava-tube-mapping/src/go2_description/xacro/const.xacro"/>
+    <xacro:include filename="/home/lava-tube-mapping/src/go2_description/xacro/materials.xacro"/>
+    <xacro:include filename="/home/lava-tube-mapping/src/go2_description/xacro/leg.xacro"/>
+    <!-- <xacro:include filename="/home/lava-tube-mapping/src/go2_description/xacro/stairs.xacro"/> -->
+    <xacro:include filename="/home/lava-tube-mapping/src/go2_description/xacro/gazebo.xacro"/>
     <!-- <xacro:include filename="$(find go2_gazebo)/launch/stairs.urdf.xacro"/> -->
 
     <!-- <xacro:stairs stairs="15" xpos="0" ypos="0" zpos="0" /> -->
@@ -30,7 +29,7 @@
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
-                <box size="0.001 0.001 0.001"/>
+                <mesh filename="/home/lava-tube-mapping/src/go2_description/meshes/base.dae" scale="1 1 1"/>
             </geometry>
         </visual>
     </link>
@@ -45,9 +44,8 @@
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="package://go2_description/meshes/trunk.dae" scale="1 1 1"/>
+                <mesh filename="/home/lava-tube-mapping/src/go2_description/meshes/trunk.dae" scale="1 1 1"/>
             </geometry>
-            <!-- <material name="orange"/> -->
         </visual>
         <collision>
             <origin rpy="0 0 0" xyz="0 0 0"/>

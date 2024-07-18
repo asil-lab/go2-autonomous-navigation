@@ -1,19 +1,47 @@
+import os
+from ament_index_python.packages import get_package_prefix
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import ThisLaunchFileDir
-from launch_ros.actions import Node
-from ament_index_python.packages import get_package_share_directory
-import os
+
+import xacro
 
 def generate_launch_description():
+
+    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+
+    pkg_box_car_description = get_package_share_directory('go2_description')
+    xacro_file = os.path.join(get_package_share_directory('go2_description'), 'xacro/', 'robot.xacro')    
+    assert os.path.exists(xacro_file), "The robot.xacro doesnt exist in "+str(xacro_file)
+
+    install_dir = get_package_prefix('go2_description')
+
+    if 'GAZEBO_MODEL_PATH' in os.environ:
+        os.environ['GAZEBO_MODEL_PATH'] =  os.environ['GAZEBO_MODEL_PATH'] + ':' + install_dir + '/share'
+    else:
+        os.environ['GAZEBO_MODEL_PATH'] =  install_dir + "/share"
+
+    if 'GAZEBO_PLUGIN_PATH' in os.environ:
+        os.environ['GAZEBO_PLUGIN_PATH'] = os.environ['GAZEBO_PLUGIN_PATH'] + ':' + install_dir + '/lib'
+    else:
+        os.environ['GAZEBO_PLUGIN_PATH'] = install_dir + '/lib'
+
+
+    robot_description_config = xacro.process_file(xacro_file)
+    robot_desc = robot_description_config.toxml()
+
+    # print(robot_desc)
     
-    sdf_dir = os.path.join(get_package_share_directory("go2_simulation"), "models", "unitree_go2")
-    sdf_filepath = os.path.join(sdf_dir, "unitree_go2.sdf")
-    
-    world_dir = os.path.join(get_package_share_directory("go2_simulation"), "worlds")
-    world_filepath = os.path.join(world_dir, "empty.world")
-    
+    # start_steering_control = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(
+    #         os.path.join(pkg_box_car_description, 'launch', 'steering_control.launch.py'),
+    #     )
+    # ) 
+
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory("gazebo_ros"), 'launch', 'gazebo.launch.py')
@@ -25,23 +53,20 @@ def generate_launch_description():
         }.items(),
     )
 
-    # GAZEBO_MODEL_PATH has to be correctly set for Gazebo to be able to find the model
-    spawn_entity = Node(package='gazebo_ros',
-        executable='spawn_entity.py',
-        name='spawn_entity',
-        output='screen',
-        arguments=[
-            '-entity', 'unitree_go2',
-            '-x', '0',
-            '-y', '0',
-            '-z', '1',
-            # '-P' 'robot_description',
-            '-file', sdf_filepath,
-            '-package_to_model',
-        ],
-    )
-
     return LaunchDescription([
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='false',
+            description='Use simulation (Gazebo) clock if true'),
+        Node(package='go2_simulation', executable='spawn_go2.py', arguments=[robot_desc], output='screen'),
+        Node(
+            package="robot_state_publisher",
+            executable="robot_state_publisher",
+            name="robot_state_publisher",
+            parameters=[
+                {"robot_description": robot_desc}],
+            output="screen"),
         gazebo,
-        spawn_entity,
+        #start_steering_control,
     ])
+

@@ -1,5 +1,5 @@
 <sdf version='1.7'>
-  <model name='go2_description'>
+  <model name='unitree_go2'>
     <link name='base'>
       <inertial>
         <pose>0.021189 0 -0.005372 0 -0 0</pose>

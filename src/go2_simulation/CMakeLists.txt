@@ -20,10 +20,18 @@ find_package(ament_cmake REQUIRED)
 find_package(gazebo_ros REQUIRED)
 
 install(DIRECTORY
-  world
+  config
   launch
   models
-  DESTINATION share/${PROJECT_NAME}
+  scripts
+  worlds
+DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+  scripts/spawn_go2.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

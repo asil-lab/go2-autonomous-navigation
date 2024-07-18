@@ -22,7 +22,7 @@ RUN sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org
 RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
 RUN apt-get update
 # RUN apt-get install -y ros-foxy-ros-ign
-RUN apt-get install -y ros-foxy-gazebo-ros
+RUN apt-get install -y ros-foxy-gazebo-ros-pkgs ros-foxy-gazebo-ros ros-foxy-gazebo-ros2-control
 
 # Install ROS 2 dependencies
 RUN apt-get install -y ros-foxy-rviz2 ros-foxy-joint-state-publisher-gui ros-foxy-robot-state-publisher
