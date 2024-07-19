@@ -17,14 +17,25 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(gazebo REQUIRED)
 find_package(gazebo_ros REQUIRED)
 
+include_directories(
+    # include
+    ${Boost_INCLUDE_DIR}
+    ${rclcpp_INCLUDE_DIRS}
+    ${geometry_msgs_INCLUDE_DIRS}
+    ${GAZEBO_INCLUDE_DIRS}
+)
+
 install(DIRECTORY
-  config
   launch
   models
+  plugin
   scripts
-  worlds
+  world
 DESTINATION share/${PROJECT_NAME}
 )
 
@@ -38,5 +49,11 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+add_library(unitreeFootContactPlugin SHARED plugin/foot_contact_plugin.cc)
+target_link_libraries(unitreeFootContactPlugin ${rclcpp_LIBRARIES} ${GAZEBO_LIBRARIES} ${geometry_msgs_LIBRARIES})
+
+add_library(unitreeDrawForcePlugin SHARED plugin/draw_force_plugin.cc)
+target_link_libraries(unitreeDrawForcePlugin ${rclcpp_LIBRARIES} ${GAZEBO_LIBRARIES} ${geometry_msgs_LIBRARIES})
 
 ament_package()

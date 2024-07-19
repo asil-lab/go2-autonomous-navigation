@@ -52,6 +52,16 @@ def generate_launch_description():
             'use_sim_time': 'true',
         }.items(),
     )
+    
+    controller_manager = Node(
+        package='controller_manager',
+        executable='spawner.py',
+        name='controller_spawner',
+        namespace='go2',
+        arguments=["joint_state_controller"],
+        # parameters=[{'use_sim_time': use_sim_time}],
+        output='screen',
+    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -63,10 +73,12 @@ def generate_launch_description():
             package="robot_state_publisher",
             executable="robot_state_publisher",
             name="robot_state_publisher",
+            namespace="go2",
             parameters=[
                 {"robot_description": robot_desc}],
             output="screen"),
         gazebo,
+        controller_manager,
         #start_steering_control,
     ])
 
