@@ -65,7 +65,7 @@ def generate_launch_description():
         executable='spawner.py',
         name=controller + '_spawner',
         namespace='go2_gazebo',
-        arguments=[controller, '-c', 'gazebo_ros2_control'],
+        arguments=[controller, '-c', '/gazebo_ros2_control'],
         output='screen',
     ) for controller in [
         'joint_state_controller',
@@ -90,7 +90,7 @@ def generate_launch_description():
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
-            parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_description}],
+            parameters=[{'use_sim_time': True, 'robot_description': robot_description}],
             # remappings=[('/joint_states', '/go2_gazebo/joint_states')],
         ),
         gazebo,

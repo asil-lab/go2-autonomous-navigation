@@ -60,7 +60,7 @@
         </sensor>
     </gazebo>
 
-    <gazebo>
+    <!-- <gazebo>
         <plugin name="gazebo_ros_joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
             <update_rate>20</update_rate>
             <joint_name>FL_hip_joint</joint_name>
@@ -76,7 +76,7 @@
             <joint_name>RR_thigh_joint</joint_name>
             <joint_name>RR_calf_joint</joint_name>
         </plugin>
-    </gazebo>
+    </gazebo> -->
 
 
 
@@ -281,6 +281,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="FL_thigh_joint">
             <command_interface name="position">
@@ -289,6 +290,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="FL_calf_joint">
             <command_interface name="position">
@@ -297,6 +299,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="FR_hip_joint">
             <command_interface name="position">
@@ -305,6 +308,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="FR_thigh_joint">
             <command_interface name="position">
@@ -313,6 +317,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="FR_calf_joint">
             <command_interface name="position">
@@ -321,6 +326,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="RL_hip_joint">
             <command_interface name="position">
@@ -329,6 +335,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="RL_thigh_joint">
             <command_interface name="position">
@@ -337,6 +344,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="RL_calf_joint">
             <command_interface name="position">
@@ -345,6 +353,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="RR_hip_joint">
             <command_interface name="position">
@@ -353,6 +362,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="RR_thigh_joint">
             <command_interface name="position">
@@ -361,6 +371,7 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
         <joint name="RR_calf_joint">
             <command_interface name="position">
@@ -369,15 +380,8 @@
             </command_interface>
             <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="effort" />
         </joint>
-        <!-- <joint name="right_wheel_joint">
-            <command_interface name="velocity">
-                <param name="min">-10</param>
-                <param name="max">10</param>
-            </command_interface>
-            <state_interface name="velocity" />
-            <state_interface name="position" />
-        </joint> -->
     </ros2_control>
 
 </robot>

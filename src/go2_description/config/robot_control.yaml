@@ -1,6 +1,7 @@
 # Controller configuration for the robot
 controller_manager:
     ros__parameters:
+        use_sim_time: true
         update_rate: 1000
 
 # Publish all joint states -----------------------------------
