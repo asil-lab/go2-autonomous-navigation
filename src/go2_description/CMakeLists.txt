@@ -21,6 +21,7 @@ find_package(urdf REQUIRED)
 find_package(xacro REQUIRED)
 find_package(gazebo REQUIRED)
 find_package(gazebo_ros REQUIRED)
+find_package(ros2_control REQUIRED)
 
 install(DIRECTORY
   config

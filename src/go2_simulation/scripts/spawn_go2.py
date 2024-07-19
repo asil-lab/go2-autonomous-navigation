@@ -17,6 +17,7 @@ def main(args=None):
     req.xml = content
     req.robot_namespace = ""
     req.reference_frame = "world"
+    req.initial_pose.position.z = 0.6
 
     while not cli.wait_for_service(timeout_sec=1.0):
         node.get_logger().info('service not available, waiting again...')
