@@ -1,7 +1,16 @@
-# ROS2 cache
-build/
-install/
-log/
-
 # VSCode
 .vscode/
+
+# ROS1 workspace
+.catkin_tools/# VSCode
+.vscode/
+
+# ROS1 workspace
+.catkin_tools/
+.catkin_workspace
+src/CMakeLists.txt
+
+# ROS1 cache
+build/
+devel/
+log/

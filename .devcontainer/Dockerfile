@@ -17,6 +17,23 @@ RUN apt-get update && apt-get install -y git openssh-client less iproute2 procps
 RUN apt-get install -y python3-pip
 RUN apt-get install -y python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
 
+# Tool for repo management
+RUN apt-get install -y python3-vcstool
+# Tool for catkin packages
+RUN apt-get install -y python3-catkin-tools python3-catkin-lint python3-pip
+# Tool for installing dependencies
+RUN apt-get install -y python3-rosdep
+# Miscellaneous libraries/tools
+RUN python3 -m pip install osrf-pycommon
+
+# Source ROS
+RUN source /opt/ros/noetic/setup.bash
+
+# initilize the catkin workspace
+RUN catkin init
+RUN catkin config --extend /opt/ros/noetic
+RUN catkin config -DCMAKE_BUILD_TYPE=Release
+
 # Install unitree_ros dependencies
 RUN apt-get install -y sudo apt-get install ros-noetic-controller-interface  ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller
 
