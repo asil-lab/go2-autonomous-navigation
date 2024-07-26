@@ -1,4 +1,4 @@
-FROM ros:foxy
+FROM ros:noetic
 ARG USERNAME=${GetMyUsername}
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
@@ -17,22 +17,32 @@ RUN apt-get update && apt-get install -y git openssh-client less iproute2 procps
 RUN apt-get install -y python3-pip
 RUN apt-get install -y python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
 
-# Install ROS Gazebo
-RUN sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list'
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
-RUN apt-get update
-# RUN apt-get install -y ros-foxy-ros-ign
-RUN apt-get install -y ros-foxy-gazebo-ros-pkgs ros-foxy-gazebo-ros ros-foxy-gazebo-ros2-control
+# Tool for repo management
+RUN apt-get install -y python3-vcstool
+# Tool for catkin packages
+RUN apt-get install -y python3-catkin-tools python3-catkin-lint python3-pip
+# Tool for installing dependencies
+RUN apt-get install -y python3-rosdep
+# Miscellaneous libraries/tools
+RUN python3 -m pip install osrf-pycommon
 
-# Install ROS 2 dependencies
-RUN apt-get install -y ros-foxy-rviz2 ros-foxy-joint-state-publisher-gui ros-foxy-robot-state-publisher
+# initilize the catkin workspace
+RUN catkin init
+RUN catkin config --extend /opt/ros/noetic
+RUN catkin config -DCMAKE_BUILD_TYPE=Release
+
+# Install unitree_ros dependencies
+RUN apt-get install -y \
+    ros-noetic-controller-interface  ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller \
+    ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller ros-noetic-xacro \
+    ros-noetic-robot-state-publisher ros-noetic-joint-state-publisher ros-noetic-joint-state-publisher-gui \
+    ros-noetic-rviz
 
 ENV SHELL /bin/bash
 
 # Source aliases and variables
 RUN echo -e "source /home/lava-tube-mapping/.devcontainer/setup_aliases.sh" >> ~/.bashrc
-RUN export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/lava-tube-mapping/src/go2_simulation/models
-
+# RUN export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/lava-tube-mapping/src/go2_simulation/models
 
 # ********************************************************
 # * Anything else you want to do like clean up goes here *

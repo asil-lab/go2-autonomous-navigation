@@ -1,5 +1,5 @@
 {
-    "name": "Rhizome Lava Tube Mapping ROS2 Container",
+    "name": "Lava Tube Mapping ROS1 Dev Container",
     "privileged": true,
     "remoteUser": "${env:USERNAME}",
     "build": {
@@ -34,9 +34,9 @@
     "mounts": [
        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
         "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
-        "source=${localWorkspaceFolder}/cache/foxy/build,target=/home/lava-tube-mapping/build,type=bind",
-        "source=${localWorkspaceFolder}/cache/foxy/install,target=/home/lava-tube-mapping/install,type=bind",
-        "source=${localWorkspaceFolder}/cache/foxy/log,target=/home/lava-tube-mapping/log,type=bind"
+        // "source=${localWorkspaceFolder}/cache/noetic/build,target=/home/lava-tube-mapping/build,type=bind",
+        // "source=${localWorkspaceFolder}/cache/noetic/install,target=/home/lava-tube-mapping/install,type=bind",
+        // "source=${localWorkspaceFolder}/cache/noetic/log,target=/home/lava-tube-mapping/log,type=bind"
     ],
-    "postCreateCommand": "sudo rosdep update --rosdistro foxy && sudo rosdep check --from-paths src --ignore-src && sudo rosdep install --from-paths src --ignore-src -r -y --rosdistro foxy && sudo chown -R ${env:USERNAME} /home/lava-tube-mapping/"
+    "postCreateCommand": "sudo rosdep update --rosdistro noetic && sudo rosdep check --from-paths src --ignore-src && sudo rosdep install --from-paths src --ignore-src -r -y --rosdistro noetic && sudo chown -R ${env:USERNAME} /home/lava-tube-mapping/"
 }
