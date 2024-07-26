@@ -1,5 +1,6 @@
 # VSCode
 .vscode/
+temp
 
 # ROS1 workspace
 .catkin_tools/# VSCode
@@ -13,4 +14,4 @@ src/CMakeLists.txt
 # ROS1 cache
 build/
 devel/
-log/
+logs/
