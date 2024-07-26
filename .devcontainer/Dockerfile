@@ -26,16 +26,17 @@ RUN apt-get install -y python3-rosdep
 # Miscellaneous libraries/tools
 RUN python3 -m pip install osrf-pycommon
 
-# Source ROS
-RUN source /opt/ros/noetic/setup.bash
-
 # initilize the catkin workspace
 RUN catkin init
 RUN catkin config --extend /opt/ros/noetic
 RUN catkin config -DCMAKE_BUILD_TYPE=Release
 
 # Install unitree_ros dependencies
-RUN apt-get install -y sudo apt-get install ros-noetic-controller-interface  ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller
+RUN apt-get install -y \
+    ros-noetic-controller-interface  ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller \
+    ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller ros-noetic-xacro \
+    ros-noetic-robot-state-publisher ros-noetic-joint-state-publisher ros-noetic-joint-state-publisher-gui \
+    ros-noetic-rviz
 
 ENV SHELL /bin/bash
 
