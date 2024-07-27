@@ -24,7 +24,6 @@ RUN apt-get update && apt-get install -y git openssh-client less iproute2 procps
 RUN apt-get update && apt-get install -y python3-pip python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-
 # # Enable Universe, Multiverse, and Restricted
 # RUN sed -i 's/^# deb/deb/g' /etc/apt/sources.list
 
@@ -35,6 +34,18 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ROS1 Noetic dependencies
 RUN apt-get update && apt-get install -y python3-catkin-tools python3-osrf-pycommon
+
+# Install ROS1 Noetic unitree_ros package dependencies
+RUN apt-get install -y \
+    ros-noetic-controller-interface  ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller \
+    ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller ros-noetic-xacro \
+    ros-noetic-robot-state-publisher ros-noetic-joint-state-publisher ros-noetic-joint-state-publisher-gui \
+    ros-noetic-rviz
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install ROS2 Foxy dependencies
+RUN apt-get update && apt-get install -y python3-argcomplete ros-dev-tools
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # # Create a workspace for ros1_bridge
@@ -59,18 +70,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # RUN catkin config --extend /opt/ros/noetic
 # RUN catkin config -DCMAKE_BUILD_TYPE=Release
 
-# # Install unitree_ros dependencies
-# RUN apt-get install -y \
-#     ros-noetic-controller-interface  ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller \
-#     ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller ros-noetic-xacro \
-#     ros-noetic-robot-state-publisher ros-noetic-joint-state-publisher ros-noetic-joint-state-publisher-gui \
-#     ros-noetic-rviz
-
 ENV SHELL /bin/bash
-
-# Source aliases and variables
-# RUN echo -e "source /home/lava-tube-mapping/.devcontainer/setup_aliases.sh" >> ~/.bashrc
-# RUN export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/lava-tube-mapping/src/go2_simulation/models
 
 # ********************************************************
 # * Anything else you want to do like clean up goes here *
