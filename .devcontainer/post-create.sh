@@ -23,11 +23,20 @@ catkin config --workspace "${ROOT}/ros1_ws" \
 echo "ROS1 workspace setup and configured."
 
 # Build the ROS1 workspace
+echo "Building ROS1 workspace..."
 catkin build --workspace "${ROOT}/ros1_ws" &>/dev/null
 echo "ROS1 workspace built."
 
 # Configure the ROS2 workspace
-source $ROS2_INSTALL_PATH/setup.bash
+# source $ROS2_INSTALL_PATH/setup.bash
+
+# Source both ROS1 Noetic and ROS2 Foxy installations to use ros1_bridge, in this order.
+echo "source $ROS1_INSTALL_PATH/setup.bash" >> ~/.bashrc
+echo "source $ROS2_INSTALL_PATH/setup.bash" >> ~/.bashrc
 
 # Source aliases
 echo "source ${ROOT}/.devcontainer/setup_aliases.sh" >> ~/.bashrc
+echo "Aliases sourced. See .devcontainer/setup_aliases.sh for more details."
+
+# Complete
+echo "Development environment setup complete."

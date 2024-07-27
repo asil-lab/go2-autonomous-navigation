@@ -3,8 +3,9 @@
 temp
 
 # ROS1 workspace
-.catkin_tools/# VSCode
+.catkin_tools
 .vscode/
+ros1_ws/src/CMakeLists.txt
 
 # ROS1 workspace
 .catkin_tools/
