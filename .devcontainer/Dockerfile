@@ -1,5 +1,6 @@
-# Base image for ROS2 Foxy
+# Base image for ROS2 Foxy and ROS1 Noetic
 FROM ros:foxy
+COPY --from=ros:noetic / /
 
 # # Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -23,30 +24,21 @@ RUN apt-get update && apt-get install -y git openssh-client less iproute2 procps
 RUN apt-get update && apt-get install -y python3-pip python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# TODO: Move after building the container and undoing debian frontend
-# # Tool for repo management
-# RUN apt-get install -y python3-vcstool
-# # Tool for catkin packages
-# RUN apt-get install -y python3-catkin-tools python3-catkin-lint python3-pip
-# # Tool for installing dependencies
-# RUN apt-get install -y python3-rosdep
-# # Miscellaneous libraries/tools
-# RUN python3 -m pip install osrf-pycommon
 
-# Enable Universe, Multiverse, and Restricted
-RUN sed -i 's/^# deb/deb/g' /etc/apt/sources.list
+# # Enable Universe, Multiverse, and Restricted
+# RUN sed -i 's/^# deb/deb/g' /etc/apt/sources.list
 
-# Install ROS1 Noetic
-RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
-RUN apt-get update && apt-get install -y ros-noetic-desktop-full
+# # Install ROS1 Noetic
+# RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+# RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+# RUN apt-get update && apt-get install -y ros-noetic-desktop-full
 
-# Create a workspace for ros1_bridge
-RUN mkdir -p /root/ros1_bridge_ws/src
+# # Create a workspace for ros1_bridge
+# RUN mkdir -p /root/ros1_bridge_ws/src
 
-# Clone the ros1_bridge repository
-RUN cd /root/ros1_bridge_ws/src && \
-    git clone https://github.com/ros2/ros1_bridge.git
+# # Clone the ros1_bridge repository
+# RUN cd /root/ros1_bridge_ws/src && \
+#     git clone https://github.com/ros2/ros1_bridge.git
 
 # # Install dependencies and build ros1_bridge
 # RUN cd /root/ros1_bridge_ws && \
