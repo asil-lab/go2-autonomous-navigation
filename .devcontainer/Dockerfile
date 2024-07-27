@@ -33,6 +33,10 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
 # RUN apt-get update && apt-get install -y ros-noetic-desktop-full
 
+# Install ROS1 Noetic dependencies
+RUN apt-get update && apt-get install -y python3-catkin-tools python3-osrf-pycommon
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # # Create a workspace for ros1_bridge
 # RUN mkdir -p /root/ros1_bridge_ws/src
 
