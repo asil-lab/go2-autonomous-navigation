@@ -33,10 +33,10 @@
     ],
     "mounts": [
        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
-        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
+        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached"
         // "source=${localWorkspaceFolder}/cache/noetic/build,target=/home/lava-tube-mapping/build,type=bind",
         // "source=${localWorkspaceFolder}/cache/noetic/install,target=/home/lava-tube-mapping/install,type=bind",
         // "source=${localWorkspaceFolder}/cache/noetic/log,target=/home/lava-tube-mapping/log,type=bind"
     ],
-    "postCreateCommand": "sudo rosdep update --rosdistro noetic && sudo rosdep check --from-paths src --ignore-src && sudo rosdep install --from-paths src --ignore-src -r -y --rosdistro noetic && sudo chown -R ${env:USERNAME} /home/lava-tube-mapping/"
+    "postCreateCommand": "bash ./.devcontainer/post-create.sh"
 }
