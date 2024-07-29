@@ -5,3 +5,4 @@
 [submodule "ros1_ws/src/unitree_ros"]
 	path = ros1_ws/src/unitree_ros
 	url = https://github.com/AlexanderJamesBecoy/unitree_ros
+	branch = master
