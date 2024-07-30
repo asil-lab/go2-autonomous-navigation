@@ -1,0 +1,20 @@
+ltm_pointcloud_filter_node:
+  ros__parameters:
+    sac_segmentation:
+      distance_threshold: 0.1 # meters
+      max_iterations: 1000
+      probability: 0.99
+    voxel_grid:
+      leaf_size: 0.01 # meters
+    passthrough:
+      filter_field_name: "Z"
+      min_limit: 0.0
+      max_limit: 1.0
+    topic:
+      sim:
+        # Set queue size to 1 to avoid processing old data
+        pointcloud_topic: "/go2_gazebo/point_cloud/raw"
+        filtered_pointcloud_topic: "/go2_gazebo/point_cloud/filtered"
+      real:
+        pointcloud_topic: "/go2/point_cloud/raw"
+        filtered_pointcloud_topic: "/go2/point_cloud/filtered"
