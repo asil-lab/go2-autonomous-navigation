@@ -11,6 +11,8 @@
 #include <rclcpp/qos.hpp>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <vision_msgs/msg/bounding_box3_d.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.hpp>
@@ -56,7 +58,8 @@ namespace LTMPointcloudFilterNode
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_raw_pointcloud_sub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_filtered_pointcloud_pub;
-
+    rclcpp::Publisher<vision_msgs::msg::BoundingBox3D>::SharedPtr m_bounding_box_pub;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_marker_array_pub;
 
   }; // class PointCloudFilterNode
 }   // namespace LTMPointcloudFilterNode

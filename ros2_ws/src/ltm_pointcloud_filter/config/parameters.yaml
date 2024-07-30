@@ -5,7 +5,7 @@ pointcloud_filter_node:
       max_iterations: 1000
       probability: 0.99
     voxel_grid:
-      leaf_size: 0.01 # meters
+      leaf_size: 0.03 # meters
     passthrough:
       filter_field_name: "Z"
       min_limit: 0.0
