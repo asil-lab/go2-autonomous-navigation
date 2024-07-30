@@ -1,6 +1,7 @@
 /*
- * Project Lava Tube Mapping
+ * Project Lava Tube Mapping, Technical University of Delft.
  * Author: Alexander James Becoy @alexanderjamesbecoy
+ * Date: 30-07-2024.
  */
 
 #ifndef LTM_POINTCLOUD_FILTER__POINTCLOUD_FILTER_NODE_HPP_

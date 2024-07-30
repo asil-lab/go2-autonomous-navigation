@@ -32,6 +32,7 @@ include_directories(include)
 
 # Create pointcloud_filter_node executable
 add_executable(pointcloud_filter_node src/pointcloud_filter_node.cpp)
+
 target_include_directories(pointcloud_filter_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
