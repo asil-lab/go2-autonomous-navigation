@@ -41,6 +41,7 @@ namespace LTMPointcloudFilterNode
     sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const;
 
+    void configurePCLParameters();
     void configureRosSubscribers(bool in_simulation);
     void configureRosPublishers(bool in_simulation);
 

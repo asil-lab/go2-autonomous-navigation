@@ -23,6 +23,9 @@ PointCloudFilterNode::PointCloudFilterNode()
   declare_parameter("in_simulation", true);
   bool in_simulation = this->get_parameter("in_simulation").as_bool();
 
+  // Configure PCL parameters
+  configurePCLParameters();
+
   // Configure ROS subscribers and publishers
   configureRosSubscribers(in_simulation);
   configureRosPublishers(in_simulation);
@@ -39,8 +42,6 @@ PointCloudFilterNode::~PointCloudFilterNode()
 
 void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  RCLCPP_INFO(this->get_logger(), "Received a new PointCloud2 message.");
-
   // Convert the ROS PointCloud2 message to a PCL PointCloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = convertPointCloud2ToPCL(msg);
 
@@ -97,6 +98,19 @@ sensor_msgs::msg::PointCloud2::SharedPtr PointCloudFilterNode::convertPCLToPoint
   return msg;
 }
 
+void PointCloudFilterNode::configurePCLParameters()
+{
+  // Declare the parameters for the PCL segmentation
+  declare_parameter("sac_segmentation.distance_threshold", 0.01);
+  declare_parameter("sac_segmentation.max_iterations", 1000);
+  declare_parameter("sac_segmentation.probability", 0.99);
+
+  // Get the parameters for the PCL segmentation
+  m_sac_segmentation_distance_threshold = this->get_parameter("sac_segmentation.distance_threshold").as_double();
+  m_sac_segmentation_max_iterations = this->get_parameter("sac_segmentation.max_iterations").as_int();
+  m_sac_segmentation_probability = this->get_parameter("sac_segmentation.probability").as_double();
+}
+
 void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)
 {
   // Get the pointcloud topic parameter from the parameter server
@@ -104,8 +118,8 @@ void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)
   std::string raw_pointcloud_topic_param = "topics." + robot_type + ".raw_pointcloud_topic";
   RCLCPP_INFO(this->get_logger(), "Raw pointcloud topic parameter: %s", raw_pointcloud_topic_param.c_str());
 
-  declare_parameter("raw_pointcloud_topic_param", "point_cloud");
-  std::string raw_pointcloud_topic = this->get_parameter(topics.sim.raw_pointcloud_topic).as_string();
+  declare_parameter(raw_pointcloud_topic_param, "point_cloud");
+  std::string raw_pointcloud_topic = this->get_parameter(raw_pointcloud_topic_param).as_string();
   RCLCPP_INFO(this->get_logger(), "Subscribe to raw pointcloud topic: %s", raw_pointcloud_topic.c_str());
 
   // Create the raw pointcloud subscriber
