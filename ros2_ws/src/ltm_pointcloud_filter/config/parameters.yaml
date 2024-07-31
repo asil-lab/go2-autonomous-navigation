@@ -1,19 +1,29 @@
 pointcloud_filter_node:
   ros__parameters:
+
     sac_segmentation:
       distance_threshold: 0.1 # meters
       max_iterations: 1000
       probability: 0.99
+
     voxel_grid:
       leaf_size: 0.03 # meters
+
     passthrough:
       filter_field_name: "Z"
       min_limit: 0.0
       max_limit: 1.0
+
     topics:
+      robot_description_topic: "/robot_description"
       sim:
         raw_pointcloud_topic: "/go2_gazebo/point_cloud/raw"
         filtered_pointcloud_topic: "/go2_gazebo/point_cloud/filtered"
       real:
         raw_pointcloud_topic: "/go2/point_cloud/raw"
         filtered_pointcloud_topic: "/go2/point_cloud/filtered"
+
+    robot_description:
+      package_name: "ltm_pointcloud_filter"
+      directory_name: "urdf"
+      file_name: "go2_description.urdf"

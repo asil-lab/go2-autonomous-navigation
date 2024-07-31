@@ -17,16 +17,19 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(vision_msgs)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(tf2_eigen REQUIRED)
+find_package(urdf REQUIRED)
 find_package(PCL REQUIRED)
 include_directories(include)
 
@@ -39,14 +42,17 @@ target_include_directories(pointcloud_filter_node PUBLIC
 
 ament_target_dependencies(pointcloud_filter_node
   rclcpp
+  ament_index_cpp
   tf2_ros
   tf2
   tf2_eigen
+  tf2_geometry_msgs
   sensor_msgs
   visualization_msgs
   vision_msgs
   geometry_msgs
   pcl_ros
+  urdf
 )
 
 # Install executables
@@ -62,6 +68,18 @@ install(DIRECTORY
 # Install config files.
 install(DIRECTORY
   config
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+# Install urdf files.
+install(DIRECTORY
+  urdf
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+# Install mesh files.
+install(DIRECTORY
+  meshes
   DESTINATION share/${PROJECT_NAME}/
 )
 

@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
 #include <pcl/ModelCoefficients.h>
@@ -22,6 +23,13 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
 
+#include <pcl/io/vtk_lib_io.h>
+
+#include <urdf_parser/urdf_parser.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+
 using namespace LTMPointcloudFilterNode;
 
 PointCloudFilterNode::PointCloudFilterNode()
@@ -33,6 +41,13 @@ PointCloudFilterNode::PointCloudFilterNode()
 
   // Configure PCL parameters
   configurePCLParameters();
+
+  // Configure URDF model
+  configureURDFModel();
+
+  // Initialize TF2 listener and buffer
+  // m_tf_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+  // m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
 
   // Configure ROS subscribers and publishers
   configureRosSubscribers(in_simulation);
@@ -90,6 +105,49 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   extract.setNegative(true);
   extract.filter(*cloud_downsampled);
 
+  // Create a pointcloud defined by the URDF model via STL
+  for (const auto &link_pair : m_urdf_model.links_) {
+    RCLCPP_INFO(this->get_logger(), "Link name: %s", link_pair.first.c_str());
+    const auto &link = link_pair.second;
+
+    // Check if the link has a collision geometry
+    if (!link->visual) {
+      RCLCPP_WARN(this->get_logger(), "Link has no visual geometry.");
+      continue;
+    }
+
+    // Check if the collision geometry is a mesh
+    pcl::PolygonMesh mesh;
+    if (!convertCollisionToPointCloud(link->visual->geometry, mesh))
+      continue;
+
+    // Convert the URDF mesh geometry to a PCL PolygonMesh
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
+    
+    // // Transform the pointcloud to the link frame
+    // geometry_msgs::msg::TransformStamped transform_stamped;
+    // try {
+    //   transform_stamped = m_tf_buffer->lookupTransform(
+    //     link->name, msg->header.frame_id, msg->header.stamp);
+    // } catch (tf2::TransformException &ex) {
+    //   RCLCPP_ERROR(this->get_logger(), "Transform error: %s", ex.what());
+    //   continue;
+    // }
+    // tf2::Transform tf2_transform;
+    // tf2::fromMsg(transform_stamped.transform, tf2_transform);
+
+    // // Convert the TF2 transform to an Eigen transform
+    // Eigen::Affine3d eigen_transform;
+    // // tf2::convert(tf2_transform, eigen_transform);
+
+    // // Transform the pointcloud to the link frame
+    // pcl::transformPointCloud(*cloud_mesh, *cloud_mesh, eigen_transform);
+
+    // Add the pointcloud to the input cloud
+    // *cloud_downsampled += *cloud_mesh;
+  }
+
   // Create the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
   tree->setInputCloud(cloud_downsampled);
@@ -103,7 +161,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   ec.setSearchMethod(tree);
   ec.setInputCloud(cloud_downsampled);
 
-  // Extract the clusters from the cloud
+  // Obtain the cluster indices from the input cloud
   ec.extract(cluster_indices);
 
   // Create a marker array for the bounding boxes
@@ -141,7 +199,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
     marker.header.frame_id = msg->header.frame_id;
     marker.header.stamp = msg->header.stamp;
     marker.ns = "bounding_box";
-    marker.id = 0;
+    marker.id = static_cast<int>(it - cluster_indices.begin());
     marker.type = visualization_msgs::msg::Marker::CUBE;
     marker.action = visualization_msgs::msg::Marker::ADD;
     marker.pose.position.x = bounding_box.center.position.x;
@@ -170,6 +228,31 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
 
   // Publish the bounding box marker array
   m_marker_array_pub->publish(marker_array);
+}
+
+bool PointCloudFilterNode::convertCollisionToPointCloud(const urdf::GeometrySharedPtr geometry, pcl::PolygonMesh &mesh) const
+{
+  // Check if the geometry is a mesh
+  if (geometry->type != urdf::Geometry::MESH) {
+    RCLCPP_WARN(this->get_logger(), "Geometry type is not a mesh.");
+    return false;
+  }
+
+  // Convert the URDF mesh geometry to a PCL PolygonMesh, if possible
+  const auto mesh_geometry = std::dynamic_pointer_cast<urdf::Mesh>(geometry);
+  if (!mesh_geometry) {
+    RCLCPP_WARN(this->get_logger(), "Failed to cast URDF mesh geometry.");
+    return false;
+  }
+
+  // Load the mesh from the STL file, if possible
+  if (pcl::io::loadPolygonFileSTL(mesh_geometry->filename, mesh) == -1) {
+    RCLCPP_WARN(this->get_logger(), "Failed to load STL file: %s", mesh_geometry->filename.c_str());
+    return false;
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Loaded STL file: %s", mesh_geometry->filename.c_str());
+  return true;
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudFilterNode::convertPointCloud2ToPCL(
@@ -201,6 +284,19 @@ void PointCloudFilterNode::configurePCLParameters()
   m_sac_segmentation_max_iterations = this->get_parameter("sac_segmentation.max_iterations").as_int();
   m_sac_segmentation_probability = this->get_parameter("sac_segmentation.probability").as_double();
   m_voxel_grid_leaf_size = this->get_parameter("voxel_grid.leaf_size").as_double();
+}
+
+void PointCloudFilterNode::configureURDFModel()
+{
+  // Get the path to the URDF file
+  std::string urdf_file = ament_index_cpp::get_package_share_directory("ltm_pointcloud_filter") + "/urdf/go2_description.urdf";
+
+  // Load the URDF model from the file
+  if (!m_urdf_model.initFile(urdf_file)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to load URDF file: %s", urdf_file.c_str());
+  }
+
+  RCLCPP_INFO(this->get_logger(), "Loaded URDF model from file: %s", urdf_file.c_str());
 }
 
 void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)

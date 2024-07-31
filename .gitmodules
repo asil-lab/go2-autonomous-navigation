@@ -6,3 +6,6 @@
 	path = ros1_ws/src/unitree_ros
 	url = https://github.com/AlexanderJamesBecoy/unitree_ros
 	branch = master
+[submodule "ros2_ws/src/unitree_ros2"]
+	path = ros2_ws/src/unitree_ros2
+	url = https://github.com/AlexanderJamesBecoy/unitree_ros2.git

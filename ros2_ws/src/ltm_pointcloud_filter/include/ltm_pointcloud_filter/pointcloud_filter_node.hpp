@@ -19,11 +19,14 @@
 #include <pcl/common/common.h>
 
 #include <tf2/transform_datatypes.h>
-#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2/convert.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_eigen/tf2_eigen.h>
+
+#include <urdf/model.h>
+#include <pcl/PolygonMesh.h>
 
 #include <string>
 
@@ -43,7 +46,10 @@ namespace LTMPointcloudFilterNode
     sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const;
 
+    bool convertCollisionToPointCloud(const urdf::GeometrySharedPtr geometry, pcl::PolygonMesh &mesh) const;
+
     void configurePCLParameters();
+    void configureURDFModel();
     void configureRosSubscribers(bool in_simulation);
     void configureRosPublishers(bool in_simulation);
 
@@ -55,6 +61,9 @@ namespace LTMPointcloudFilterNode
 
     double m_voxel_grid_leaf_size;
 
+    urdf::Model m_urdf_model;
+    std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
+    std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_raw_pointcloud_sub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_filtered_pointcloud_pub;
