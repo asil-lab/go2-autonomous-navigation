@@ -75,35 +75,17 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   voxel_grid.setLeafSize(m_voxel_grid_leaf_size, m_voxel_grid_leaf_size, m_voxel_grid_leaf_size);
   voxel_grid.filter(*cloud_downsampled);
 
-  // Create the filtering object
+  // Remove the ground plane from the pointcloud
   pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
   pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
-  // Create the segmentation object
-  pcl::SACSegmentation<pcl::PointXYZ> sac_segmentation;
-  sac_segmentation.setOptimizeCoefficients(true);
-
-  // Set the segmentation parameters for the plane model
-  sac_segmentation.setModelType(pcl::SACMODEL_PLANE);
-  sac_segmentation.setMethodType(pcl::SAC_RANSAC);
-  sac_segmentation.setDistanceThreshold(m_sac_segmentation_distance_threshold);
-
-  sac_segmentation.setInputCloud(cloud_downsampled);
-  sac_segmentation.segment(*inliers, *coefficients);
-
-  if (inliers->indices.size() == 0) {
+  if (!m_ground_plane_removal->segmentPlane(cloud_downsampled, inliers, coefficients)) {
     RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model for the given dataset.");
     return;
   }
 
-  // Create the filtering object for the inliers
-  pcl::ExtractIndices<pcl::PointXYZ> extract;
-  extract.setInputCloud(cloud_downsampled);
-
-  // Extract the inliers of the plane model from the input cloud
-  extract.setIndices(inliers);
-  extract.setNegative(true);
-  extract.filter(*cloud_downsampled);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
+  m_ground_plane_removal->removePlane(cloud_downsampled, cloud_plane_removed, inliers);
 
   // Create a pointcloud defined by the URDF model via STL
   for (const auto &link_pair : m_urdf_model.links_) {
@@ -145,12 +127,12 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
     // pcl::transformPointCloud(*cloud_mesh, *cloud_mesh, eigen_transform);
 
     // Add the pointcloud to the input cloud
-    // *cloud_downsampled += *cloud_mesh;
+    // *cloud_plane_removed += *cloud_mesh;
   }
 
   // Create the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-  tree->setInputCloud(cloud_downsampled);
+  tree->setInputCloud(cloud_plane_removed);
 
   // Create the Euclidean Cluster Extraction object
   std::vector<pcl::PointIndices> cluster_indices;
@@ -159,7 +141,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   ec.setMinClusterSize(100);
   ec.setMaxClusterSize(25000);
   ec.setSearchMethod(tree);
-  ec.setInputCloud(cloud_downsampled);
+  ec.setInputCloud(cloud_plane_removed);
 
   // Obtain the cluster indices from the input cloud
   ec.extract(cluster_indices);
@@ -172,7 +154,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
     for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
-      cloud_cluster->points.push_back(cloud_downsampled->points[*pit]);
+      cloud_cluster->points.push_back(cloud_plane_removed->points[*pit]);
     }
     cloud_cluster->width = cloud_cluster->points.size();
     cloud_cluster->height = 1;
@@ -221,7 +203,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   }
 
   // Convert the PCL PointCloud back to a ROS PointCloud2 message
-  sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud_downsampled);
+  sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud_plane_removed);
 
   // Publish the filtered PointCloud2 message
   m_filtered_pointcloud_pub->publish(*filtered_msg);
@@ -279,11 +261,17 @@ void PointCloudFilterNode::configurePCLParameters()
   declare_parameter("sac_segmentation.probability", 0.99);
   declare_parameter("voxel_grid.leaf_size", 0.01);
 
-  // Get the parameters for the PCL segmentation
-  m_sac_segmentation_distance_threshold = this->get_parameter("sac_segmentation.distance_threshold").as_double();
-  m_sac_segmentation_max_iterations = this->get_parameter("sac_segmentation.max_iterations").as_int();
-  m_sac_segmentation_probability = this->get_parameter("sac_segmentation.probability").as_double();
+  // // Get the parameters for the PCL segmentation
+  double sac_segmentation_distance_threshold = this->get_parameter("sac_segmentation.distance_threshold").as_double();
+  int sac_segmentation_max_iterations = this->get_parameter("sac_segmentation.max_iterations").as_int();
+  double sac_segmentation_probability = this->get_parameter("sac_segmentation.probability").as_double();
   m_voxel_grid_leaf_size = this->get_parameter("voxel_grid.leaf_size").as_double();
+
+  m_ground_plane_removal = std::make_unique<LTMPointcloudFilter::GroundPlaneRemoval>();
+  m_ground_plane_removal->configureSACSegmentationParameters(
+    sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
+  RCLCPP_INFO(this->get_logger(), "Ground plane removal, SAC segmentation parameters configured: \n Distance threshold: %f m\n Max iterations: %d\n Probability: %f",
+    sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
 }
 
 void PointCloudFilterNode::configureURDFModel()

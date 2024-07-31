@@ -30,6 +30,8 @@
 
 #include <string>
 
+#include <ltm_pointcloud_filter/ground_plane_removal.hpp>
+
 namespace LTMPointcloudFilterNode
 {
   class PointCloudFilterNode : public rclcpp::Node
@@ -64,6 +66,8 @@ namespace LTMPointcloudFilterNode
     urdf::Model m_urdf_model;
     std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
     std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
+
+    std::unique_ptr<LTMPointcloudFilter::GroundPlaneRemoval> m_ground_plane_removal;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_raw_pointcloud_sub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_filtered_pointcloud_pub;
