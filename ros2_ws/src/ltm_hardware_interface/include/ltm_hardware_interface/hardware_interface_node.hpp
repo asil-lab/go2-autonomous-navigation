@@ -11,6 +11,7 @@
 
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <unitree_go/msg/sport_mode_state.hpp>
+#include <unitree_go/msg/low_state.hpp>
 
 #include <vector>
 #include <string>
@@ -24,14 +25,16 @@ namespace LTM
     ~HardwareInterfaceNode();
 
   private:
-    void sportModeCallback(const unitree_go::msg::SportModeState::SharedPtr msg);
+    void lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg);
     void publishJointState(const sensor_msgs::msg::JointState::SharedPtr msg);
 
     void initializeJointStateMsg();
 
+    std::vector<std::string> extractJointNames();
+
     sensor_msgs::msg::JointState::SharedPtr m_joint_state_msg;
 
-    rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_sub;
+    rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr m_joint_state_pub;
 
   }; // class HardwareInterfaceNode

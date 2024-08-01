@@ -18,9 +18,12 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(unitree_go REQUIRED)
+find_package(urdf REQUIRED)
+find_package(ltm_go2_description REQUIRED)
 
 add_executable(hardware_interface_node src/hardware_interface_node.cpp)
 target_include_directories(hardware_interface_node PUBLIC
@@ -29,9 +32,11 @@ target_include_directories(hardware_interface_node PUBLIC
 
 ament_target_dependencies(hardware_interface_node
   rclcpp
+  ament_index_cpp
   std_msgs
   sensor_msgs
   unitree_go
+  urdf
 )
 
 install(TARGETS hardware_interface_node
