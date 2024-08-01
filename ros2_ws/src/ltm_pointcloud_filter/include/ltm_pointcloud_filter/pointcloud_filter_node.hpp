@@ -41,6 +41,7 @@ namespace LTMPointcloudFilterNode
     ~PointCloudFilterNode();
 
   private:
+    void timerCallback();
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr convertPointCloud2ToPCL(
@@ -57,10 +58,6 @@ namespace LTMPointcloudFilterNode
 
     enum Axis { X, Y, Z };
 
-    double m_sac_segmentation_distance_threshold;
-    int m_sac_segmentation_max_iterations;
-    double m_sac_segmentation_probability;
-
     double m_voxel_grid_leaf_size;
 
     urdf::Model m_urdf_model;
@@ -69,6 +66,7 @@ namespace LTMPointcloudFilterNode
 
     std::unique_ptr<LTMPointcloudFilter::GroundPlaneRemoval> m_ground_plane_removal;
 
+    rclcpp::TimerBase::SharedPtr m_timer;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_raw_pointcloud_sub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_filtered_pointcloud_pub;
     rclcpp::Publisher<vision_msgs::msg::BoundingBox3D>::SharedPtr m_bounding_box_pub;

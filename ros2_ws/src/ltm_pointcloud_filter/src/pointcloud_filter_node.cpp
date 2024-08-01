@@ -24,11 +24,15 @@
 #include <pcl/segmentation/extract_clusters.h>
 
 #include <pcl/io/vtk_lib_io.h>
+#include <pcl/filters/random_sample.h>
+#include <pcl/filters/uniform_sampling.h>
 
 #include <urdf_parser/urdf_parser.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+
+#include <Eigen/Geometry>
 
 using namespace LTMPointcloudFilterNode;
 
@@ -53,6 +57,8 @@ PointCloudFilterNode::PointCloudFilterNode()
   configureRosSubscribers(in_simulation);
   configureRosPublishers(in_simulation);
 
+  m_timer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&PointCloudFilterNode::timerCallback, this));
+
   RCLCPP_INFO(this->get_logger(), "LTM Pointcloud Filter Node has been initialized.");
 }
 
@@ -61,6 +67,230 @@ PointCloudFilterNode::~PointCloudFilterNode()
   this->m_raw_pointcloud_sub.reset();
   this->m_filtered_pointcloud_pub.reset();
   RCLCPP_WARN(this->get_logger(), "LTM Pointcloud Filter Node has been destroyed.");
+}
+
+void PointCloudFilterNode::timerCallback()
+{
+  // Create pointcloud for every link in the URDF model and publish the total pointcloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+  // for (const auto &link_pair : m_urdf_model.links_) {
+  //   // RCLCPP_INFO(this->get_logger(), "Link name: %s", link_pair.first.c_str());
+  //   const auto &link = link_pair.second;
+
+  //   // Check if the link has a collision geometry
+  //   if (!link->visual) {
+  //     // RCLCPP_WARN(this->get_logger(), "Link has no visual geometry.");
+  //     continue;
+  //   }
+
+  //   // Check if the collision geometry is a mesh
+  //   pcl::PolygonMesh mesh;
+  //   if (!convertCollisionToPointCloud(link->visual->geometry, mesh))
+  //     continue;
+
+  //   // Convert the URDF mesh geometry to a PCL PolygonMesh
+  //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
+  //   pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
+
+  //   // Get random sample of the pointcloud
+  //   pcl::RandomSample<pcl::PointXYZ> random_sample;
+  //   random_sample.setInputCloud(cloud_mesh);
+  //   random_sample.setSample(100000);
+
+  //   // Apply the random sample filter
+  //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_sampled(new pcl::PointCloud<pcl::PointXYZ>);
+  //   random_sample.filter(*cloud_sampled);
+
+  //   RCLCPP_INFO(this->get_logger(), "Link name: %s", link->name.c_str());
+
+  //   if (link->name != "base") {
+  //     // Find the joint where the link is the child
+  //     const auto &joint = m_urdf_model.joints_[link->parent_joint->name];
+
+  //     // Get the joint origin as Affine3d
+  //     Eigen::Vector3d origin(joint->parent_to_joint_origin_transform.position.x,
+  //                             joint->parent_to_joint_origin_transform.position.y,
+  //                             joint->parent_to_joint_origin_transform.position.z);
+  //     Eigen::Quaterniond orientation(joint->parent_to_joint_origin_transform.rotation.w,
+  //                                     joint->parent_to_joint_origin_transform.rotation.x,
+  //                                     joint->parent_to_joint_origin_transform.rotation.y,
+  //                                     joint->parent_to_joint_origin_transform.rotation.z);
+  //     orientation = orientation.inverse();
+  //     Eigen::Affine3d transform = Eigen::Translation3d(origin) * orientation;
+
+  //     // Transform the pointcloud to the joint frame
+  //     pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, transform);
+  //   }
+
+  //   // Add the pointcloud to the input cloud
+  //   *cloud += *cloud_sampled;
+  // }
+
+  // Create a pointcloud for the entire URDF model starting from the base link
+  const auto &base_link = m_urdf_model.links_["base"];
+
+  // Check if the base link has a collision geometry
+  if (!base_link->visual) {
+    RCLCPP_WARN(this->get_logger(), "Base link has no visual geometry.");
+    return;
+  }
+
+  // Check if the collision geometry is a mesh
+  pcl::PolygonMesh mesh;
+  if (!convertCollisionToPointCloud(base_link->visual->geometry, mesh))
+    return;
+
+  // Convert the URDF mesh geometry to a PCL PolygonMesh
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
+
+  // Get uniform sample of the pointcloud
+  pcl::UniformSampling<pcl::PointXYZ> uniform_sample;
+  uniform_sample.setInputCloud(cloud_mesh);
+  uniform_sample.setRadiusSearch(0.01);
+
+  // Apply the uniform sample filter
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_sampled(new pcl::PointCloud<pcl::PointXYZ>);
+  uniform_sample.filter(*cloud_sampled);
+
+  // Rotate the pointcloud around the X-axis by 90 degrees
+  Eigen::Affine3d transform = Eigen::Affine3d::Identity();
+  transform.rotate(Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()));
+
+  // Transform the pointcloud to the base link frame
+  pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, transform);
+
+  // Add the pointcloud to the input cloud
+  *cloud += *cloud_sampled;
+
+  // Create a pointcloud for the next link in the URDF model given the joints where the parent link is the base link
+  for (const auto &joint_pair : m_urdf_model.joints_) {
+    const auto &joint = joint_pair.second;
+
+    // Check if the joint has a parent link
+    if (joint->parent_link_name != "base") {
+      continue;
+    }
+
+    // Check if the child link has a collision geometry
+    const auto &child_link = m_urdf_model.links_[joint->child_link_name];
+    if (!child_link->visual) {
+      continue;
+    }
+
+    // Check if the collision geometry is a mesh
+    pcl::PolygonMesh mesh;
+    if (!convertCollisionToPointCloud(child_link->visual->geometry, mesh))
+      continue;
+
+    // Convert the URDF mesh geometry to a PCL PolygonMesh
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
+
+    // Get uniform sample of the pointcloud
+    pcl::UniformSampling<pcl::PointXYZ> uniform_sample;
+    uniform_sample.setInputCloud(cloud_mesh);
+    uniform_sample.setRadiusSearch(0.01);
+
+    // Apply the uniform sample filter
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_sampled(new pcl::PointCloud<pcl::PointXYZ>);
+    uniform_sample.filter(*cloud_sampled);
+
+    // Rotate the pointcloud around the X-axis by 90 degrees
+    Eigen::Affine3d correction_transform = Eigen::Affine3d::Identity();
+    correction_transform.rotate(Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()));
+
+    // Transform the pointcloud to the joint frame
+    pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, correction_transform);
+
+    // Rotate the pointcloud according to the visual geometry in X, Y, Z
+    RCLCPP_INFO(this->get_logger(), "Child link name: %s", child_link->name.c_str());
+    Eigen::Affine3d visual_transform = Eigen::Affine3d::Identity();
+    Eigen::Quaterniond visual_orientation(
+      child_link->visual->origin.rotation.w,
+      child_link->visual->origin.rotation.x,
+      child_link->visual->origin.rotation.y,
+      child_link->visual->origin.rotation.z);
+    visual_transform.rotate(visual_orientation);
+    pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, visual_transform);
+
+    // Find the joint origin as Affine3d
+    Eigen::Vector3d origin(joint->parent_to_joint_origin_transform.position.x,
+                          joint->parent_to_joint_origin_transform.position.y,
+                          joint->parent_to_joint_origin_transform.position.z);
+    Eigen::Quaterniond orientation(joint->parent_to_joint_origin_transform.rotation.w,
+                                  joint->parent_to_joint_origin_transform.rotation.x,
+                                  joint->parent_to_joint_origin_transform.rotation.y,
+                                  joint->parent_to_joint_origin_transform.rotation.z);
+    Eigen::Affine3d transform = Eigen::Translation3d(origin) * orientation;
+
+    // Transform the pointcloud to the joint frame
+    pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, transform);
+
+    // Add the pointcloud to the input cloud
+    *cloud += *cloud_sampled;
+
+    // // Create a pointcloud for the next link in the URDF model given the joints where the parent link is this child link
+    // for (const auto &joint_pair : m_urdf_model.joints_) {
+    //   const auto &joint = joint_pair.second;
+
+    //   // Check if the joint has a parent link
+    //   if (joint->parent_link_name != child_link->name) {
+    //     continue;
+    //   }
+
+    //   // Check if the child link has a collision geometry
+    //   const auto &child_link = m_urdf_model.links_[joint->child_link_name];
+    //   if (!child_link->visual) {
+    //     continue;
+    //   }
+
+    //   // Check if the collision geometry is a mesh
+    //   pcl::PolygonMesh mesh;
+    //   if (!convertCollisionToPointCloud(child_link->visual->geometry, mesh))
+    //     continue;
+
+    //   // Convert the URDF mesh geometry to a PCL PolygonMesh
+    //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
+    //   pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
+
+    //   // Get random sample of the pointcloud
+    //   pcl::RandomSample<pcl::PointXYZ> random_sample;
+    //   random_sample.setInputCloud(cloud_mesh);
+    //   random_sample.setSample(20000);
+
+    //   // Apply the random sample filter
+    //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_sampled(new pcl::PointCloud<pcl::PointXYZ>);
+    //   random_sample.filter(*cloud_sampled);
+
+    //   // Find the joint origin as Affine3d
+    //   Eigen::Vector3d origin2(joint->parent_to_joint_origin_transform.position.x,
+    //                         joint->parent_to_joint_origin_transform.position.y,
+    //                         joint->parent_to_joint_origin_transform.position.z);
+    //   Eigen::Quaterniond orientation2(joint->parent_to_joint_origin_transform.rotation.w,
+    //                                 joint->parent_to_joint_origin_transform.rotation.x,
+    //                                 joint->parent_to_joint_origin_transform.rotation.y,
+    //                                 joint->parent_to_joint_origin_transform.rotation.z);
+    //   Eigen::Affine3d transform2 = Eigen::Translation3d(origin) * orientation;
+    //   // transform2.rotate(Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()));
+    //   transform2 = transform * transform2;
+
+    //   // Transform the pointcloud to the joint frame
+    //   pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, transform2);
+
+    //   // Add the pointcloud to the input cloud
+    //   *cloud += *cloud_sampled;
+    // }
+  }
+
+  // Convert the PCL PointCloud back to a ROS PointCloud2 message
+  sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud);
+  filtered_msg->header.frame_id = "map";
+  filtered_msg->header.stamp = this->now();
+
+  // Publish the filtered PointCloud2 message
+  m_filtered_pointcloud_pub->publish(*filtered_msg);
 }
 
 void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
@@ -94,7 +324,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
 
     // Check if the link has a collision geometry
     if (!link->visual) {
-      RCLCPP_WARN(this->get_logger(), "Link has no visual geometry.");
+      // RCLCPP_WARN(this->get_logger(), "Link has no visual geometry.");
       continue;
     }
 
@@ -233,7 +463,7 @@ bool PointCloudFilterNode::convertCollisionToPointCloud(const urdf::GeometryShar
     return false;
   }
 
-  RCLCPP_INFO(this->get_logger(), "Loaded STL file: %s", mesh_geometry->filename.c_str());
+  // RCLCPP_INFO(this->get_logger(), "Loaded STL file: %s", mesh_geometry->filename.c_str());
   return true;
 }
 
