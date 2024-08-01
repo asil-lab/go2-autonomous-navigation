@@ -1,6 +1,7 @@
 # Base image for ROS2 Foxy and ROS1 Noetic
-FROM ros:foxy
+FROM ubuntu:focal
 COPY --from=ros:noetic / /
+COPY --from=ros:foxy / /
 
 # # Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -22,7 +23,6 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # Install necessary tools
 RUN apt-get update && apt-get install -y git openssh-client less iproute2 procps curl lsb-release nano bash-completion
 RUN apt-get update && apt-get install -y python3-pip python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # # Enable Universe, Multiverse, and Restricted
 RUN sed -i 's/^# deb/deb/g' /etc/apt/sources.list
@@ -31,7 +31,6 @@ RUN sed -i 's/^# deb/deb/g' /etc/apt/sources.list
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
 RUN apt-get update && apt-get install -y ros-noetic-desktop-full
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ROS1 Noetic dependencies
 RUN apt-get update && apt-get install -y python3-catkin-tools python3-osrf-pycommon
