@@ -13,8 +13,8 @@
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <unitree_go/msg/imu_state.hpp>
-#include <unitree_go/msg/sport_mode_state.hpp>
 #include <unitree_go/msg/low_state.hpp>
+#include <unitree_go/msg/sport_mode_state.hpp>
 
 #include <vector>
 #include <string>
@@ -33,23 +33,26 @@ namespace LTM
 
   private:
     void lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg);
+    void sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg);
     void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
     void updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state);
     void publishJointState();
     void initializeJointStateMsg();
 
-    void updateIMUTransform(const unitree_go::msg::IMUState& imu_state);
-    void broadcastIMUTransform();
-    void initializeIMUTransformMsg();
+    void updateWorldToBaseTranslation(const std::array<float, 3>& translation);
+    void updateWorldToBaseOrientation(const std::array<float, 4>& orientation);
+    void broadcastWorldToBaseTransform();
+    void initializeWorldToBaseTransformMsg();
 
     sensor_msgs::msg::JointState::SharedPtr m_joint_state_msg;
     std::vector<int> m_joint_idx;
 
     std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
-    geometry_msgs::msg::TransformStamped::SharedPtr m_imu_transform_msg;
+    geometry_msgs::msg::TransformStamped::SharedPtr m_world_to_base_transform_msg;
 
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
+    rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_sub;
 
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr m_joint_state_pub;
