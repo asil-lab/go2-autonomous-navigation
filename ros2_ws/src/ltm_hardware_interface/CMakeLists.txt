@@ -20,13 +20,12 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(unitree_go REQUIRED)
 find_package(urdf REQUIRED)
 find_package(ltm_go2_description REQUIRED)
-find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
 
 add_executable(hardware_interface_node src/hardware_interface_node.cpp)
 target_include_directories(hardware_interface_node PUBLIC
@@ -37,12 +36,11 @@ ament_target_dependencies(hardware_interface_node
   rclcpp
   ament_index_cpp
   std_msgs
+  geometry_msgs
   sensor_msgs
   unitree_go
   urdf
-  tf2
   tf2_ros
-  tf2_geometry_msgs
 )
 
 install(TARGETS hardware_interface_node

@@ -6,8 +6,6 @@
 
 #include <ltm_hardware_interface/hardware_interface_node.hpp>
 
-#include <geometry_msgs/msg/transform_stamped.hpp>
-
 using namespace LTM;
 
 HardwareInterfaceNode::HardwareInterfaceNode()
@@ -47,8 +45,9 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
   updateJointStateMsg(msg->motor_state);
-  broadcastIMUTransform(msg->imu_state);
   publishJointState();
+
+  updateIMUTransform(msg->imu_state);
 }
 
 void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
@@ -74,7 +73,6 @@ void HardwareInterfaceNode::updateJointStateMsg(const std::array<unitree_go::msg
 
 void HardwareInterfaceNode::publishJointState()
 {
-  // Publish the joint state message
   m_joint_state_pub->publish(*m_joint_state_msg);
 }
 
@@ -100,21 +98,41 @@ void HardwareInterfaceNode::initializeJointStateMsg()
   m_joint_state_msg->effort = std::vector<double>(12, 0.0);
 
   // Set the joint state message indices
-  m_joint_idx = {3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8}; // TODO: Parameterize this
+  m_joint_idx = {3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8}; // TODO: Parameterize this, use enum?
 }
 
-void HardwareInterfaceNode::broadcastIMUTransform(const unitree_go::msg::IMUState& imu_state)
+void HardwareInterfaceNode::updateIMUTransform(const unitree_go::msg::IMUState& imu_state)
 {
-  // Broadcast the transform between the world and the base according to the IMU state
-  geometry_msgs::msg::TransformStamped imu_transform;
-  imu_transform.header.stamp = this->now();
-  imu_transform.header.frame_id = "world_imu";
-  imu_transform.child_frame_id = "base";
-  imu_transform.transform.rotation.w = imu_state.quaternion[0];
-  imu_transform.transform.rotation.x = imu_state.quaternion[1];
-  imu_transform.transform.rotation.y = imu_state.quaternion[2];
-  imu_transform.transform.rotation.z = imu_state.quaternion[3];
-  m_tf_broadcaster->sendTransform(imu_transform);
+  m_imu_transform_msg->header.stamp = this->now();
+  m_imu_transform_msg->transform.rotation.w = imu_state.quaternion[0];
+  m_imu_transform_msg->transform.rotation.x = imu_state.quaternion[1];
+  m_imu_transform_msg->transform.rotation.y = imu_state.quaternion[2];
+  m_imu_transform_msg->transform.rotation.z = imu_state.quaternion[3];
+}
+
+void HardwareInterfaceNode::broadcastIMUTransform()
+{
+  m_tf_broadcaster->sendTransform(*m_imu_transform_msg);
+}
+
+void HardwareInterfaceNode::initializeIMUTransformMsg()
+{
+  // Initialize the IMU transform message
+  m_imu_transform_msg = std::make_shared<geometry_msgs::msg::TransformStamped>();
+
+  // Set the parent and child frames
+  m_imu_transform_msg->header.frame_id = "world_imu";
+  m_imu_transform_msg->child_frame_id = "base";
+
+  // Set the transform values to zero
+  m_imu_transform_msg->transform.translation.x = 0.0;
+  m_imu_transform_msg->transform.translation.y = 0.0;
+  m_imu_transform_msg->transform.translation.z = 0.0;
+
+  m_imu_transform_msg->transform.rotation.w = 0.0;
+  m_imu_transform_msg->transform.rotation.x = 0.0;
+  m_imu_transform_msg->transform.rotation.y = 0.0;
+  m_imu_transform_msg->transform.rotation.z = 0.0;
 }
 
 int main(int argc, char * argv[])
