@@ -7,6 +7,7 @@
 #ifndef LTM_POINTCLOUD_FILTER__ROBOT_CLUSTER_REMOVAL_HPP_
 #define LTM_POINTCLOUD_FILTER__ROBOT_CLUSTER_REMOVAL_HPP_
 
+#include <rclcpp/rclcpp.hpp>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/extract_indices.h>
@@ -19,49 +20,30 @@
 #include <urdf_parser/urdf_parser.h>
 
 #include <tf2_ros/transform_listener.h>
-#include <tf2_ros/buffer.h>
 
 #include <string>
+#include <unordered_map>
+#include <vector>
 
-namespace LTMPointcloudFilterNode {
+namespace LTM {
   class RobotClusterRemoval {
     public:
-      RobotClusterRemoval();
-      ~RobotClusterRemoval();
+      typedef std::unordered_map<std::string, pcl::PointCloud<pcl::PointXYZ>::Ptr> ClusterMeshMap;
+
+      RobotClusterRemoval(rclcpp::Clock::SharedPtr clock);
+      ~RobotClusterRemoval() = default;
 
       void setRobotModel(const std::string &robot_description);
-      void setRobotModel(const urdf::Model &robot_model);
-
-      void setTransformBuffer(const std::shared_ptr<tf2_ros::Buffer> &tf_buffer);
-
-      void setRobotFrame(const std::string &robot_frame);
-      void setWorldFrame(const std::string &world_frame);
-
-      void setRobotRadius(const double &robot_radius);
-      void setRobotHeight(const double &robot_height);
-
-      void setClusterTolerance(const double &cluster_tolerance);
-      void setMinClusterSize(const int &min_cluster_size);
-      void setMaxClusterSize(const int &max_cluster_size);
-
-      void removeRobotClusters(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input_cloud, 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr &output_cloud);
-
+      
     private:
+      void generateRobotMeshes();
+
       urdf::Model m_robot_model_;
       std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
       std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
 
-      std::string m_robot_frame;
-      std::string m_world_frame;
+      ClusterMeshMap m_robot_meshes;
 
-      double m_cluster_tolerance;
-      int m_min_cluster_size;
-      int m_max_cluster_size;
-
-      void transformPointCloud(const Eigen::Affine3d &transform, 
-        const pcl::PointCloud<pcl::PointXYZ>::Ptr &input_cloud, 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr &output_cloud);
   }; // class RobotClusterRemoval
 } // namespace LTMPointcloudFilterNode
 

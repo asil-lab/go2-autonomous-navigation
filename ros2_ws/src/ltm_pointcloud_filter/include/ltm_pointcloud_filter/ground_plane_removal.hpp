@@ -13,7 +13,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 
-namespace LTMPointcloudFilter
+namespace LTM
 {
   class GroundPlaneRemoval
   {

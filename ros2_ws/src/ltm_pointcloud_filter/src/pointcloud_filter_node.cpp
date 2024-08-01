@@ -24,7 +24,6 @@
 #include <pcl/segmentation/extract_clusters.h>
 
 #include <pcl/io/vtk_lib_io.h>
-#include <pcl/filters/random_sample.h>
 #include <pcl/filters/uniform_sampling.h>
 
 #include <urdf_parser/urdf_parser.h>
@@ -34,7 +33,7 @@
 
 #include <Eigen/Geometry>
 
-using namespace LTMPointcloudFilterNode;
+using namespace LTM;
 
 PointCloudFilterNode::PointCloudFilterNode()
 : Node("ltm_pointcloud_filter_node")
@@ -497,7 +496,7 @@ void PointCloudFilterNode::configurePCLParameters()
   double sac_segmentation_probability = this->get_parameter("sac_segmentation.probability").as_double();
   m_voxel_grid_leaf_size = this->get_parameter("voxel_grid.leaf_size").as_double();
 
-  m_ground_plane_removal = std::make_unique<LTMPointcloudFilter::GroundPlaneRemoval>();
+  m_ground_plane_removal = std::make_unique<LTM::GroundPlaneRemoval>();
   m_ground_plane_removal->configureSACSegmentationParameters(
     sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
   RCLCPP_INFO(this->get_logger(), "Ground plane removal, SAC segmentation parameters configured: \n Distance threshold: %f m\n Max iterations: %d\n Probability: %f",

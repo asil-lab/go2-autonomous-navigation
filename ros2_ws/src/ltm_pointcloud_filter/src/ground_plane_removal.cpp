@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <functional>
 
-namespace LTMPointcloudFilter
+namespace LTM
 {
   GroundPlaneRemoval::GroundPlaneRemoval()
   {

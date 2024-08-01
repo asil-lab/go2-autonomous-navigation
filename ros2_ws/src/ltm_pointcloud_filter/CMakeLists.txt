@@ -30,6 +30,7 @@ find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(urdf REQUIRED)
+find_package(assimp REQUIRED)
 find_package(PCL REQUIRED)
 include_directories(include)
 
@@ -37,6 +38,7 @@ include_directories(include)
 add_executable(pointcloud_filter_node 
   src/pointcloud_filter_node.cpp
   src/ground_plane_removal.cpp
+  src/robot_cluster_removal.cpp
 )
 
 target_include_directories(pointcloud_filter_node PUBLIC
@@ -56,6 +58,12 @@ ament_target_dependencies(pointcloud_filter_node
   geometry_msgs
   pcl_ros
   urdf
+  assimp
+)
+
+target_link_libraries(pointcloud_filter_node
+  ${PCL_LIBRARIES}
+  ${ASSIMP_LIBRARIES}
 )
 
 # Install executables
