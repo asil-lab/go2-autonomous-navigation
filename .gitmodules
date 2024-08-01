@@ -6,3 +6,7 @@
 	path = ros2_ws/src/ros1_bridge
 	url = https://github.com/ros2/ros1_bridge.git
 	branch = foxy
+[submodule "ros2_ws/src/unitree_ros2"]
+	path = ros2_ws/src/unitree_ros2
+	url = https://github.com/AlexanderJamesBecoy/unitree_ros2.git
+	branch = master

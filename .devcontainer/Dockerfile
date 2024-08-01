@@ -1,6 +1,7 @@
 # Base image for ROS2 Foxy and ROS1 Noetic
-FROM ros:foxy
+FROM ubuntu:focal
 COPY --from=ros:noetic / /
+COPY --from=ros:foxy / /
 
 # # Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -22,15 +23,14 @@ RUN groupadd --gid $USER_GID $USERNAME \
 # Install necessary tools
 RUN apt-get update && apt-get install -y git openssh-client less iproute2 procps curl lsb-release nano bash-completion
 RUN apt-get update && apt-get install -y python3-pip python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # # Enable Universe, Multiverse, and Restricted
-# RUN sed -i 's/^# deb/deb/g' /etc/apt/sources.list
+RUN sed -i 's/^# deb/deb/g' /etc/apt/sources.list
 
 # # Install ROS1 Noetic
-# RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-# RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
-# RUN apt-get update && apt-get install -y ros-noetic-desktop-full
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+RUN apt-get update && apt-get install -y ros-noetic-desktop-full
 
 # Install ROS1 Noetic dependencies
 RUN apt-get update && apt-get install -y python3-catkin-tools python3-osrf-pycommon
@@ -42,14 +42,24 @@ RUN apt-get install -y \
     ros-noetic-robot-state-publisher ros-noetic-joint-state-publisher ros-noetic-joint-state-publisher-gui \
     ros-noetic-rviz
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install ROS2 Foxy
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+RUN "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | \
+    tee /etc/apt/sources.list.d/ros2.list > /dev/null
+RUN apt-get update && apt-get upgrade -y && apt-get install -y ros-foxy-desktop python3-argcomplete
 
 # Install ROS2 Foxy dependencies
 RUN apt-get update && apt-get install -y python3-argcomplete ros-dev-tools
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# # Create a workspace for ros1_bridge
-# RUN mkdir -p /root/ros1_bridge_ws/src
+# Install Unitree ROS2 dependencies
+RUN apt-get update && apt-get install -y ros-foxy-rmw-cyclonedds-cpp ros-foxy-rosidl-generator-dds-idl
+
+# Install Go2 dependencies
+RUN apt-get update && apt-get install -y nlohmann-json3-dev
+
+# Install PCL, Eigen3, and OpenCV
+RUN apt-get update && apt-get install -y libpcl-dev libeigen3-dev libopencv-dev
+RUN apt-get update && apt-get install -y ros-foxy-pcl-conversions ros-foxy-pcl-msgs ros-foxy-pcl-ros
 
 # # Clone the ros1_bridge repository
 # RUN cd /root/ros1_bridge_ws/src && \
@@ -69,6 +79,9 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # RUN catkin init
 # RUN catkin config --extend /opt/ros/noetic
 # RUN catkin config -DCMAKE_BUILD_TYPE=Release
+
+# Clean up
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 ENV SHELL /bin/bash
 
