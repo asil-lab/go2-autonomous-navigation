@@ -14,12 +14,15 @@ HardwareInterfaceNode::HardwareInterfaceNode()
   // Initialize the joint state message
   initializeJointStateMsg();
 
-  // Create a subscription to the sport mode state
+  // Create subscriptions
   m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
     "lowstate", 10, std::bind(&HardwareInterfaceNode::lowStateCallback, this, std::placeholders::_1));
+  m_point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+    "utlidar/cloud", 10, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
 
-  // Create a publisher for the joint state
+  // Create publishers
   m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
+  m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 10);
 
   RCLCPP_INFO(this->get_logger(), "LTM Hardware Interface Node initialized.");
 }
@@ -40,6 +43,13 @@ void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::Sh
 {
   updateJointStateMsg(msg->motor_state);
   publishJointState();
+}
+
+void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+{
+  sensor_msgs::msg::PointCloud2 point_cloud_msg = *msg;
+  point_cloud_msg.header.frame_id = "radar";
+  m_point_cloud_pub->publish(point_cloud_msg);
 }
 
 void HardwareInterfaceNode::updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state)
@@ -72,8 +82,11 @@ void HardwareInterfaceNode::initializeJointStateMsg()
   m_joint_state_msg->header.frame_id = "base_link";
 
   // Set the joint state message names
-  m_joint_state_msg->name = {"FL_hip_joint", "FL_thigh_joint", "FL_calf_joint", "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
-                            "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint", "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"};
+  m_joint_state_msg->name = {
+    "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint", 
+    "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
+    "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint", 
+    "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"};
 
   // Set zero values for the joint state message
   m_joint_state_msg->position = std::vector<double>(12, 0.0);

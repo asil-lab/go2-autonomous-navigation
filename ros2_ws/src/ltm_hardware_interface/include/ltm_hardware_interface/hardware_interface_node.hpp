@@ -10,6 +10,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <unitree_go/msg/sport_mode_state.hpp>
 #include <unitree_go/msg/low_state.hpp>
 
@@ -28,16 +29,20 @@ namespace LTM
 
   private:
     void lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg);
+    void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+
     void updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state);
     void publishJointState();
-
     void initializeJointStateMsg();
 
     sensor_msgs::msg::JointState::SharedPtr m_joint_state_msg;
     std::vector<int> m_joint_idx;
 
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_sub;
+
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr m_joint_state_pub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_pub;
 
   }; // class HardwareInterfaceNode
 } // namespace LTM
