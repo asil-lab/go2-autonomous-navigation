@@ -21,7 +21,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Install necessary tools
-RUN apt-get update && apt-get install -y git openssh-client less iproute2 procps curl lsb-release nano bash-completion
+RUN apt-get update && apt-get install -y git openssh-client less iproute2 procps curl lsb-release nano bash-completion iputils-ping
 RUN apt-get update && apt-get install -y python3-pip python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
 
 # # Enable Universe, Multiverse, and Restricted
