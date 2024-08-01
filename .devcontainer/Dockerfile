@@ -47,8 +47,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ROS2 Foxy dependencies
 RUN apt-get update && apt-get install -y python3-argcomplete ros-dev-tools ros-foxy-rclcpp ros-foxy-rviz2
-RUN apt-get install -y ros-foxy-sensor-msgs ros-foxy-geometry-msgs ros-foxy-std-msgs ros-foxy-visualization-msgs ros-foxy-vision-msgs
-RUN apt-get install -y ros-foxy-tf2 ros-foxy-tf2-ros ros-foxy-tf2-sensor-msgs ros-foxy-tf2-py \
+RUN apt-get update && apt-get install -y ros-foxy-sensor-msgs ros-foxy-geometry-msgs ros-foxy-std-msgs ros-foxy-visualization-msgs ros-foxy-vision-msgs
+RUN apt-get update && apt-get install -y ros-foxy-tf2 ros-foxy-tf2-ros ros-foxy-tf2-sensor-msgs ros-foxy-tf2-py \
     ros-foxy-tf2-msgs ros-foxy-tf2-eigen ros-foxy-tf2-geometry-msgs ros-foxy-tf2-tools
 
 # Install PCL, Eigen3, and OpenCV
