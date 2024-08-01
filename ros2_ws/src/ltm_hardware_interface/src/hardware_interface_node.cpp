@@ -6,10 +6,6 @@
 
 #include <ltm_hardware_interface/hardware_interface_node.hpp>
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
-#include <urdf/model.h>
-#include <urdf_parser/urdf_parser.h>
-
 using namespace LTM;
 
 HardwareInterfaceNode::HardwareInterfaceNode()
@@ -96,7 +92,6 @@ void HardwareInterfaceNode::initializeJointStateMsg()
   // Set the joint state message names
   m_joint_state_msg->name = {"FL_hip_joint", "FL_thigh_joint", "FL_calf_joint", "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
                             "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint", "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"};
-  // m_joint_state_msg->name = extractJointNames();
 
   // Set the joint state message positions
   m_joint_state_msg->position = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -109,31 +104,6 @@ void HardwareInterfaceNode::initializeJointStateMsg()
   // Set the joint state message efforts
   m_joint_state_msg->effort = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-}
-
-std::vector<std::string> HardwareInterfaceNode::extractJointNames()
-{
-  // Extract the joint names from the URDF file
-  std::string urdf_file = 
-    ament_index_cpp::get_package_share_directory("ltm_go2_description") + "/urdf/go2_description.urdf";
-  urdf::Model model;
-  if (!model.initFile(urdf_file))
-  {
-    RCLCPP_ERROR(this->get_logger(), "Failed to load URDF file: %s", urdf_file.c_str());
-    return {};
-  }
-
-  std::vector<std::string> joint_names;
-  for (auto const& joint : model.joints_)
-  {
-    if (joint.second->type != urdf::Joint::REVOLUTE)
-    {
-      continue;
-    }
-    joint_names.push_back(joint.first);
-  }
-
-  return joint_names;
 }
 
 int main(int argc, char * argv[])
