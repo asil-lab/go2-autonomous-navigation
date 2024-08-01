@@ -18,6 +18,8 @@
 
 namespace LTM
 {
+  #define MOTOR_SIZE 20
+
   class HardwareInterfaceNode : public rclcpp::Node
   {
   public:
@@ -26,13 +28,13 @@ namespace LTM
 
   private:
     void lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg);
-    void publishJointState(const sensor_msgs::msg::JointState::SharedPtr msg);
+    void updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state);
+    void publishJointState();
 
     void initializeJointStateMsg();
 
-    std::vector<std::string> extractJointNames();
-
     sensor_msgs::msg::JointState::SharedPtr m_joint_state_msg;
+    std::vector<int> m_joint_idx;
 
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr m_joint_state_pub;

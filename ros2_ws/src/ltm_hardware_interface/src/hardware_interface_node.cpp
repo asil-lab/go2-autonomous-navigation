@@ -38,46 +38,28 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 
 void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
-  // Update the joint state message
-  m_joint_state_msg->header.stamp = this->now();
-  // m_joint_state_msg->position = std::vector<double>(
-  //   msg->foot_position_body.begin(), msg->foot_position_body.end());
-  // m_joint_state_msg->velocity = std::vector<double>(
-  //   msg->foot_speed_body.begin(), msg->foot_speed_body.end());
-
-  // m_joint_state_msg->position[0] = static_cast<double>(msg->motor_state[3]);
-  // m_joint_state_msg->position[1] = static_cast<double>(msg->motor_state[4]);
-  // m_joint_state_msg->position[2] = static_cast<double>(msg->motor_state[5]);
-  // m_joint_state_msg->position[3] = static_cast<double>(msg->motor_state[0]);
-  // m_joint_state_msg->position[4] = static_cast<double>(msg->motor_state[1]);
-  // m_joint_state_msg->position[5] = static_cast<double>(msg->motor_state[2]);
-  // m_joint_state_msg->position[6] = static_cast<double>(msg->motor_state[9]);
-  // m_joint_state_msg->position[7] = static_cast<double>(msg->motor_state[10]);
-  // m_joint_state_msg->position[8] = static_cast<double>(msg->motor_state[11]);
-  // m_joint_state_msg->position[9] = static_cast<double>(msg->motor_state[6]);
-  // m_joint_state_msg->position[10] = static_cast<double>(msg->motor_state[7]);
-  // m_joint_state_msg->position[11] = static_cast<double>(msg->motor_state[8]);
-  m_joint_state_msg->position[0] = msg->motor_state[3].q;
-  m_joint_state_msg->position[1] = msg->motor_state[4].q;
-  m_joint_state_msg->position[2] = msg->motor_state[5].q;
-  m_joint_state_msg->position[3] = msg->motor_state[0].q;
-  m_joint_state_msg->position[4] = msg->motor_state[1].q;
-  m_joint_state_msg->position[5] = msg->motor_state[2].q;
-  m_joint_state_msg->position[6] = msg->motor_state[9].q;
-  m_joint_state_msg->position[7] = msg->motor_state[10].q;
-  m_joint_state_msg->position[8] = msg->motor_state[11].q;
-  m_joint_state_msg->position[9] = msg->motor_state[6].q;
-  m_joint_state_msg->position[10] = msg->motor_state[7].q;
-  m_joint_state_msg->position[11] = msg->motor_state[8].q;
-
-  // Publish the joint state message
-  publishJointState(m_joint_state_msg);
+  updateJointStateMsg(msg->motor_state);
+  publishJointState();
 }
 
-void HardwareInterfaceNode::publishJointState(const sensor_msgs::msg::JointState::SharedPtr msg)
+void HardwareInterfaceNode::updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state)
+{
+  // Update the joint state message
+  m_joint_state_msg->header.stamp = this->now();
+
+  // Update the joint state values
+  for (unsigned long int i = 0; i < m_joint_idx.size(); i++)
+  {
+    m_joint_state_msg->position[i] = motor_state[m_joint_idx[i]].q;
+    m_joint_state_msg->velocity[i] = motor_state[m_joint_idx[i]].dq;
+    m_joint_state_msg->effort[i] = motor_state[m_joint_idx[i]].tau_est;
+  }
+}
+
+void HardwareInterfaceNode::publishJointState()
 {
   // Publish the joint state message
-  m_joint_state_pub->publish(*msg);
+  m_joint_state_pub->publish(*m_joint_state_msg);
 }
 
 void HardwareInterfaceNode::initializeJointStateMsg()
@@ -93,17 +75,13 @@ void HardwareInterfaceNode::initializeJointStateMsg()
   m_joint_state_msg->name = {"FL_hip_joint", "FL_thigh_joint", "FL_calf_joint", "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
                             "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint", "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"};
 
-  // Set the joint state message positions
-  m_joint_state_msg->position = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  // Set zero values for the joint state message
+  m_joint_state_msg->position = std::vector<double>(12, 0.0);
+  m_joint_state_msg->velocity = std::vector<double>(12, 0.0);
+  m_joint_state_msg->effort = std::vector<double>(12, 0.0);
 
-  // Set the joint state message velocities
-  m_joint_state_msg->velocity = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
-  // Set the joint state message efforts
-  m_joint_state_msg->effort = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  // Set the joint state message indices
+  m_joint_idx = {3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8}; // TODO: Parameterize this
 }
 
 int main(int argc, char * argv[])
