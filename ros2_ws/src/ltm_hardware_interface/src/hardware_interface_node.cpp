@@ -11,21 +11,22 @@ using namespace LTM;
 HardwareInterfaceNode::HardwareInterfaceNode()
 : Node("hardware_interface_node")
 {
-  // Initialize the joint state message
+  // Initialize the messages
   initializeJointStateMsg();
+  initializeIMUTransformMsg();
 
   // Initialize the transform broadcaster
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
   // Create subscriptions
   m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
-    "lowstate", 1, std::bind(&HardwareInterfaceNode::lowStateCallback, this, std::placeholders::_1));
+    "lowstate", 10, std::bind(&HardwareInterfaceNode::lowStateCallback, this, std::placeholders::_1));
   m_point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    "utlidar/cloud", 1, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
+    "utlidar/cloud", 100, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
 
   // Create publishers
-  m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1);
-  m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 1);
+  m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
+  m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 100);
 
   RCLCPP_INFO(this->get_logger(), "LTM Hardware Interface Node initialized.");
 }
@@ -38,6 +39,7 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 
   // Reset msg pointers
   m_joint_state_msg.reset();
+  m_imu_transform_msg.reset();
 
   RCLCPP_WARN(this->get_logger(), "LTM Hardware Interface Node shutting down.");
 }
@@ -48,6 +50,7 @@ void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::Sh
   publishJointState();
 
   updateIMUTransform(msg->imu_state);
+  broadcastIMUTransform();
 }
 
 void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
