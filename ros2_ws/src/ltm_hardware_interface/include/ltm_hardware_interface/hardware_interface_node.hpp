@@ -11,11 +11,14 @@
 
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <unitree_go/msg/imu_state.hpp>
 #include <unitree_go/msg/sport_mode_state.hpp>
 #include <unitree_go/msg/low_state.hpp>
 
 #include <vector>
 #include <string>
+
+#include <tf2_ros/transform_broadcaster.h>
 
 namespace LTM
 {
@@ -35,8 +38,12 @@ namespace LTM
     void publishJointState();
     void initializeJointStateMsg();
 
+    void broadcastIMUTransform(const unitree_go::msg::IMUState& imu_state);
+
     sensor_msgs::msg::JointState::SharedPtr m_joint_state_msg;
     std::vector<int> m_joint_idx;
+
+    std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
 
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_sub;

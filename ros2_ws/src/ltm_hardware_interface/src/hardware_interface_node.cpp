@@ -6,6 +6,8 @@
 
 #include <ltm_hardware_interface/hardware_interface_node.hpp>
 
+#include <geometry_msgs/msg/transform_stamped.hpp>
+
 using namespace LTM;
 
 HardwareInterfaceNode::HardwareInterfaceNode()
@@ -14,15 +16,18 @@ HardwareInterfaceNode::HardwareInterfaceNode()
   // Initialize the joint state message
   initializeJointStateMsg();
 
+  // Initialize the transform broadcaster
+  m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+
   // Create subscriptions
   m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
-    "lowstate", 10, std::bind(&HardwareInterfaceNode::lowStateCallback, this, std::placeholders::_1));
+    "lowstate", 1, std::bind(&HardwareInterfaceNode::lowStateCallback, this, std::placeholders::_1));
   m_point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    "utlidar/cloud", 10, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
+    "utlidar/cloud", 1, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
 
   // Create publishers
-  m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
-  m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 10);
+  m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1);
+  m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 1);
 
   RCLCPP_INFO(this->get_logger(), "LTM Hardware Interface Node initialized.");
 }
@@ -42,6 +47,7 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
   updateJointStateMsg(msg->motor_state);
+  broadcastIMUTransform(msg->imu_state);
   publishJointState();
 }
 
@@ -95,6 +101,20 @@ void HardwareInterfaceNode::initializeJointStateMsg()
 
   // Set the joint state message indices
   m_joint_idx = {3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8}; // TODO: Parameterize this
+}
+
+void HardwareInterfaceNode::broadcastIMUTransform(const unitree_go::msg::IMUState& imu_state)
+{
+  // Broadcast the transform between the world and the base according to the IMU state
+  geometry_msgs::msg::TransformStamped imu_transform;
+  imu_transform.header.stamp = this->now();
+  imu_transform.header.frame_id = "world_imu";
+  imu_transform.child_frame_id = "base";
+  imu_transform.transform.rotation.w = imu_state.quaternion[0];
+  imu_transform.transform.rotation.x = imu_state.quaternion[1];
+  imu_transform.transform.rotation.y = imu_state.quaternion[2];
+  imu_transform.transform.rotation.z = imu_state.quaternion[3];
+  m_tf_broadcaster->sendTransform(imu_transform);
 }
 
 int main(int argc, char * argv[])
