@@ -13,7 +13,7 @@ HardwareInterfaceNode::HardwareInterfaceNode()
 {
   // Initialize the messages
   initializeJointStateMsg();
-  initializeIMUTransformMsg();
+  initializeWorldToBaseTransformMsg();
 
   // Initialize the transform broadcaster
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
@@ -21,12 +21,14 @@ HardwareInterfaceNode::HardwareInterfaceNode()
   // Create subscriptions
   m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
     "lowstate", 10, std::bind(&HardwareInterfaceNode::lowStateCallback, this, std::placeholders::_1));
+  m_sport_mode_state_sub = this->create_subscription<unitree_go::msg::SportModeState>(
+    "sportmodestate", 10, std::bind(&HardwareInterfaceNode::sportModeStateCallback, this, std::placeholders::_1));
   m_point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    "utlidar/cloud", 100, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
+    "utlidar/cloud", 10, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
 
   // Create publishers
   m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
-  m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 100);
+  m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 10);
 
   RCLCPP_INFO(this->get_logger(), "LTM Hardware Interface Node initialized.");
 }
@@ -39,7 +41,7 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 
   // Reset msg pointers
   m_joint_state_msg.reset();
-  m_imu_transform_msg.reset();
+  m_world_to_base_transform_msg.reset();
 
   RCLCPP_WARN(this->get_logger(), "LTM Hardware Interface Node shutting down.");
 }
@@ -48,9 +50,13 @@ void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::Sh
 {
   updateJointStateMsg(msg->motor_state);
   publishJointState();
+}
 
-  updateIMUTransform(msg->imu_state);
-  broadcastIMUTransform();
+void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
+{
+  updateWorldToBaseTranslation(msg->position);
+  updateWorldToBaseOrientation(msg->imu_state.quaternion);
+  broadcastWorldToBaseTransform();
 }
 
 void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
@@ -62,10 +68,6 @@ void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointClou
 
 void HardwareInterfaceNode::updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state)
 {
-  // Update the joint state message
-  m_joint_state_msg->header.stamp = this->now();
-
-  // Update the joint state values
   for (unsigned long int i = 0; i < m_joint_idx.size(); i++)
   {
     m_joint_state_msg->position[i] = motor_state[m_joint_idx[i]].q;
@@ -76,6 +78,7 @@ void HardwareInterfaceNode::updateJointStateMsg(const std::array<unitree_go::msg
 
 void HardwareInterfaceNode::publishJointState()
 {
+  m_joint_state_msg->header.stamp = this->now();
   m_joint_state_pub->publish(*m_joint_state_msg);
 }
 
@@ -104,38 +107,45 @@ void HardwareInterfaceNode::initializeJointStateMsg()
   m_joint_idx = {3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8}; // TODO: Parameterize this, use enum?
 }
 
-void HardwareInterfaceNode::updateIMUTransform(const unitree_go::msg::IMUState& imu_state)
+void HardwareInterfaceNode::updateWorldToBaseTranslation(const std::array<float, 3>& translation)
 {
-  m_imu_transform_msg->header.stamp = this->now();
-  m_imu_transform_msg->transform.rotation.w = imu_state.quaternion[0];
-  m_imu_transform_msg->transform.rotation.x = imu_state.quaternion[1];
-  m_imu_transform_msg->transform.rotation.y = imu_state.quaternion[2];
-  m_imu_transform_msg->transform.rotation.z = imu_state.quaternion[3];
+  m_world_to_base_transform_msg->transform.translation.x = translation[0];
+  m_world_to_base_transform_msg->transform.translation.y = translation[1];
+  m_world_to_base_transform_msg->transform.translation.z = translation[2];
 }
 
-void HardwareInterfaceNode::broadcastIMUTransform()
+void HardwareInterfaceNode::updateWorldToBaseOrientation(const std::array<float, 4>& orientation)
 {
-  m_tf_broadcaster->sendTransform(*m_imu_transform_msg);
+  m_world_to_base_transform_msg->transform.rotation.w = orientation[0];
+  m_world_to_base_transform_msg->transform.rotation.x = orientation[1];
+  m_world_to_base_transform_msg->transform.rotation.y = orientation[2];
+  m_world_to_base_transform_msg->transform.rotation.z = orientation[3];
 }
 
-void HardwareInterfaceNode::initializeIMUTransformMsg()
+void HardwareInterfaceNode::broadcastWorldToBaseTransform()
+{
+  m_world_to_base_transform_msg->header.stamp = this->now();
+  m_tf_broadcaster->sendTransform(*m_world_to_base_transform_msg);
+}
+
+void HardwareInterfaceNode::initializeWorldToBaseTransformMsg()
 {
   // Initialize the IMU transform message
-  m_imu_transform_msg = std::make_shared<geometry_msgs::msg::TransformStamped>();
+  m_world_to_base_transform_msg = std::make_shared<geometry_msgs::msg::TransformStamped>();
 
   // Set the parent and child frames
-  m_imu_transform_msg->header.frame_id = "world_imu";
-  m_imu_transform_msg->child_frame_id = "base";
+  m_world_to_base_transform_msg->header.frame_id = "world";
+  m_world_to_base_transform_msg->child_frame_id = "base";
 
   // Set the transform values to zero
-  m_imu_transform_msg->transform.translation.x = 0.0;
-  m_imu_transform_msg->transform.translation.y = 0.0;
-  m_imu_transform_msg->transform.translation.z = 0.0;
+  m_world_to_base_transform_msg->transform.translation.x = 0.0;
+  m_world_to_base_transform_msg->transform.translation.y = 0.0;
+  m_world_to_base_transform_msg->transform.translation.z = 0.0;
 
-  m_imu_transform_msg->transform.rotation.w = 0.0;
-  m_imu_transform_msg->transform.rotation.x = 0.0;
-  m_imu_transform_msg->transform.rotation.y = 0.0;
-  m_imu_transform_msg->transform.rotation.z = 0.0;
+  m_world_to_base_transform_msg->transform.rotation.w = 0.0;
+  m_world_to_base_transform_msg->transform.rotation.x = 0.0;
+  m_world_to_base_transform_msg->transform.rotation.y = 0.0;
+  m_world_to_base_transform_msg->transform.rotation.z = 0.0;
 }
 
 int main(int argc, char * argv[])
