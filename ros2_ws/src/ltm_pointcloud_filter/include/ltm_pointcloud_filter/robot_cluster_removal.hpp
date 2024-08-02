@@ -37,11 +37,17 @@ namespace LTM {
       pcl::PointCloud<pcl::PointXYZ>::Ptr getRobotMesh(const std::string &link_name) const;
       
     private:
+      void transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame) const;
       void generateRobotMeshes();
+
+      void initializeTransformListener(const rclcpp::Clock::SharedPtr clock);
+      void setClock(const rclcpp::Clock::SharedPtr clock);
 
       urdf::Model m_robot_model;
       std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
       std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
+      rclcpp::Clock::SharedPtr m_clock;
 
       ClusterMeshMap m_robot_meshes;
       double m_robot_mesh_resolution;

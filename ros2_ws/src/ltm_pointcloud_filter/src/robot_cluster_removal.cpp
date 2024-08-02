@@ -12,15 +12,15 @@
 #include <assimp/postprocess.h>
 #include <pcl/filters/uniform_sampling.h>
 #include <urdf_parser/urdf_parser.h>
+#include <pcl_ros/transforms.hpp>
 
 #include <iostream>
 
 namespace LTM {
 
   RobotClusterRemoval::RobotClusterRemoval(rclcpp::Clock::SharedPtr clock) {
-    // Initialize the transform listener
-    m_tf_buffer = std::make_shared<tf2_ros::Buffer>(clock);
-    m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
+    setClock(clock);
+    initializeTransformListener(clock);
   }
 
   bool RobotClusterRemoval::setRobotModel(const std::string &robot_description) {
@@ -51,11 +51,36 @@ namespace LTM {
     const std::string &link_name) const {
     // Check if the link exists
     try {
-      return m_robot_meshes.at(link_name);
+      // Get the point cloud of the link mesh in the link frame
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+      *cloud = *m_robot_meshes.at(link_name);
+      cloud->header.frame_id = link_name;
+
+      // Transform the point cloud to the world frame
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
+      transformPointCloud(cloud, cloud_transformed, "world");
+
+      return cloud_transformed;
+
     } catch (const std::out_of_range &e) {
       std::cout << "Link " << link_name << " does not exist in the robot model." << std::endl;
       return nullptr;
     }
+  }
+
+  void RobotClusterRemoval::transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame) const {
+    // // Check if the transform is available
+    // if (!m_tf_buffer->canTransform(target_frame, source_frame, rclcpp::Time(0))) {
+    //   std::cout << "Transform between " << target_frame << " and " << source_frame << " is not available." << std::endl;
+    //   return;
+    // }
+
+    // Transform the point cloud
+    pcl_ros::transformPointCloud(target_frame, *cloud_input, *cloud_output, *m_tf_buffer);
+
+    // Set the frame ID
+    cloud_output->header.frame_id = target_frame;
   }
 
   void RobotClusterRemoval::generateRobotMeshes() {
@@ -102,6 +127,16 @@ namespace LTM {
       // Add the point cloud to the map
       m_robot_meshes[link.first] = cloud_sampled;
     }
+  }
+
+  void RobotClusterRemoval::initializeTransformListener(const rclcpp::Clock::SharedPtr clock) {
+    // Initialize the transform listener
+    m_tf_buffer = std::make_shared<tf2_ros::Buffer>(clock);
+    m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
+  }
+
+  void RobotClusterRemoval::setClock(const rclcpp::Clock::SharedPtr clock) {
+    m_clock = clock;
   }
 
 } // namespace LTM

@@ -44,8 +44,7 @@ namespace LTM
     void publishPointcloudBuffer();
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformPointCloud(
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, 
-      const std::string target_frame) const;
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, const std::string target_frame) const;
     pcl::PointCloud<pcl::PointXYZ>::Ptr convertPointCloud2ToPCL(
       const sensor_msgs::msg::PointCloud2::SharedPtr msg) const;
     sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(

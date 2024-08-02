@@ -38,7 +38,7 @@ PointCloudFilterNode::PointCloudFilterNode()
 
   // Initialize
   initializeGroundPlaneRemoval();
-  initializeRobotClusterRemoval();
+  // initializeRobotClusterRemoval();
 
   // Configure ROS subscribers and publishers
   configureRosSubscribers(in_simulation);
@@ -193,7 +193,7 @@ void PointCloudFilterNode::removeGroundPlane(const pcl::PointCloud<pcl::PointXYZ
   pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
   if (!m_ground_plane_removal->segmentPlane(cloud_input, inliers, coefficients)) {
     RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model from input pointcloud.");
-    return;
+    return; // TODO: Return buffer instead?
   }
   m_ground_plane_removal->removePlane(cloud_input, cloud_filtered, inliers);
 }
@@ -264,6 +264,8 @@ void PointCloudFilterNode::initializeRobotClusterRemoval()
   // Set the robot mesh resolution
   m_robot_cluster_removal->setRobotMeshResolution(
     this->get_parameter("robot_cluster_removal.robot_mesh_resolution").as_double());
+
+  RCLCPP_INFO(this->get_logger(), "Robot cluster removal configured.");
 }
 
 void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)

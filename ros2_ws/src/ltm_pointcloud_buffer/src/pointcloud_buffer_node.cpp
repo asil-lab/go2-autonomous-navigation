@@ -18,7 +18,7 @@ PointCloudBufferNode::PointCloudBufferNode()
 
   // Create a timer to call the callback function at a specified rate
   auto timer_callback = std::bind(&PointCloudBufferNode::timerCallback, this);
-  m_timer = this->create_wall_timer(std::chrono::milliseconds(1000), timer_callback);
+  m_timer = this->create_wall_timer(std::chrono::milliseconds(5000), timer_callback); // TODO: Parameterize this
 
   // Create a subscription to the pointcloud topic
   m_pointcloud_subscription = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -48,6 +48,7 @@ void PointCloudBufferNode::timerCallback()
 
 void PointCloudBufferNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Received pointcloud message with %d points", msg->width * msg->height);
   updateInputPointcloudMsg(msg);
   bufferPointCloud(convertPointCloud2ToPCL(msg));
 }
@@ -83,8 +84,7 @@ void PointCloudBufferNode::publishPointcloudBuffer()
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudBufferNode::transformPointCloud(
-  const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, 
-  const std::string target_frame) const
+  const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, const std::string target_frame) const
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   // while (!m_tf_buffer->canTransform(m_recent_input_pointcloud_msg->header.frame_id, 

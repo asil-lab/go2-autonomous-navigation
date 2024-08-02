@@ -1,10 +1,11 @@
 pointcloud_filter_node:
   ros__parameters:
 
-    sac_segmentation:
-      distance_threshold: 0.1 # meters
-      max_iterations: 1000
-      probability: 0.99
+    ground_plane_removal:
+      sac_segmentation:
+        distance_threshold: 0.1 # meters
+        max_iterations: 10000
+        probability: 0.99
 
     voxel_grid:
       leaf_size: 0.03 # meters
