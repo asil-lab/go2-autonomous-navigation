@@ -23,13 +23,7 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
 
-#include <pcl/io/vtk_lib_io.h>
-#include <pcl/filters/uniform_sampling.h>
-
-#include <urdf_parser/urdf_parser.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include <Eigen/Geometry>
 
@@ -42,21 +36,13 @@ PointCloudFilterNode::PointCloudFilterNode()
   declare_parameter("in_simulation", true);
   bool in_simulation = this->get_parameter("in_simulation").as_bool();
 
-  // Configure PCL parameters
-  configurePCLParameters();
-
-  // Configure URDF model
-  configureURDFModel();
-
-  // Initialize TF2 listener and buffer
-  // m_tf_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-  // m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
+  // Initialize
+  initializeGroundPlaneRemoval();
+  initializeRobotClusterRemoval();
 
   // Configure ROS subscribers and publishers
   configureRosSubscribers(in_simulation);
   configureRosPublishers(in_simulation);
-
-  m_timer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&PointCloudFilterNode::timerCallback, this));
 
   RCLCPP_INFO(this->get_logger(), "LTM Pointcloud Filter Node has been initialized.");
 }
@@ -68,402 +54,148 @@ PointCloudFilterNode::~PointCloudFilterNode()
   RCLCPP_WARN(this->get_logger(), "LTM Pointcloud Filter Node has been destroyed.");
 }
 
-void PointCloudFilterNode::timerCallback()
-{
-  // Create pointcloud for every link in the URDF model and publish the total pointcloud
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+// void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+// {
+//   // Convert the ROS PointCloud2 message to a PCL PointCloud
+//   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = convertPointCloud2ToPCL(msg);
 
-  // for (const auto &link_pair : m_urdf_model.links_) {
-  //   // RCLCPP_INFO(this->get_logger(), "Link name: %s", link_pair.first.c_str());
-  //   const auto &link = link_pair.second;
+//   // Downsample the pointcloud using leaf size
+//   pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
+//   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
+//   voxel_grid.setInputCloud(cloud);
+//   voxel_grid.setLeafSize(m_voxel_grid_leaf_size, m_voxel_grid_leaf_size, m_voxel_grid_leaf_size);
+//   voxel_grid.filter(*cloud_downsampled);
 
-  //   // Check if the link has a collision geometry
-  //   if (!link->visual) {
-  //     // RCLCPP_WARN(this->get_logger(), "Link has no visual geometry.");
-  //     continue;
-  //   }
+//   // Remove the ground plane from the pointcloud
+//   pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+//   pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
-  //   // Check if the collision geometry is a mesh
-  //   pcl::PolygonMesh mesh;
-  //   if (!convertCollisionToPointCloud(link->visual->geometry, mesh))
-  //     continue;
+//   if (!m_ground_plane_removal->segmentPlane(cloud_downsampled, inliers, coefficients)) {
+//     RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model for the given dataset.");
+//     return;
+//   }
 
-  //   // Convert the URDF mesh geometry to a PCL PolygonMesh
-  //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
-  //   pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
+//   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
+//   m_ground_plane_removal->removePlane(cloud_downsampled, cloud_plane_removed, inliers);
 
-  //   // Get random sample of the pointcloud
-  //   pcl::RandomSample<pcl::PointXYZ> random_sample;
-  //   random_sample.setInputCloud(cloud_mesh);
-  //   random_sample.setSample(100000);
+//   // // Create the KdTree object for the search method of the extraction
+//   // pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+//   // tree->setInputCloud(cloud_plane_removed);
 
-  //   // Apply the random sample filter
-  //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_sampled(new pcl::PointCloud<pcl::PointXYZ>);
-  //   random_sample.filter(*cloud_sampled);
+//   // // Create the Euclidean Cluster Extraction object
+//   // std::vector<pcl::PointIndices> cluster_indices;
+//   // pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+//   // ec.setClusterTolerance(0.1);  // 10cm
+//   // ec.setMinClusterSize(100);
+//   // ec.setMaxClusterSize(25000);
+//   // ec.setSearchMethod(tree);
+//   // ec.setInputCloud(cloud_plane_removed);
 
-  //   RCLCPP_INFO(this->get_logger(), "Link name: %s", link->name.c_str());
+//   // // Obtain the cluster indices from the input cloud
+//   // ec.extract(cluster_indices);
 
-  //   if (link->name != "base") {
-  //     // Find the joint where the link is the child
-  //     const auto &joint = m_urdf_model.joints_[link->parent_joint->name];
+//   // // Create a marker array for the bounding boxes
+//   // visualization_msgs::msg::MarkerArray marker_array;
 
-  //     // Get the joint origin as Affine3d
-  //     Eigen::Vector3d origin(joint->parent_to_joint_origin_transform.position.x,
-  //                             joint->parent_to_joint_origin_transform.position.y,
-  //                             joint->parent_to_joint_origin_transform.position.z);
-  //     Eigen::Quaterniond orientation(joint->parent_to_joint_origin_transform.rotation.w,
-  //                                     joint->parent_to_joint_origin_transform.rotation.x,
-  //                                     joint->parent_to_joint_origin_transform.rotation.y,
-  //                                     joint->parent_to_joint_origin_transform.rotation.z);
-  //     orientation = orientation.inverse();
-  //     Eigen::Affine3d transform = Eigen::Translation3d(origin) * orientation;
+//   // // Iterate over the clusters and publish the bounding boxes
+//   // RCLCPP_INFO(this->get_logger(), "Number of clusters: %lu", cluster_indices.size());
+//   // for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it) {
+//   //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
+//   //   for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
+//   //     cloud_cluster->points.push_back(cloud_plane_removed->points[*pit]);
+//   //   }
+//   //   cloud_cluster->width = cloud_cluster->points.size();
+//   //   cloud_cluster->height = 1;
+//   //   cloud_cluster->is_dense = true;
 
-  //     // Transform the pointcloud to the joint frame
-  //     pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, transform);
-  //   }
+//   //   // Compute the bounding box of the cluster
+//   //   pcl::PointXYZ min_pt, max_pt;
+//   //   pcl::getMinMax3D(*cloud_cluster, min_pt, max_pt);
 
-  //   // Add the pointcloud to the input cloud
-  //   *cloud += *cloud_sampled;
-  // }
+//   //   // Create the bounding box message
+//   //   vision_msgs::msg::BoundingBox3D bounding_box;
+//   //   bounding_box.center.position.x = (min_pt.x + max_pt.x) / 2;
+//   //   bounding_box.center.position.y = (min_pt.y + max_pt.y) / 2;
+//   //   bounding_box.center.position.z = (min_pt.z + max_pt.z) / 2;
+//   //   bounding_box.size.x = max_pt.x - min_pt.x;
+//   //   bounding_box.size.y = max_pt.y - min_pt.y;
+//   //   bounding_box.size.z = max_pt.z - min_pt.z;
 
-  // Create a pointcloud for the entire URDF model starting from the base link
-  const auto &base_link = m_urdf_model.links_["base"];
+//   //   // Publish the bounding box message
+//   //   m_bounding_box_pub->publish(bounding_box);
 
-  // Check if the base link has a collision geometry
-  if (!base_link->visual) {
-    RCLCPP_WARN(this->get_logger(), "Base link has no visual geometry.");
-    return;
-  }
+//   //   // Create a marker array for the bounding box
+//   //   visualization_msgs::msg::Marker marker;
+//   //   marker.header.frame_id = msg->header.frame_id;
+//   //   marker.header.stamp = msg->header.stamp;
+//   //   marker.ns = "bounding_box";
+//   //   marker.id = static_cast<int>(it - cluster_indices.begin());
+//   //   marker.type = visualization_msgs::msg::Marker::CUBE;
+//   //   marker.action = visualization_msgs::msg::Marker::ADD;
+//   //   marker.pose.position.x = bounding_box.center.position.x;
+//   //   marker.pose.position.y = bounding_box.center.position.y;
+//   //   marker.pose.position.z = bounding_box.center.position.z;
+//   //   marker.pose.orientation.x = 0.0;
+//   //   marker.pose.orientation.y = 0.0;
+//   //   marker.pose.orientation.z = 0.0;
+//   //   marker.pose.orientation.w = 1.0;
+//   //   marker.scale.x = bounding_box.size.x;
+//   //   marker.scale.y = bounding_box.size.y;
+//   //   marker.scale.z = bounding_box.size.z;
+//   //   marker.color.r = 0.0f;
+//   //   marker.color.g = 1.0f;
+//   //   marker.color.b = 0.0f;
+//   //   marker.color.a = 0.5;
+//   //   marker.lifetime = rclcpp::Duration(0.5);
+//   //   marker_array.markers.push_back(marker);
+//   // }
 
-  // Check if the collision geometry is a mesh
-  pcl::PolygonMesh mesh;
-  if (!convertCollisionToPointCloud(base_link->visual->geometry, mesh))
-    return;
+//   // Convert the PCL PointCloud back to a ROS PointCloud2 message
+//   sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud_plane_removed);
 
-  // Convert the URDF mesh geometry to a PCL PolygonMesh
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
+//   // Publish the filtered PointCloud2 message
+//   m_filtered_pointcloud_pub->publish(*filtered_msg);
 
-  // Get uniform sample of the pointcloud
-  pcl::UniformSampling<pcl::PointXYZ> uniform_sample;
-  uniform_sample.setInputCloud(cloud_mesh);
-  uniform_sample.setRadiusSearch(0.01);
-
-  // Apply the uniform sample filter
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_sampled(new pcl::PointCloud<pcl::PointXYZ>);
-  uniform_sample.filter(*cloud_sampled);
-
-  // Rotate the pointcloud around the X-axis by 90 degrees
-  Eigen::Affine3d transform = Eigen::Affine3d::Identity();
-  transform.rotate(Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()));
-
-  // Transform the pointcloud to the base link frame
-  pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, transform);
-
-  // Add the pointcloud to the input cloud
-  *cloud += *cloud_sampled;
-
-  // Create a pointcloud for the next link in the URDF model given the joints where the parent link is the base link
-  for (const auto &joint_pair : m_urdf_model.joints_) {
-    const auto &joint = joint_pair.second;
-
-    // Check if the joint has a parent link
-    if (joint->parent_link_name != "base") {
-      continue;
-    }
-
-    // Check if the child link has a collision geometry
-    const auto &child_link = m_urdf_model.links_[joint->child_link_name];
-    if (!child_link->visual) {
-      continue;
-    }
-
-    // Check if the collision geometry is a mesh
-    pcl::PolygonMesh mesh;
-    if (!convertCollisionToPointCloud(child_link->visual->geometry, mesh))
-      continue;
-
-    // Convert the URDF mesh geometry to a PCL PolygonMesh
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
-
-    // Get uniform sample of the pointcloud
-    pcl::UniformSampling<pcl::PointXYZ> uniform_sample;
-    uniform_sample.setInputCloud(cloud_mesh);
-    uniform_sample.setRadiusSearch(0.01);
-
-    // Apply the uniform sample filter
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_sampled(new pcl::PointCloud<pcl::PointXYZ>);
-    uniform_sample.filter(*cloud_sampled);
-
-    // Rotate the pointcloud around the X-axis by 90 degrees
-    Eigen::Affine3d correction_transform = Eigen::Affine3d::Identity();
-    correction_transform.rotate(Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()));
-
-    // Transform the pointcloud to the joint frame
-    pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, correction_transform);
-
-    // Rotate the pointcloud according to the visual geometry in X, Y, Z
-    RCLCPP_INFO(this->get_logger(), "Child link name: %s", child_link->name.c_str());
-    Eigen::Affine3d visual_transform = Eigen::Affine3d::Identity();
-    Eigen::Quaterniond visual_orientation(
-      child_link->visual->origin.rotation.w,
-      child_link->visual->origin.rotation.x,
-      child_link->visual->origin.rotation.y,
-      child_link->visual->origin.rotation.z);
-    visual_transform.rotate(visual_orientation);
-    pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, visual_transform);
-
-    // Find the joint origin as Affine3d
-    Eigen::Vector3d origin(joint->parent_to_joint_origin_transform.position.x,
-                          joint->parent_to_joint_origin_transform.position.y,
-                          joint->parent_to_joint_origin_transform.position.z);
-    Eigen::Quaterniond orientation(joint->parent_to_joint_origin_transform.rotation.w,
-                                  joint->parent_to_joint_origin_transform.rotation.x,
-                                  joint->parent_to_joint_origin_transform.rotation.y,
-                                  joint->parent_to_joint_origin_transform.rotation.z);
-    Eigen::Affine3d transform = Eigen::Translation3d(origin) * orientation;
-
-    // Transform the pointcloud to the joint frame
-    pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, transform);
-
-    // Add the pointcloud to the input cloud
-    *cloud += *cloud_sampled;
-
-    // // Create a pointcloud for the next link in the URDF model given the joints where the parent link is this child link
-    // for (const auto &joint_pair : m_urdf_model.joints_) {
-    //   const auto &joint = joint_pair.second;
-
-    //   // Check if the joint has a parent link
-    //   if (joint->parent_link_name != child_link->name) {
-    //     continue;
-    //   }
-
-    //   // Check if the child link has a collision geometry
-    //   const auto &child_link = m_urdf_model.links_[joint->child_link_name];
-    //   if (!child_link->visual) {
-    //     continue;
-    //   }
-
-    //   // Check if the collision geometry is a mesh
-    //   pcl::PolygonMesh mesh;
-    //   if (!convertCollisionToPointCloud(child_link->visual->geometry, mesh))
-    //     continue;
-
-    //   // Convert the URDF mesh geometry to a PCL PolygonMesh
-    //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
-    //   pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
-
-    //   // Get random sample of the pointcloud
-    //   pcl::RandomSample<pcl::PointXYZ> random_sample;
-    //   random_sample.setInputCloud(cloud_mesh);
-    //   random_sample.setSample(20000);
-
-    //   // Apply the random sample filter
-    //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_sampled(new pcl::PointCloud<pcl::PointXYZ>);
-    //   random_sample.filter(*cloud_sampled);
-
-    //   // Find the joint origin as Affine3d
-    //   Eigen::Vector3d origin2(joint->parent_to_joint_origin_transform.position.x,
-    //                         joint->parent_to_joint_origin_transform.position.y,
-    //                         joint->parent_to_joint_origin_transform.position.z);
-    //   Eigen::Quaterniond orientation2(joint->parent_to_joint_origin_transform.rotation.w,
-    //                                 joint->parent_to_joint_origin_transform.rotation.x,
-    //                                 joint->parent_to_joint_origin_transform.rotation.y,
-    //                                 joint->parent_to_joint_origin_transform.rotation.z);
-    //   Eigen::Affine3d transform2 = Eigen::Translation3d(origin) * orientation;
-    //   // transform2.rotate(Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()));
-    //   transform2 = transform * transform2;
-
-    //   // Transform the pointcloud to the joint frame
-    //   pcl::transformPointCloud(*cloud_sampled, *cloud_sampled, transform2);
-
-    //   // Add the pointcloud to the input cloud
-    //   *cloud += *cloud_sampled;
-    // }
-  }
-
-  // Convert the PCL PointCloud back to a ROS PointCloud2 message
-  sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud);
-  filtered_msg->header.frame_id = "map";
-  filtered_msg->header.stamp = this->now();
-
-  // Publish the filtered PointCloud2 message
-  m_filtered_pointcloud_pub->publish(*filtered_msg);
-}
+//   // // Publish the bounding box marker array
+//   // m_marker_array_pub->publish(marker_array);
+// }
 
 void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  // Convert the ROS PointCloud2 message to a PCL PointCloud
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received pointcloud message with %d points", msg->width * msg->height);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = convertPointCloud2ToPCL(msg);
 
-  // Downsample the pointcloud using leaf size
-  pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
-  voxel_grid.setInputCloud(cloud);
-  voxel_grid.setLeafSize(m_voxel_grid_leaf_size, m_voxel_grid_leaf_size, m_voxel_grid_leaf_size);
-  voxel_grid.filter(*cloud_downsampled);
-
   // Remove the ground plane from the pointcloud
-  pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-  pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-
-  if (!m_ground_plane_removal->segmentPlane(cloud_downsampled, inliers, coefficients)) {
-    RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model for the given dataset.");
-    return;
-  }
-
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  m_ground_plane_removal->removePlane(cloud_downsampled, cloud_plane_removed, inliers);
+  removeGroundPlane(cloud, cloud_plane_removed);
 
-  // Create a pointcloud defined by the URDF model via STL
-  for (const auto &link_pair : m_urdf_model.links_) {
-    RCLCPP_INFO(this->get_logger(), "Link name: %s", link_pair.first.c_str());
-    const auto &link = link_pair.second;
+  publishFilteredPointCloud(cloud_plane_removed, msg->header.frame_id, msg->header.stamp);
+}
 
-    // Check if the link has a collision geometry
-    if (!link->visual) {
-      // RCLCPP_WARN(this->get_logger(), "Link has no visual geometry.");
-      continue;
-    }
-
-    // Check if the collision geometry is a mesh
-    pcl::PolygonMesh mesh;
-    if (!convertCollisionToPointCloud(link->visual->geometry, mesh))
-      continue;
-
-    // Convert the URDF mesh geometry to a PCL PolygonMesh
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_mesh(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromPCLPointCloud2(mesh.cloud, *cloud_mesh);
-    
-    // // Transform the pointcloud to the link frame
-    // geometry_msgs::msg::TransformStamped transform_stamped;
-    // try {
-    //   transform_stamped = m_tf_buffer->lookupTransform(
-    //     link->name, msg->header.frame_id, msg->header.stamp);
-    // } catch (tf2::TransformException &ex) {
-    //   RCLCPP_ERROR(this->get_logger(), "Transform error: %s", ex.what());
-    //   continue;
-    // }
-    // tf2::Transform tf2_transform;
-    // tf2::fromMsg(transform_stamped.transform, tf2_transform);
-
-    // // Convert the TF2 transform to an Eigen transform
-    // Eigen::Affine3d eigen_transform;
-    // // tf2::convert(tf2_transform, eigen_transform);
-
-    // // Transform the pointcloud to the link frame
-    // pcl::transformPointCloud(*cloud_mesh, *cloud_mesh, eigen_transform);
-
-    // Add the pointcloud to the input cloud
-    // *cloud_plane_removed += *cloud_mesh;
-  }
-
-  // Create the KdTree object for the search method of the extraction
-  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-  tree->setInputCloud(cloud_plane_removed);
-
-  // Create the Euclidean Cluster Extraction object
-  std::vector<pcl::PointIndices> cluster_indices;
-  pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-  ec.setClusterTolerance(0.1);  // 10cm
-  ec.setMinClusterSize(100);
-  ec.setMaxClusterSize(25000);
-  ec.setSearchMethod(tree);
-  ec.setInputCloud(cloud_plane_removed);
-
-  // Obtain the cluster indices from the input cloud
-  ec.extract(cluster_indices);
-
-  // Create a marker array for the bounding boxes
-  visualization_msgs::msg::MarkerArray marker_array;
-
-  // Iterate over the clusters and publish the bounding boxes
-  RCLCPP_INFO(this->get_logger(), "Number of clusters: %lu", cluster_indices.size());
-  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it) {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-    for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
-      cloud_cluster->points.push_back(cloud_plane_removed->points[*pit]);
-    }
-    cloud_cluster->width = cloud_cluster->points.size();
-    cloud_cluster->height = 1;
-    cloud_cluster->is_dense = true;
-
-    // Compute the bounding box of the cluster
-    pcl::PointXYZ min_pt, max_pt;
-    pcl::getMinMax3D(*cloud_cluster, min_pt, max_pt);
-
-    // Create the bounding box message
-    vision_msgs::msg::BoundingBox3D bounding_box;
-    bounding_box.center.position.x = (min_pt.x + max_pt.x) / 2;
-    bounding_box.center.position.y = (min_pt.y + max_pt.y) / 2;
-    bounding_box.center.position.z = (min_pt.z + max_pt.z) / 2;
-    bounding_box.size.x = max_pt.x - min_pt.x;
-    bounding_box.size.y = max_pt.y - min_pt.y;
-    bounding_box.size.z = max_pt.z - min_pt.z;
-
-    // Publish the bounding box message
-    m_bounding_box_pub->publish(bounding_box);
-
-    // Create a marker array for the bounding box
-    visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = msg->header.frame_id;
-    marker.header.stamp = msg->header.stamp;
-    marker.ns = "bounding_box";
-    marker.id = static_cast<int>(it - cluster_indices.begin());
-    marker.type = visualization_msgs::msg::Marker::CUBE;
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.pose.position.x = bounding_box.center.position.x;
-    marker.pose.position.y = bounding_box.center.position.y;
-    marker.pose.position.z = bounding_box.center.position.z;
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = bounding_box.size.x;
-    marker.scale.y = bounding_box.size.y;
-    marker.scale.z = bounding_box.size.z;
-    marker.color.r = 0.0f;
-    marker.color.g = 1.0f;
-    marker.color.b = 0.0f;
-    marker.color.a = 0.5;
-    marker.lifetime = rclcpp::Duration(0.5);
-    marker_array.markers.push_back(marker);
-  }
-
+void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+  const std::string& frame_id, const rclcpp::Time& stamp)
+{
   // Convert the PCL PointCloud back to a ROS PointCloud2 message
-  sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud_plane_removed);
+  sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud);
+
+  // Set the header information for the PointCloud2 message
+  filtered_msg->header.frame_id = frame_id;
+  filtered_msg->header.stamp = stamp;
 
   // Publish the filtered PointCloud2 message
   m_filtered_pointcloud_pub->publish(*filtered_msg);
-
-  // Publish the bounding box marker array
-  m_marker_array_pub->publish(marker_array);
 }
 
-bool PointCloudFilterNode::convertCollisionToPointCloud(const urdf::GeometrySharedPtr geometry, pcl::PolygonMesh &mesh) const
+void PointCloudFilterNode::removeGroundPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered)
 {
-  // Check if the geometry is a mesh
-  if (geometry->type != urdf::Geometry::MESH) {
-    RCLCPP_WARN(this->get_logger(), "Geometry type is not a mesh.");
-    return false;
+  pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+  pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+  if (!m_ground_plane_removal->segmentPlane(cloud_input, inliers, coefficients)) {
+    RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model from input pointcloud.");
+    return;
   }
-
-  // Convert the URDF mesh geometry to a PCL PolygonMesh, if possible
-  const auto mesh_geometry = std::dynamic_pointer_cast<urdf::Mesh>(geometry);
-  if (!mesh_geometry) {
-    RCLCPP_WARN(this->get_logger(), "Failed to cast URDF mesh geometry.");
-    return false;
-  }
-
-  // Load the mesh from the STL file, if possible
-  if (pcl::io::loadPolygonFileSTL(mesh_geometry->filename, mesh) == -1) {
-    RCLCPP_WARN(this->get_logger(), "Failed to load STL file: %s", mesh_geometry->filename.c_str());
-    return false;
-  }
-
-  // RCLCPP_INFO(this->get_logger(), "Loaded STL file: %s", mesh_geometry->filename.c_str());
-  return true;
+  m_ground_plane_removal->removePlane(cloud_input, cloud_filtered, inliers);
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudFilterNode::convertPointCloud2ToPCL(
@@ -482,38 +214,56 @@ sensor_msgs::msg::PointCloud2::SharedPtr PointCloudFilterNode::convertPCLToPoint
   return msg;
 }
 
-void PointCloudFilterNode::configurePCLParameters()
+void PointCloudFilterNode::initializeGroundPlaneRemoval()
 {
-  // Declare the parameters for the PCL segmentation
-  declare_parameter("sac_segmentation.distance_threshold", 0.01);
-  declare_parameter("sac_segmentation.max_iterations", 1000);
-  declare_parameter("sac_segmentation.probability", 0.99);
-  declare_parameter("voxel_grid.leaf_size", 0.01);
-
-  // // Get the parameters for the PCL segmentation
-  double sac_segmentation_distance_threshold = this->get_parameter("sac_segmentation.distance_threshold").as_double();
-  int sac_segmentation_max_iterations = this->get_parameter("sac_segmentation.max_iterations").as_int();
-  double sac_segmentation_probability = this->get_parameter("sac_segmentation.probability").as_double();
-  m_voxel_grid_leaf_size = this->get_parameter("voxel_grid.leaf_size").as_double();
-
+  // Initialize the GroundPlaneRemoval object
   m_ground_plane_removal = std::make_unique<LTM::GroundPlaneRemoval>();
+
+  // Declare parameters for the GroundPlaneRemoval object
+  declare_parameter("ground_plane_removal.sac_segmentation.distance_threshold", 0.01);
+  declare_parameter("ground_plane_removal.sac_segmentation.max_iterations", 1000);
+  declare_parameter("ground_plane_removal.sac_segmentation.probability", 0.99);
+
+  // Set the parameters for the SAC segmentation
+  double sac_segmentation_distance_threshold = this->get_parameter("ground_plane_removal.sac_segmentation.distance_threshold").as_double();
+  int sac_segmentation_max_iterations = this->get_parameter("ground_plane_removal.sac_segmentation.max_iterations").as_int();
+  double sac_segmentation_probability = this->get_parameter("ground_plane_removal.sac_segmentation.probability").as_double();
+
   m_ground_plane_removal->configureSACSegmentationParameters(
     sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
   RCLCPP_INFO(this->get_logger(), "Ground plane removal, SAC segmentation parameters configured: \n Distance threshold: %f m\n Max iterations: %d\n Probability: %f",
     sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
 }
 
-void PointCloudFilterNode::configureURDFModel()
+void PointCloudFilterNode::initializeRobotClusterRemoval()
 {
-  // Get the path to the URDF file
-  std::string urdf_file = ament_index_cpp::get_package_share_directory("ltm_pointcloud_filter") + "/urdf/go2_description.urdf";
+  // Initialize the RobotClusterRemoval object
+  m_robot_cluster_removal = std::make_unique<LTM::RobotClusterRemoval>(this->get_clock());
 
-  // Load the URDF model from the file
-  if (!m_urdf_model.initFile(urdf_file)) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to load URDF file: %s", urdf_file.c_str());
+  // Declare parameters for the RobotClusterRemoval object
+  declare_parameter("robot_cluster_removal.robot_description.package_name", "ltm_go2_description");
+  declare_parameter("robot_cluster_removal.robot_description.directory_name", "urdf");
+  declare_parameter("robot_cluster_removal.robot_description.file_name", "go2_description.urdf");
+  declare_parameter("robot_cluster_removal.robot_mesh_resolution", 0.01);
+
+  // Set the robot model from the URDF
+  std::string urdf_package_name = this->get_parameter("robot_cluster_removal.robot_description.package_name").as_string();
+  std::string urdf_directory_name = this->get_parameter("robot_cluster_removal.robot_description.directory_name").as_string();
+  std::string urdf_file_name = this->get_parameter("robot_cluster_removal.robot_description.file_name").as_string();
+  std::string urdf_filepath = ament_index_cpp::get_package_share_directory(
+    this->get_parameter("robot_cluster_removal.robot_description.package_name").as_string()) + "/" + 
+    this->get_parameter("robot_cluster_removal.robot_description.directory_name").as_string() + "/" + 
+    this->get_parameter("robot_cluster_removal.robot_description.file_name").as_string();
+
+  // Set the robot model from the URDF file path, exit if failed
+  if (!m_robot_cluster_removal->setRobotModel(urdf_filepath)) {
+    RCLCPP_ERROR(this->get_logger(), "Failed to set the robot model from URDF file: %s", urdf_filepath.c_str());
+    exit(EXIT_FAILURE);
   }
 
-  RCLCPP_INFO(this->get_logger(), "Loaded URDF model from file: %s", urdf_file.c_str());
+  // Set the robot mesh resolution
+  m_robot_cluster_removal->setRobotMeshResolution(
+    this->get_parameter("robot_cluster_removal.robot_mesh_resolution").as_double());
 }
 
 void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)

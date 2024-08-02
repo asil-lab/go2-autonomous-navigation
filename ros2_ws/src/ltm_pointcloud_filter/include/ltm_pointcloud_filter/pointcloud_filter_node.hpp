@@ -31,6 +31,7 @@
 #include <string>
 
 #include <ltm_pointcloud_filter/ground_plane_removal.hpp>
+#include <ltm_pointcloud_filter/robot_cluster_removal.hpp>
 
 namespace LTM // TODO: Change this to LTM
 {
@@ -41,18 +42,23 @@ namespace LTM // TODO: Change this to LTM
     ~PointCloudFilterNode();
 
   private:
-    void timerCallback();
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+    void publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+      const std::string& frame_id, const rclcpp::Time& stamp);
+
+    void removeGroundPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered);
+    void removeRobotClusters(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr convertPointCloud2ToPCL(
       const sensor_msgs::msg::PointCloud2::SharedPtr msg) const;
     sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const;
 
-    bool convertCollisionToPointCloud(const urdf::GeometrySharedPtr geometry, pcl::PolygonMesh &mesh) const;
+    void initializeGroundPlaneRemoval();
+    void initializeRobotClusterRemoval();
 
-    void configurePCLParameters();
-    void configureURDFModel();
     void configureRosSubscribers(bool in_simulation);
     void configureRosPublishers(bool in_simulation);
 
@@ -60,13 +66,9 @@ namespace LTM // TODO: Change this to LTM
 
     double m_voxel_grid_leaf_size;
 
-    urdf::Model m_urdf_model;
-    std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
-    std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
-
     std::unique_ptr<LTM::GroundPlaneRemoval> m_ground_plane_removal;
+    std::unique_ptr<LTM::RobotClusterRemoval> m_robot_cluster_removal;
 
-    rclcpp::TimerBase::SharedPtr m_timer;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_raw_pointcloud_sub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_filtered_pointcloud_pub;
     rclcpp::Publisher<vision_msgs::msg::BoundingBox3D>::SharedPtr m_bounding_box_pub;

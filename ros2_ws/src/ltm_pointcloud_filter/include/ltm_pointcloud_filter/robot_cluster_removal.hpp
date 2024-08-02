@@ -17,8 +17,6 @@
 #include <pcl/common/transforms.h>
 
 #include <urdf/model.h>
-#include <urdf_parser/urdf_parser.h>
-
 #include <tf2_ros/transform_listener.h>
 
 #include <string>
@@ -31,18 +29,22 @@ namespace LTM {
       typedef std::unordered_map<std::string, pcl::PointCloud<pcl::PointXYZ>::Ptr> ClusterMeshMap;
 
       RobotClusterRemoval(rclcpp::Clock::SharedPtr clock);
-      ~RobotClusterRemoval() = default;
+      ~RobotClusterRemoval();
 
-      void setRobotModel(const std::string &robot_description);
+      bool setRobotModel(const std::string &robot_description);
+      void setRobotMeshResolution(const double& resolution);
+
+      pcl::PointCloud<pcl::PointXYZ>::Ptr getRobotMesh(const std::string &link_name) const;
       
     private:
       void generateRobotMeshes();
 
-      urdf::Model m_robot_model_;
+      urdf::Model m_robot_model;
       std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
       std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
 
       ClusterMeshMap m_robot_meshes;
+      double m_robot_mesh_resolution;
 
   }; // class RobotClusterRemoval
 } // namespace LTMPointcloudFilterNode

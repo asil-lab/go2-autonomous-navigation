@@ -27,8 +27,7 @@ namespace LTM
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered, pcl::PointIndices::Ptr inliers) const;
 
     void configureSACSegmentationParameters(const double& distance_threshold,
-                                            int max_iterations,
-                                            const double& probability);
+      int max_iterations, const double& probability);
 
   private:
     std::unique_ptr<pcl::SACSegmentation<pcl::PointXYZ>> m_sac_segmentation;

@@ -23,7 +23,11 @@ pointcloud_filter_node:
         raw_pointcloud_topic: "/point_cloud/buffer"
         filtered_pointcloud_topic: "/point_cloud/filtered"
 
-    robot_description:
-      package_name: "ltm_pointcloud_filter"
-      directory_name: "urdf"
-      file_name: "go2_description.urdf"
+    robot_cluster_removal:
+      robot_description:
+        package_name: "ltm_pointcloud_filter"
+        directory_name: "urdf"
+        file_name: "go2_description.urdf"
+      cluster_tolerance: 0.1 # meters
+      min_cluster_size: 100
+      mesh_resolution: 0.01
