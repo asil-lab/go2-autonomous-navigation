@@ -87,12 +87,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudBufferNode::transformPointCloud(
   const std::string target_frame) const
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  while (!m_tf_buffer->canTransform(m_recent_input_pointcloud_msg->header.frame_id, 
-    target_frame, m_recent_input_pointcloud_msg->header.stamp))
-  {
-    RCLCPP_DEBUG(this->get_logger(), "Waiting for transform from %s to %s", 
-      m_recent_input_pointcloud_msg->header.frame_id.c_str(), target_frame.c_str());
-  }
+  // while (!m_tf_buffer->canTransform(m_recent_input_pointcloud_msg->header.frame_id, 
+  //   target_frame, m_recent_input_pointcloud_msg->header.stamp))
+  // {
+  //   RCLCPP_DEBUG(this->get_logger(), "Waiting for transform from %s to %s", 
+  //     m_recent_input_pointcloud_msg->header.frame_id.c_str(), target_frame.c_str());
+  // }
   pcl_ros::transformPointCloud(target_frame, *cloud, *transformed_cloud, *m_tf_buffer);
   return transformed_cloud;
 }
