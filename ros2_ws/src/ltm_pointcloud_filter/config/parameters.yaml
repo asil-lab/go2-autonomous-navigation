@@ -4,7 +4,7 @@ pointcloud_filter_node:
     ground_plane_removal:
       sac_segmentation:
         distance_threshold: 0.1 # meters
-        max_iterations: 10000
+        max_iterations: 1000
         probability: 0.99
 
     voxel_grid:
@@ -32,3 +32,4 @@ pointcloud_filter_node:
       cluster_tolerance: 0.1 # meters
       min_cluster_size: 100
       mesh_resolution: 0.01
+      frame: "world"

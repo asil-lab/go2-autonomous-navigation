@@ -31,6 +31,9 @@ namespace LTM {
       RobotClusterRemoval(rclcpp::Clock::SharedPtr clock);
       ~RobotClusterRemoval();
 
+      void removeRobotCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const;
+
       bool setRobotModel(const std::string &robot_description);
       void setRobotMeshResolution(const double& resolution);
 
@@ -39,6 +42,10 @@ namespace LTM {
     private:
       void transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame) const;
+      void drawRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const;
+      void clusterRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const;
       void generateRobotMeshes();
 
       void initializeTransformListener(const rclcpp::Clock::SharedPtr clock);

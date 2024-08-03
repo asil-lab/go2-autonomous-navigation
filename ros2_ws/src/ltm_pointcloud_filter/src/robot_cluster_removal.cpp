@@ -18,12 +18,14 @@
 
 namespace LTM {
 
-  RobotClusterRemoval::RobotClusterRemoval(rclcpp::Clock::SharedPtr clock) {
+  RobotClusterRemoval::RobotClusterRemoval(rclcpp::Clock::SharedPtr clock)
+  {
     setClock(clock);
     initializeTransformListener(clock);
   }
 
-  bool RobotClusterRemoval::setRobotModel(const std::string &robot_description) {
+  bool RobotClusterRemoval::setRobotModel(const std::string &robot_description)
+  {
     // Load the robot model from the URDF if it exists
     if (!m_robot_model.initFile(robot_description)) {
       std::cout << "Failed to load the robot model from URDF file." << std::endl;
@@ -33,7 +35,8 @@ namespace LTM {
     return true;
   }
 
-  RobotClusterRemoval::~RobotClusterRemoval() {
+  RobotClusterRemoval::~RobotClusterRemoval()
+  {
     // Reset the robot model
     m_robot_model.clear();
     m_robot_meshes.clear();
@@ -43,12 +46,24 @@ namespace LTM {
     m_tf_listener.reset();
   }
 
-  void RobotClusterRemoval::setRobotMeshResolution(const double& resolution) {
+  void RobotClusterRemoval::removeRobotCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const
+  {
+    // @TODO: draw robot mesh as pointclouds onto the cloud input
+    // @TODO: cluster pointcloud output
+    // @TODO: extract cluster on base origin
+    // @TODO: remove selected cluster of points
+    // @TODO (in ltm_go2_description)
+  }
+
+  void RobotClusterRemoval::setRobotMeshResolution(const double& resolution)
+  {
     m_robot_mesh_resolution = resolution;
   }
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr RobotClusterRemoval::getRobotMesh(
-    const std::string &link_name) const {
+    const std::string &link_name) const
+  {
     // Check if the link exists
     try {
       // Get the point cloud of the link mesh in the link frame
@@ -69,7 +84,8 @@ namespace LTM {
   }
 
   void RobotClusterRemoval::transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame) const {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame) const
+  {
     // // Check if the transform is available
     // if (!m_tf_buffer->canTransform(target_frame, source_frame, rclcpp::Time(0))) {
     //   std::cout << "Transform between " << target_frame << " and " << source_frame << " is not available." << std::endl;
@@ -83,12 +99,30 @@ namespace LTM {
     cloud_output->header.frame_id = target_frame;
   }
 
-  void RobotClusterRemoval::generateRobotMeshes() {
+  void RobotClusterRemoval::drawRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const
+  {
+    // Iterate over robot meshes while transforming them
+  }
+
+  void RobotClusterRemoval::clusterRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const
+  {
+    // Cluster pointcloud input and select cluster on base origin
+  }
+
+  void RobotClusterRemoval::generateRobotMeshes()
+  {
     // Initialize uniform sampling
     pcl::UniformSampling<pcl::PointXYZ> uniform_sampling;
     uniform_sampling.setRadiusSearch(m_robot_mesh_resolution);
 
     for (const auto &link : m_robot_model.links_) {
+      // Skip links without collision
+      if (link.second->collision == nullptr) {
+        continue;
+      }
+
       // Skip links without visual geometry
       if (link.second->visual->geometry->type != urdf::Geometry::MESH) {
         continue;
@@ -97,6 +131,7 @@ namespace LTM {
       // Get the mesh file path
       const auto mesh = std::static_pointer_cast<urdf::Mesh>(link.second->visual->geometry);
       const std::string mesh_path = mesh->filename;
+      std::cout << "Loading " << link.first << "'s mesh file from " << mesh_path << std::endl;
 
       // Load the mesh
       Assimp::Importer importer;
@@ -124,18 +159,22 @@ namespace LTM {
       uniform_sampling.setInputCloud(cloud_original);
       uniform_sampling.filter(*cloud_sampled);
 
+      // TODO: Determine if the pointcloud are needed to rotate.
+
       // Add the point cloud to the map
       m_robot_meshes[link.first] = cloud_sampled;
     }
   }
 
-  void RobotClusterRemoval::initializeTransformListener(const rclcpp::Clock::SharedPtr clock) {
+  void RobotClusterRemoval::initializeTransformListener(const rclcpp::Clock::SharedPtr clock)
+  {
     // Initialize the transform listener
     m_tf_buffer = std::make_shared<tf2_ros::Buffer>(clock);
     m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
   }
 
-  void RobotClusterRemoval::setClock(const rclcpp::Clock::SharedPtr clock) {
+  void RobotClusterRemoval::setClock(const rclcpp::Clock::SharedPtr clock)
+  {
     m_clock = clock;
   }
 
