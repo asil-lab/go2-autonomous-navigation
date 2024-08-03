@@ -37,14 +37,17 @@ namespace LTM
     void timerCallback();
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
-    void initializePointcloudBuffer();
     void updateInputPointcloudMsg(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void bufferPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
     void clearPointcloudBuffer();
     void publishPointcloudBuffer();
 
+    void initializeROSTopics();
+    void initializeTFListener();
+    void initializePointcloudBuffer();
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformPointCloud(
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, const std::string target_frame) const;
+      const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const;
     pcl::PointCloud<pcl::PointXYZ>::Ptr convertPointCloud2ToPCL(
       const sensor_msgs::msg::PointCloud2::SharedPtr msg) const;
     sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(
@@ -52,6 +55,8 @@ namespace LTM
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr m_pointcloud_buffer;
     sensor_msgs::msg::PointCloud2::SharedPtr m_recent_input_pointcloud_msg;
+    std::string m_source_frame;
+    std::string m_target_frame;
 
     std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
     std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;

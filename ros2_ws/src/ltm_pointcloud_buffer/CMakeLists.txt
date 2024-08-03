@@ -50,8 +50,21 @@ ament_target_dependencies(pointcloud_buffer_node
   pcl_conversions
 )
 
+# Install executables
 install(TARGETS pointcloud_buffer_node
   DESTINATION lib/${PROJECT_NAME})
+
+# Install launch files.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+# Install config files.
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
