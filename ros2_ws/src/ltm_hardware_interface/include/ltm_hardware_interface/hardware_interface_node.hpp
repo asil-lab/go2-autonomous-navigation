@@ -21,6 +21,7 @@
 #include <vector>
 #include <string>
 
+#include <ltm_hardware_interface/front_camera_processing.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 
 namespace LTM
@@ -54,6 +55,8 @@ namespace LTM
     std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
     geometry_msgs::msg::TransformStamped::SharedPtr m_world_to_base_transform_msg;
 
+    std::shared_ptr<FrontCamera> m_front_camera;
+
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
     rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_sub;
@@ -61,6 +64,9 @@ namespace LTM
 
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr m_joint_state_pub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_pub;
+
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_front_video_180p_pub;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_front_video_360p_pub;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_front_video_720p_pub;
 
   }; // class HardwareInterfaceNode

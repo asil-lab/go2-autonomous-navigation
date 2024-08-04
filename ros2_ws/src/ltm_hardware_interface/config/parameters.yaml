@@ -24,13 +24,13 @@ hardware_interface_node:
       lidar_point_cloud_queue_size: 10
       lidar_point_cloud_frame: "radar"
 
-      180p_image_topic: "/image/180p"
+      180p_image_topic: "/front_camera/180p"
       180p_image_queue_size: 10
 
-      360p_image_topic: "/image/360p"
+      360p_image_topic: "/front_camera/360p"
       360p_image_queue_size: 10
 
-      720p_image_topic: "/image/720p"
+      720p_image_topic: "/front_camera/720p"
       720p_image_queue_size: 10
     
     # Parameters for the hardware interface

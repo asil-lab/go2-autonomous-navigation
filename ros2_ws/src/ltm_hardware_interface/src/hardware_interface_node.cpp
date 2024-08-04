@@ -11,6 +11,9 @@ using namespace LTM;
 HardwareInterfaceNode::HardwareInterfaceNode()
 : Node("hardware_interface_node")
 {
+  // Initialize processing classes
+  m_front_camera = std::make_shared<FrontCamera>("front_camera");
+
   // Initialize the messages
   initializeJointStateMsg();
   initializeWorldToBaseTransformMsg();
@@ -31,7 +34,9 @@ HardwareInterfaceNode::HardwareInterfaceNode()
   // Create publishers
   m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
   m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 10);
-  m_front_video_720p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/image_raw", 10);
+  m_front_video_180p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/180p", 10);
+  m_front_video_360p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/360p", 10);
+  m_front_video_720p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/720p", 10);
 
   RCLCPP_INFO(this->get_logger(), "LTM Hardware Interface Node initialized.");
 }
@@ -71,16 +76,11 @@ void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointClou
 
 void HardwareInterfaceNode::frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg)
 {
-  sensor_msgs::msg::Image front_video_msg;
-  front_video_msg.header.stamp = this->now();
-  front_video_msg.header.frame_id = "front_camera";
-  front_video_msg.height = 720;
-  front_video_msg.width = 1280;
-  front_video_msg.encoding = "rgb8";
-  front_video_msg.is_bigendian = false;
-  front_video_msg.step = 1280 * 3;
-  front_video_msg.data = msg->video720p;
-  m_front_video_720p_pub->publish(front_video_msg);
+  m_front_camera->updateFrontCameraMsgs(msg, this->now());
+
+  m_front_video_180p_pub->publish(*(m_front_camera->getFrontCamera180pMsg()));
+  m_front_video_360p_pub->publish(*(m_front_camera->getFrontCamera360pMsg()));
+  m_front_video_720p_pub->publish(*(m_front_camera->getFrontCamera720pMsg()));
 }
 
 void HardwareInterfaceNode::updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state)
