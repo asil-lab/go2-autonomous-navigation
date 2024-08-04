@@ -1,0 +1,55 @@
+hardware_interface_node:
+  ros__parameters:
+    input_topics:
+      # Input topics from unitree_ros2
+      low_level_state_topic: "/lowstate"
+      low_level_state_queue_size: 10
+
+      high_level_state_topic: "/sportmodestate"
+      high_level_state_queue_size: 10
+
+      lidar_point_cloud_topic: "/utlidar/cloud"
+      lidar_point_cloud_queue_size: 10
+      lidar_point_cloud_frame: "utlidar"
+
+      camera_image_topic: "/image"
+      camera_image_queue_size: 10
+
+    output_topics:
+      # Output topics to ltm_stacks
+      joint_state_topic: "/joint_states"
+      joint_state_queue_size: 10
+
+      lidar_point_cloud_topic: "/point_cloud/raw"
+      lidar_point_cloud_queue_size: 10
+      lidar_point_cloud_frame: "radar"
+
+      180p_image_topic: "/image/180p"
+      180p_image_queue_size: 10
+
+      360p_image_topic: "/image/360p"
+      360p_image_queue_size: 10
+
+      720p_image_topic: "/image/720p"
+      720p_image_queue_size: 10
+    
+    # Parameters for the hardware interface
+    joints:
+      names:
+      - "FL_hip_joint"
+      - "FL_thigh_joint"
+      - "FL_calf_joint"
+      - "FR_hip_joint"
+      - "FR_thigh_joint"
+      - "FR_calf_joint"
+      - "RL_hip_joint"
+      - "RL_thigh_joint"
+      - "RL_calf_joint"
+      - "RR_hip_joint"
+      - "RR_thigh_joint"
+      - "RR_calf_joint"
+      indices: [3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8]
+
+    state_estimation:
+      base_frame: "base"
+      odom_frame: "world"
