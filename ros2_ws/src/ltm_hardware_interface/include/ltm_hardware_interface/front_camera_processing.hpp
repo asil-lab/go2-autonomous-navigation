@@ -18,6 +18,7 @@
 #define IMAGE_IS_BIGENDIAN  false
 #define IMAGE_STEP_SCALE    3
 
+#define FRONT_CAMERA_FRAME_ID "front_camera"
 #define FRONT_CAMERA_180p_WIDTH   320
 #define FRONT_CAMERA_180p_HEIGHT  180
 #define FRONT_CAMERA_360p_WIDTH   640
@@ -27,11 +28,11 @@
 
 namespace LTM
 {
-  class FrontCamera
+  class FrontCameraProcessing
   {
     public:
-      FrontCamera(const std::string& frame_id);
-      ~FrontCamera();
+      FrontCameraProcessing();
+      ~FrontCameraProcessing();
 
       void updateFrontCameraMsgs(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg,
         const rclcpp::Time& timestamp);
@@ -41,7 +42,7 @@ namespace LTM
       sensor_msgs::msg::Image::SharedPtr getFrontCamera720pMsg() const;
 
     private:
-      void initializeFrontCameraMsgs(const std::string& frame_id);
+      void initializeFrontCameraMsgs();
 
       sensor_msgs::msg::Image::SharedPtr m_front_camera_180p_msg;
       sensor_msgs::msg::Image::SharedPtr m_front_camera_360p_msg;

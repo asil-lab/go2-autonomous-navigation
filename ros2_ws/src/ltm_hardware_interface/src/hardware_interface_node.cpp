@@ -12,10 +12,10 @@ HardwareInterfaceNode::HardwareInterfaceNode()
 : Node("hardware_interface_node")
 {
   // Initialize processing classes
-  m_front_camera = std::make_shared<FrontCamera>("front_camera");
+  m_front_camera_processing = std::make_shared<FrontCameraProcessing>();
+  m_joint_state_processing = std::make_shared<JointStateProcessing>();
 
   // Initialize the messages
-  initializeJointStateMsg();
   initializeWorldToBaseTransformMsg();
 
   // Initialize the transform broadcaster
@@ -43,12 +43,27 @@ HardwareInterfaceNode::HardwareInterfaceNode()
 
 HardwareInterfaceNode::~HardwareInterfaceNode()
 {
-  // Reset ROS subscriptions and publishers
+  // Reset ROS subscriptions
   m_low_state_sub.reset();
+  m_sport_mode_state_sub.reset();
+  m_point_cloud_sub.reset();
+  m_front_video_sub.reset();
+
+  // Reset ROS publishers
   m_joint_state_pub.reset();
+  m_point_cloud_pub.reset();
+  m_front_video_180p_pub.reset();
+  m_front_video_360p_pub.reset();
+  m_front_video_720p_pub.reset();
+
+  // Reset transform broadcaster
+  m_tf_broadcaster.reset();
+
+  // Reset processing classes
+  m_front_camera_processing.reset();
+  m_joint_state_processing.reset();
 
   // Reset msg pointers
-  m_joint_state_msg.reset();
   m_world_to_base_transform_msg.reset();
 
   RCLCPP_WARN(this->get_logger(), "LTM Hardware Interface Node shutting down.");
@@ -56,8 +71,8 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 
 void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
-  updateJointStateMsg(msg->motor_state);
-  publishJointState();
+  m_joint_state_processing->updateJointStateMsg(msg->motor_state);
+  m_joint_state_pub->publish(*(m_joint_state_processing->getJointStateMsg()));
 }
 
 void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
@@ -76,52 +91,11 @@ void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointClou
 
 void HardwareInterfaceNode::frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg)
 {
-  m_front_camera->updateFrontCameraMsgs(msg, this->now());
+  m_front_camera_processing->updateFrontCameraMsgs(msg, this->now());
 
-  m_front_video_180p_pub->publish(*(m_front_camera->getFrontCamera180pMsg()));
-  m_front_video_360p_pub->publish(*(m_front_camera->getFrontCamera360pMsg()));
-  m_front_video_720p_pub->publish(*(m_front_camera->getFrontCamera720pMsg()));
-}
-
-void HardwareInterfaceNode::updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state)
-{
-  for (unsigned long int i = 0; i < m_joint_idx.size(); i++)
-  {
-    m_joint_state_msg->position[i] = motor_state[m_joint_idx[i]].q;
-    m_joint_state_msg->velocity[i] = motor_state[m_joint_idx[i]].dq;
-    m_joint_state_msg->effort[i] = motor_state[m_joint_idx[i]].tau_est;
-  }
-}
-
-void HardwareInterfaceNode::publishJointState()
-{
-  m_joint_state_msg->header.stamp = this->now();
-  m_joint_state_pub->publish(*m_joint_state_msg);
-}
-
-void HardwareInterfaceNode::initializeJointStateMsg()
-{
-  // Initialize the joint state message
-  m_joint_state_msg = std::make_shared<sensor_msgs::msg::JointState>();
-
-  // Set the joint state message header
-  m_joint_state_msg->header.stamp = this->now();
-  m_joint_state_msg->header.frame_id = "base_link";
-
-  // Set the joint state message names
-  m_joint_state_msg->name = {
-    "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint", 
-    "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
-    "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint", 
-    "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"};
-
-  // Set zero values for the joint state message
-  m_joint_state_msg->position = std::vector<double>(12, 0.0);
-  m_joint_state_msg->velocity = std::vector<double>(12, 0.0);
-  m_joint_state_msg->effort = std::vector<double>(12, 0.0);
-
-  // Set the joint state message indices
-  m_joint_idx = {3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8}; // TODO: Parameterize this, use enum?
+  m_front_video_180p_pub->publish(*(m_front_camera_processing->getFrontCamera180pMsg()));
+  m_front_video_360p_pub->publish(*(m_front_camera_processing->getFrontCamera360pMsg()));
+  m_front_video_720p_pub->publish(*(m_front_camera_processing->getFrontCamera720pMsg()));
 }
 
 void HardwareInterfaceNode::updateWorldToBaseTranslation(const std::array<float, 3>& translation)
@@ -172,3 +146,5 @@ int main(int argc, char * argv[])
   rclcpp::shutdown();
   return 0;
 }
+
+// End of file: hardware_interface_node.cpp

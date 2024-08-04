@@ -22,12 +22,11 @@
 #include <string>
 
 #include <ltm_hardware_interface/front_camera_processing.hpp>
+#include <ltm_hardware_interface/joint_state_processing.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 
 namespace LTM
 {
-  #define MOTOR_SIZE 20
-
   class HardwareInterfaceNode : public rclcpp::Node
   {
   public:
@@ -40,22 +39,16 @@ namespace LTM
     void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg);
 
-    void updateJointStateMsg(const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state);
-    void publishJointState();
-    void initializeJointStateMsg();
-
     void updateWorldToBaseTranslation(const std::array<float, 3>& translation);
     void updateWorldToBaseOrientation(const std::array<float, 4>& orientation);
     void broadcastWorldToBaseTransform();
     void initializeWorldToBaseTransformMsg();
 
-    sensor_msgs::msg::JointState::SharedPtr m_joint_state_msg;
-    std::vector<int> m_joint_idx;
-
     std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
     geometry_msgs::msg::TransformStamped::SharedPtr m_world_to_base_transform_msg;
 
-    std::shared_ptr<FrontCamera> m_front_camera;
+    std::shared_ptr<FrontCameraProcessing> m_front_camera_processing;
+    std::shared_ptr<JointStateProcessing> m_joint_state_processing;
 
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
     rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;
@@ -73,3 +66,5 @@ namespace LTM
 } // namespace LTM
 
 #endif // LTM_HARDWARE_INTERFACE__HARDWARE_INTERFACE_NODE_HPP_
+
+// End of file: hardware_interface_node.hpp
