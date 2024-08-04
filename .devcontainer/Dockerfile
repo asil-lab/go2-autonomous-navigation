@@ -51,7 +51,7 @@ RUN apt-get update && apt-get install -y ros-foxy-tf2 ros-foxy-tf2-ros ros-foxy-
     ros-foxy-tf2-msgs ros-foxy-tf2-eigen ros-foxy-tf2-geometry-msgs ros-foxy-tf2-tools
 
 # Install PCL, Eigen3, and OpenCV
-RUN apt-get install -y libpcl-dev libeigen3-dev libopencv-dev
+RUN apt-get install -y libpcl-dev libeigen3-dev libopencv-dev assimp-utils
 RUN apt-get install -y ros-foxy-pcl-conversions ros-foxy-pcl-msgs ros-foxy-pcl-ros
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

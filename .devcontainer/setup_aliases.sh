@@ -3,14 +3,18 @@ alias noetic='source /opt/ros/noetic/setup.bash && echo "ROS1 sourced."'
 alias foxy='source /opt/ros/foxy/setup.bash && echo "ROS2 sourced."'
 
 # Source ROS workspaces
-alias ws1='cd /home/lava-tube-mapping/ros1_ws && noetic && source devel/setup.bash && echo "ROS1 workspace sourced."'
-alias ws2='cd /home/lava-tube-mapping/ros2_ws && foxy && source install/setup.bash && echo "ROS2 workspace sourced."'
+alias ws1_source='cd /home/lava-tube-mapping/ros1_ws && noetic && source devel/setup.bash && echo "ROS1 workspace sourced."'
+alias ws2_source='cd /home/lava-tube-mapping/ros2_ws && foxy && source install/setup.bash && echo "ROS2 workspace sourced."'
 
 # Connect to the Unitree Go2 robot
 # alias connect-go2="export ROS_MASTER_URI=http://\$(ip route show default | \
 #     grep -oP 'via \K\d+\.\d+\.\d+').5:11311 ; export ROS_IP=\$(ip route get 8.8.8.8 | \
 #     grep -oP '(?<=src )\S+') ; echo 'ROS_MASTER_URI and ROS_IP set to ' ; printenv ROS_MASTER_URI ; printenv ROS_IP"
 # alias connect-go2="export ROS_MASTER_URI=http://192.168.1.1:11311 ; export ROS_IP=192.168.1.2; export ROS_DOMAIN_ID=0;"
+
+# ROS2 workspace
+# TODO: Make a function and parameterize
+alias ws2_build='cd /home/lava-tube-mapping/ros2_ws && colcon build --packages-skip ros1_bridge cyclonedds'
 
 connect-go2 () {
     auto wlp2s0
