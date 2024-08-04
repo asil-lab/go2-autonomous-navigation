@@ -36,9 +36,9 @@ PointCloudFilterNode::PointCloudFilterNode()
   declare_parameter("in_simulation", true);
   bool in_simulation = this->get_parameter("in_simulation").as_bool();
 
-  // Initialize
+  // Initialize filtering objects
   initializeGroundPlaneRemoval();
-  // initializeRobotClusterRemoval();
+  initializeRobotClusterRemoval();
 
   // Configure ROS subscribers and publishers
   configureRosSubscribers(in_simulation);
@@ -169,7 +169,11 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
   removeGroundPlane(cloud, cloud_plane_removed);
 
-  publishFilteredPointCloud(cloud_plane_removed, msg->header.frame_id, msg->header.stamp);
+  // Remove the robot clusters from the pointcloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_robot_removed(new pcl::PointCloud<pcl::PointXYZ>);
+  m_robot_cluster_removal->removeRobotCluster(cloud_plane_removed, cloud_robot_removed);
+
+  publishFilteredPointCloud(cloud_robot_removed, msg->header.frame_id, msg->header.stamp);
 }
 
 void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
@@ -246,6 +250,10 @@ void PointCloudFilterNode::initializeRobotClusterRemoval()
   declare_parameter("robot_cluster_removal.robot_description.file_name", "go2_description.urdf");
   declare_parameter("robot_cluster_removal.robot_mesh_resolution", 0.01);
 
+  // Set the robot mesh resolution
+  m_robot_cluster_removal->setRobotMeshResolution(
+    this->get_parameter("robot_cluster_removal.robot_mesh_resolution").as_double());
+
   // Set the robot model from the URDF
   std::string urdf_package_name = this->get_parameter("robot_cluster_removal.robot_description.package_name").as_string();
   std::string urdf_directory_name = this->get_parameter("robot_cluster_removal.robot_description.directory_name").as_string();
@@ -259,11 +267,9 @@ void PointCloudFilterNode::initializeRobotClusterRemoval()
   if (!m_robot_cluster_removal->setRobotModel(urdf_filepath)) {
     RCLCPP_ERROR(this->get_logger(), "Failed to set the robot model from URDF file: %s", urdf_filepath.c_str());
     exit(EXIT_FAILURE);
+  } else {
+    RCLCPP_INFO(this->get_logger(), "Robot model set from URDF file: %s", urdf_filepath.c_str());
   }
-
-  // Set the robot mesh resolution
-  m_robot_cluster_removal->setRobotMeshResolution(
-    this->get_parameter("robot_cluster_removal.robot_mesh_resolution").as_double());
 
   RCLCPP_INFO(this->get_logger(), "Robot cluster removal configured.");
 }

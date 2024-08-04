@@ -48,8 +48,6 @@ namespace LTM // TODO: Change this to LTM
 
     void removeGroundPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered);
-    void removeRobotClusters(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr convertPointCloud2ToPCL(
       const sensor_msgs::msg::PointCloud2::SharedPtr msg) const;

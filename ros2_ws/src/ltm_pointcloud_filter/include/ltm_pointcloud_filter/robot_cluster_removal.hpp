@@ -48,6 +48,7 @@ namespace LTM {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const;
       void generateRobotMeshes();
 
+      std::string resolveMeshPath(const std::string &mesh_path_uri) const;
       void initializeTransformListener(const rclcpp::Clock::SharedPtr clock);
       void setClock(const rclcpp::Clock::SharedPtr clock);
 
