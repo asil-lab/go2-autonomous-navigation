@@ -23,6 +23,7 @@
 
 #include <ltm_hardware_interface/front_camera_processing.hpp>
 #include <ltm_hardware_interface/joint_state_processing.hpp>
+#include <ltm_hardware_interface/odom_processing.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 
 namespace LTM
@@ -39,16 +40,9 @@ namespace LTM
     void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg);
 
-    void updateWorldToBaseTranslation(const std::array<float, 3>& translation);
-    void updateWorldToBaseOrientation(const std::array<float, 4>& orientation);
-    void broadcastWorldToBaseTransform();
-    void initializeWorldToBaseTransformMsg();
-
-    std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
-    geometry_msgs::msg::TransformStamped::SharedPtr m_world_to_base_transform_msg;
-
     std::shared_ptr<FrontCameraProcessing> m_front_camera_processing;
     std::shared_ptr<JointStateProcessing> m_joint_state_processing;
+    std::shared_ptr<OdomProcessing> m_odom_processing;
 
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
     rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;

@@ -33,7 +33,8 @@ find_package(tf2_geometry_msgs REQUIRED)
 add_executable(hardware_interface_node 
   src/hardware_interface_node.cpp 
   src/front_camera_processing.cpp 
-  src/joint_state_processing.cpp 
+  src/joint_state_processing.cpp
+  src/odom_processing.cpp 
 )
 target_include_directories(hardware_interface_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
