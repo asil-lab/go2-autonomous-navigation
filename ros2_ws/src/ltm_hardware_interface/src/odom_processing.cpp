@@ -21,6 +21,13 @@ OdomProcessing::~OdomProcessing()
   m_odom_msg.reset();
 }
 
+void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
+  const std::array<float, ORIENTATION_SIZE>& orientation)
+{
+  updateOdomTranslation(translation);
+  updateOdomOrientation(orientation);
+}
+
 void OdomProcessing::updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation)
 {
   m_odom_msg->transform.translation.x = translation[static_cast<int>(TranslationIdx::X)];

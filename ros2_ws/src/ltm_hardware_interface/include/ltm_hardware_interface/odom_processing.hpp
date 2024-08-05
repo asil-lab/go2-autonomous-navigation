@@ -28,11 +28,13 @@ namespace LTM
       OdomProcessing(const rclcpp::Node::SharedPtr& node);
       ~OdomProcessing();
 
-      void updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation);
-      void updateOdomOrientation(const std::array<float, ORIENTATION_SIZE>& orientation);
+      void updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
+        const std::array<float, ORIENTATION_SIZE>& orientation);
       void broadcastOdomTransform();
 
     private:
+      void updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation);
+      void updateOdomOrientation(const std::array<float, ORIENTATION_SIZE>& orientation);
       void initializeOdomTransformMsg();
 
       enum class TranslationIdx { X = 0, Y = 1, Z = 2 };
