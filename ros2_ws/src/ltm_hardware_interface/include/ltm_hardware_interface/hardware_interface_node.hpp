@@ -51,7 +51,6 @@ namespace LTM
 
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr m_joint_state_pub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_pub;
-
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_front_video_180p_pub;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_front_video_360p_pub;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_front_video_720p_pub;

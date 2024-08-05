@@ -1,6 +1,6 @@
 hardware_interface_node:
   ros__parameters:
-    input_topics:
+    input:
       # Input topics from unitree_ros2
       low_level_state_topic: "/lowstate"
       low_level_state_queue_size: 10
@@ -15,7 +15,7 @@ hardware_interface_node:
       camera_image_topic: "/image"
       camera_image_queue_size: 10
 
-    output_topics:
+    output:
       # Output topics to ltm_stacks
       joint_state_topic: "/joint_states"
       joint_state_queue_size: 10
@@ -33,23 +33,3 @@ hardware_interface_node:
       720p_image_topic: "/front_camera/720p"
       720p_image_queue_size: 10
     
-    # Parameters for the hardware interface
-    joints:
-      names:
-      - "FL_hip_joint"
-      - "FL_thigh_joint"
-      - "FL_calf_joint"
-      - "FR_hip_joint"
-      - "FR_thigh_joint"
-      - "FR_calf_joint"
-      - "RL_hip_joint"
-      - "RL_thigh_joint"
-      - "RL_calf_joint"
-      - "RR_hip_joint"
-      - "RR_thigh_joint"
-      - "RR_calf_joint"
-      indices: [3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8]
-
-    state_estimation:
-      base_frame: "base"
-      odom_frame: "world"
