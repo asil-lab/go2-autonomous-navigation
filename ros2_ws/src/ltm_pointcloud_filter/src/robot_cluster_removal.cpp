@@ -53,6 +53,8 @@ namespace LTM {
   void RobotClusterRemoval::removeRobotCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
     const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const
   {
+    // *cloud_output = *cloud_input;
+
     // @TODO: Finish implement this in the future. For now, a simple 3D box
     // // @TODO: draw robot mesh as pointclouds onto the cloud input
     // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_drawn(new pcl::PointCloud<pcl::PointXYZ>);
@@ -66,27 +68,25 @@ namespace LTM {
 
     // // @TODO: remove selected cluster of points
 
-    // // Transform the point cloud to the base frame
-    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
-    // pcl_ros::transformPointCloud("base", rclcpp::Time(0), *cloud_input, "world", *cloud_transformed, *m_tf_buffer);
+    // Transform the point cloud to the base frame
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
+    transformPointCloud(cloud_input, cloud_transformed, "base", cloud_input->header.frame_id);
 
     // // Remove points that are 30cm wide, 80cm long, and 30cm high around the base origin
-    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-    // Eigen::Vector4f min_point(-0.15, -0.4, -0.15, 1);
-    // Eigen::Vector4f max_point(0.15, 0.4, 0.15, 1);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+    Eigen::Vector4f min_point(-0.45, -0.5, -1.0, 1.0);
+    Eigen::Vector4f max_point(0.45, 0.5, 0.0, 1.0);
 
-    // // Remove points that are within the box
-    // pcl::CropBox<pcl::PointXYZ> crop_box;
-    // crop_box.setInputCloud(cloud_transformed);
-    // crop_box.setMin(min_point);
-    // crop_box.setMax(max_point);
-    // crop_box.setNegative(true);
-    // crop_box.filter(*cloud_filtered);
+    // Remove points that are within the box
+    pcl::CropBox<pcl::PointXYZ> crop_box;
+    crop_box.setInputCloud(cloud_transformed);
+    crop_box.setMin(min_point);
+    crop_box.setMax(max_point);
+    crop_box.setNegative(true);
+    crop_box.filter(*cloud_filtered);
 
-    // // Transform the point cloud back to the world frame
-    // pcl_ros::transformPointCloud("world", rclcpp::Time(0), *cloud_filtered, "base", *cloud_output, *m_tf_buffer);
-
-    *cloud_output = *cloud_input;
+    // Transform the point cloud back to the world frame
+    transformPointCloud(cloud_filtered, cloud_output, cloud_input->header.frame_id, "base");
   }
 
   void RobotClusterRemoval::setRobotMeshResolution(const double& resolution)
@@ -118,14 +118,7 @@ namespace LTM {
   void RobotClusterRemoval::transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame, const std::string &source_frame) const
   {
-    // // Check if the transform is available
-    // if (!m_tf_buffer->canTransform(target_frame, source_frame, rclcpp::Time(0))) {
-    //   std::cout << "Transform between " << target_frame << " and " << source_frame << " is not available." << std::endl;
-    //   return;
-    // }
-
-    // Transform the point cloud
-    // pcl_ros::transformPointCloud(target_frame, *cloud_input, *cloud_output, *m_tf_buffer);
+    // Transform the point cloud from the source frame to the target frame
     pcl_ros::transformPointCloud(target_frame, rclcpp::Time(0), *cloud_input, source_frame, *cloud_output, *m_tf_buffer);
 
     // Set the frame ID
@@ -144,31 +137,31 @@ namespace LTM {
     }
   }
 
-  void RobotClusterRemoval::clusterRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const
-  {
-    // Cluster pointcloud input and select cluster on base origin
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-    tree->setInputCloud(cloud_input);
+  // void RobotClusterRemoval::clusterRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+  //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const
+  // {
+  //   // Cluster pointcloud input and select cluster on base origin
+  //   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+  //   tree->setInputCloud(cloud_input);
 
-    // Create the Euclidean Cluster Extraction object
-    std::vector<pcl::PointIndices> cluster_indices;
-    pcl::EuclideanClusterExtraction<pcl::PointXYZ> euclidean_cluster_extraction;
-    euclidean_cluster_extraction.setClusterTolerance(0.1);  // 10cm, @TODO: Parameterize this
-    euclidean_cluster_extraction.setMinClusterSize(100);    // @TODO: Parameterize this
-    euclidean_cluster_extraction.setMaxClusterSize(25000);  // @TODO: Parameterize this
-    euclidean_cluster_extraction.setSearchMethod(tree);
-    euclidean_cluster_extraction.setInputCloud(cloud_input);
+  //   // Create the Euclidean Cluster Extraction object
+  //   std::vector<pcl::PointIndices> cluster_indices;
+  //   pcl::EuclideanClusterExtraction<pcl::PointXYZ> euclidean_cluster_extraction;
+  //   euclidean_cluster_extraction.setClusterTolerance(0.1);  // 10cm, @TODO: Parameterize this
+  //   euclidean_cluster_extraction.setMinClusterSize(100);    // @TODO: Parameterize this
+  //   euclidean_cluster_extraction.setMaxClusterSize(25000);  // @TODO: Parameterize this
+  //   euclidean_cluster_extraction.setSearchMethod(tree);
+  //   euclidean_cluster_extraction.setInputCloud(cloud_input);
 
-    // Obtain the cluster indices from the input cloud
-    euclidean_cluster_extraction.extract(cluster_indices);
+  //   // Obtain the cluster indices from the input cloud
+  //   euclidean_cluster_extraction.extract(cluster_indices);
 
-    // Get the translation of base w.r.t. world using tf2 transform
+  //   // Get the translation of base w.r.t. world using tf2 transform
 
-    // Get the cluster index surrounding this translation
+  //   // Get the cluster index surrounding this translation
 
-    // Filter the cluster points with this cluster index onto cloud_output
-  }
+  //   // Filter the cluster points with this cluster index onto cloud_output
+  // }
 
   void RobotClusterRemoval::generateRobotMeshes()
   {

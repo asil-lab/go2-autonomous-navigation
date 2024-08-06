@@ -7,7 +7,7 @@ pointcloud_filter_node:
         max_iterations: 5000
         probability: 0.99
 
-    voxel_grid:
+    voxel_grid_filter:
       leaf_size: # meters
         x: 0.1
         y: 0.1

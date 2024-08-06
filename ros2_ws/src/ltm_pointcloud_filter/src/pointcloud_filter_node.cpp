@@ -163,17 +163,21 @@ PointCloudFilterNode::~PointCloudFilterNode()
 void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
   RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received pointcloud message with %d points", msg->width * msg->height);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = convertPointCloud2ToPCL(msg);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input = convertPointCloud2ToPCL(msg);
 
   // Determine if the pointcloud is empty
-  if (cloud->empty()) {
+  if (cloud_input->empty()) {
     RCLCPP_DEBUG(this->get_logger(), "Received empty pointcloud message.");
     return;
   }
 
   // Downsample the pointcloud using leaf size
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
-  m_voxel_grid_filter->filter(cloud, cloud_downsampled);
+  // m_voxel_grid_filter->filter(cloud, cloud_downsampled); // Why isn't this working?
+  pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
+  voxel_grid.setInputCloud(cloud_input);
+  voxel_grid.setLeafSize(0.1, 0.1, 0.1);
+  voxel_grid.filter(*cloud_downsampled);
 
   // Remove the ground plane from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
