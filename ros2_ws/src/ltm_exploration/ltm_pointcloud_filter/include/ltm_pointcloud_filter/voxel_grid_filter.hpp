@@ -18,7 +18,7 @@ namespace LTM {
   class VoxelGridFilter {
     public:
       VoxelGridFilter();
-      ~VoxelGridFilter();
+      ~VoxelGridFilter() = default;
 
       void filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output);
@@ -26,7 +26,9 @@ namespace LTM {
       void setLeafSize(const double& x, const double& y, const double& z);
 
     private:
-      pcl::VoxelGrid<pcl::PointXYZ> m_voxel_grid_filter;
+      double m_leaf_size_x;
+      double m_leaf_size_y;
+      double m_leaf_size_z;
 
   }; // class VoxelGridFilter
 } // namespace LTM

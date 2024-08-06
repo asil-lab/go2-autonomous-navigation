@@ -10,25 +10,24 @@ using namespace LTM;
 
 VoxelGridFilter::VoxelGridFilter()
 {
-  // Set default leaf size to 0.1m
-  m_voxel_grid_filter.setLeafSize(0.1, 0.1, 0.1);
-}
-
-VoxelGridFilter::~VoxelGridFilter()
-{
-  m_voxel_grid_filter.setInputCloud(nullptr);
+  // Set default leaf size to 0.1 m
+  double default_leaf_size = 0.1;
+  setLeafSize(default_leaf_size, default_leaf_size, default_leaf_size);
 }
 
 void VoxelGridFilter::filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output)
 {
+  pcl::VoxelGrid<pcl::PointXYZ> m_voxel_grid_filter;
   m_voxel_grid_filter.setInputCloud(cloud_input);
   m_voxel_grid_filter.filter(*cloud_output);
 }
 
 void VoxelGridFilter::setLeafSize(const double& x, const double& y, const double& z)
 {
-  m_voxel_grid_filter.setLeafSize(x, y, z);
+  m_leaf_size_x = x;
+  m_leaf_size_y = y;
+  m_leaf_size_z = z;
 }
 
 // End of file: ltm_pointcloud_filter/src/voxel_grid_filter.cpp
