@@ -11,21 +11,10 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
-#include <pcl/ModelCoefficients.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/extract_indices.h>
-	
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/search/kdtree.h>
-#include <pcl/segmentation/extract_clusters.h>
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
-
-#include <Eigen/Geometry>
 
 using namespace LTM;
 
@@ -49,8 +38,12 @@ PointCloudFilterNode::PointCloudFilterNode()
 
 PointCloudFilterNode::~PointCloudFilterNode()
 {
-  this->m_raw_pointcloud_sub.reset();
   this->m_filtered_pointcloud_pub.reset();
+  this->m_bounding_box_pub.reset();
+  this->m_marker_array_pub.reset();
+  this->m_raw_pointcloud_sub.unsubscribe();
+  this->m_sport_mode_state_sub.unsubscribe();
+  this->m_sync.reset();
   RCLCPP_WARN(this->get_logger(), "LTM Pointcloud Filter Node has been destroyed.");
 }
 
@@ -160,10 +153,12 @@ PointCloudFilterNode::~PointCloudFilterNode()
 //   // m_marker_array_pub->publish(marker_array);
 // }
 
-void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+// void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr pointcloud_msg,
+  const unitree_go::msg::SportModeState::SharedPtr sport_mode_state_msg)
 {
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received pointcloud message with %d points", msg->width * msg->height);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input = convertPointCloud2ToPCL(msg);
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received pointcloud message with %d points", pointcloud_msg->width * pointcloud_msg->height);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input = convertPointCloud2ToPCL(pointcloud_msg);
 
   // Determine if the pointcloud is empty
   if (cloud_input->empty()) {
@@ -179,6 +174,21 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   voxel_grid.setLeafSize(0.1, 0.1, 0.1);
   voxel_grid.filter(*cloud_downsampled);
 
+  // Remove points that are around z = 0.0, when the robot is below 1.5 m in position
+  if (sport_mode_state_msg->position[2] < 1.5) {
+    pcl::PointIndices::Ptr indices(new pcl::PointIndices);
+    for (size_t i = 0; i < cloud_downsampled->points.size(); i++) {
+      if (cloud_downsampled->points[i].z < 0.1) {
+        indices->indices.push_back(i);
+      }
+    }
+    pcl::ExtractIndices<pcl::PointXYZ> extract;
+    extract.setInputCloud(cloud_downsampled);
+    extract.setIndices(indices);
+    extract.setNegative(true);
+    extract.filter(*cloud_downsampled);
+  }
+
   // Remove the ground plane from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
   removeGroundPlane(cloud_downsampled, cloud_plane_removed);
@@ -187,7 +197,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_robot_removed(new pcl::PointCloud<pcl::PointXYZ>);
   m_robot_cluster_removal->removeRobotCluster(cloud_plane_removed, cloud_robot_removed);
 
-  publishFilteredPointCloud(cloud_robot_removed, msg->header.frame_id, msg->header.stamp);
+  publishFilteredPointCloud(cloud_robot_removed, pointcloud_msg->header.frame_id, pointcloud_msg->header.stamp);
 }
 
 void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
@@ -319,10 +329,16 @@ void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)
   std::string raw_pointcloud_topic = this->get_parameter(raw_pointcloud_topic_param).as_string();
   RCLCPP_INFO(this->get_logger(), "Subscribe to raw pointcloud topic: %s", raw_pointcloud_topic.c_str());
 
+  // Create QoS profile for the subscribers
+  rclcpp::QoS qos(100); // 100ms history, TODO: Parameterize this
+  // qos.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+  auto rmw_qos_profile = qos.get_rmw_qos_profile();
+
   // Create the raw pointcloud subscriber
-  m_raw_pointcloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    raw_pointcloud_topic, rclcpp::SensorDataQoS(), 
-    std::bind(&PointCloudFilterNode::pointcloudCallback, this, std::placeholders::_1));
+  m_raw_pointcloud_sub.subscribe(this, raw_pointcloud_topic, rmw_qos_profile);
+  m_sport_mode_state_sub.subscribe(this, "sport_mode_state", rmw_qos_profile);
+  m_sync.reset(new message_filters::Synchronizer<SyncPolicy>(SyncPolicy(10), m_raw_pointcloud_sub, m_sport_mode_state_sub));
+  m_sync->registerCallback(&PointCloudFilterNode::pointcloudCallback, this);
 }
 
 void PointCloudFilterNode::configureRosPublishers(bool in_simulation)
