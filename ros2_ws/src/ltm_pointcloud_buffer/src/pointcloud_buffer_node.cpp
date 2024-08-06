@@ -90,7 +90,7 @@ void PointCloudBufferNode::initializeROSTopics()
   std::string raw_pointcloud_topic = 
     this->get_parameter("topics.raw_pointcloud_topic").as_string();
   std::string buffered_pointcloud_topic = 
-    this->get_parameter("topipcs.buffered_pointcloud_topic").as_string();
+    this->get_parameter("topics.buffered_pointcloud_topic").as_string();
   RCLCPP_INFO(this->get_logger(), "Subscribing to topic: %s", raw_pointcloud_topic.c_str());
   RCLCPP_INFO(this->get_logger(), "Publishing to topic: %s", buffered_pointcloud_topic.c_str());
 
