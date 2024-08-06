@@ -8,7 +8,10 @@ pointcloud_filter_node:
         probability: 0.99
 
     voxel_grid:
-      leaf_size: 0.03 # meters
+      leaf_size: # meters
+        x: 0.1
+        y: 0.1
+        z: 0.1
 
     passthrough:
       filter_field_name: "Z"

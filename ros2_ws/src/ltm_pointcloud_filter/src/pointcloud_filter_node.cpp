@@ -171,9 +171,13 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
     return;
   }
 
+  // Downsample the pointcloud using leaf size
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
+  m_voxel_grid_filter->filter(cloud, cloud_downsampled);
+
   // Remove the ground plane from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  removeGroundPlane(cloud, cloud_plane_removed);
+  removeGroundPlane(cloud_downsampled, cloud_plane_removed);
 
   // Remove the robot clusters from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_robot_removed(new pcl::PointCloud<pcl::PointXYZ>);
@@ -278,6 +282,26 @@ void PointCloudFilterNode::initializeRobotClusterRemoval()
   }
 
   RCLCPP_INFO(this->get_logger(), "Robot cluster removal configured.");
+}
+
+void PointCloudFilterNode::initializeVoxelGridFilter()
+{
+  // Initialize the VoxelGridFilter object
+  m_voxel_grid_filter = std::make_unique<LTM::VoxelGridFilter>();
+
+  // Declare parameters for the VoxelGridFilter object
+  declare_parameter("voxel_grid_filter.leaf_size.x", 0.1);
+  declare_parameter("voxel_grid_filter.leaf_size.y", 0.1);
+  declare_parameter("voxel_grid_filter.leaf_size.z", 0.1);
+
+  // Set the leaf size for the VoxelGridFilter object
+  double leaf_size_x = this->get_parameter("voxel_grid_filter.leaf_size.x").as_double();
+  double leaf_size_y = this->get_parameter("voxel_grid_filter.leaf_size.y").as_double();
+  double leaf_size_z = this->get_parameter("voxel_grid_filter.leaf_size.z").as_double();
+  m_voxel_grid_filter->setLeafSize(leaf_size_x, leaf_size_y, leaf_size_z);
+
+  RCLCPP_INFO(this->get_logger(), "Voxel grid filter leaf size configured: \n x: %f m\n y: %f m\n z: %f m",
+    leaf_size_x, leaf_size_y, leaf_size_z);
 }
 
 void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)
