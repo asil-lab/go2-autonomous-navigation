@@ -31,8 +31,6 @@ find_package(pcl_conversions REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(urdf REQUIRED)
 find_package(assimp REQUIRED)
-find_package(message_filters REQUIRED)
-find_package(unitree_go REQUIRED)
 find_package(PCL REQUIRED)
 include_directories(include)
 
@@ -62,8 +60,6 @@ ament_target_dependencies(pointcloud_filter_node
   pcl_ros
   urdf
   assimp
-  message_filters
-  unitree_go
 )
 
 target_link_libraries(pointcloud_filter_node
