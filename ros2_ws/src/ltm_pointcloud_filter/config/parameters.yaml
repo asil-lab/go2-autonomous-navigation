@@ -4,7 +4,7 @@ pointcloud_filter_node:
     ground_plane_removal:
       sac_segmentation:
         distance_threshold: 0.1 # meters
-        max_iterations: 1000
+        max_iterations: 5000
         probability: 0.99
 
     voxel_grid:
@@ -31,6 +31,6 @@ pointcloud_filter_node:
         file_name: "go2_description.urdf"
       cluster_tolerance: 0.1 # meters
       min_cluster_size: 100
-      mesh_resolution: 0.01
+      mesh_resolution: 0.1
       robot_frame: "base"
       target_frame: "world"

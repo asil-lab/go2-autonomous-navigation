@@ -31,14 +31,15 @@ def generate_launch_description():
     )
     
     # Pointcloud-to-laserscan node
+    pointcloud_to_laserscan_config = os.path.join(
+        get_package_share_directory('ltm_exploration_core'), 'config', 'parameters.yaml')
     pointcloud_to_laserscan_node = Node(
         package='pointcloud_to_laserscan',
         executable='pointcloud_to_laserscan_node',
         name='pointcloud_to_laserscan_node',
         output='screen',
-        remappings=[
-            ('cloud_in', '/point_cloud/filter'),
-        ]
+        remappings=[('cloud_in', 'point_cloud/filtered'),],
+        # parameters=[pointcloud_to_laserscan_config],
     )
     
     return LaunchDescription([

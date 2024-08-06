@@ -41,7 +41,8 @@ namespace LTM {
       
     private:
       void transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame) const;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame,
+        const std::string &source_frame) const;
       void drawRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const;
       void clusterRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,

@@ -165,6 +165,12 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received pointcloud message with %d points", msg->width * msg->height);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = convertPointCloud2ToPCL(msg);
 
+  // Determine if the pointcloud is empty
+  if (cloud->empty()) {
+    RCLCPP_DEBUG(this->get_logger(), "Received empty pointcloud message.");
+    return;
+  }
+
   // Remove the ground plane from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
   removeGroundPlane(cloud, cloud_plane_removed);
@@ -287,7 +293,8 @@ void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)
 
   // Create the raw pointcloud subscriber
   m_raw_pointcloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    raw_pointcloud_topic, 10, std::bind(&PointCloudFilterNode::pointcloudCallback, this, std::placeholders::_1));
+    raw_pointcloud_topic, rclcpp::SensorDataQoS(), 
+    std::bind(&PointCloudFilterNode::pointcloudCallback, this, std::placeholders::_1));
 }
 
 void PointCloudFilterNode::configureRosPublishers(bool in_simulation)

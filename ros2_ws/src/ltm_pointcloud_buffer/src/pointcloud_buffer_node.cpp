@@ -90,7 +90,7 @@ void PointCloudBufferNode::initializeROSTopics()
 
   // Create a subscription to the raw pointcloud topic
   m_pointcloud_subscription = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    raw_pointcloud_topic, 10, 
+    raw_pointcloud_topic, rclcpp::SensorDataQoS(), 
     std::bind(&PointCloudBufferNode::pointcloudCallback, this, std::placeholders::_1));
 
   // Create a publisher to the buffered pointcloud topic

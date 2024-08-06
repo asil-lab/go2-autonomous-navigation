@@ -10,6 +10,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl/filters/uniform_sampling.h>
 #include <urdf_parser/urdf_parser.h>
 #include <pcl_ros/transforms.hpp>
@@ -52,17 +53,40 @@ namespace LTM {
   void RobotClusterRemoval::removeRobotCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
     const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const
   {
-    // @TODO (in ltm_go2_description, adjust the radar position according to the pointcloud input)
-    // @TODO: draw robot mesh as pointclouds onto the cloud input
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_drawn(new pcl::PointCloud<pcl::PointXYZ>);
-    drawRobotMeshes(cloud_input, cloud_drawn);
+    // @TODO: Finish implement this in the future. For now, a simple 3D box
+    // // @TODO: draw robot mesh as pointclouds onto the cloud input
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_drawn(new pcl::PointCloud<pcl::PointXYZ>);
+    // // drawRobotMeshes(cloud_input, cloud_drawn);
+    // drawRobotMeshes(cloud_input, cloud_output);
 
-    // @TODO: cluster pointcloud output
-    // clusterRobotMeshes(cloud_output, cloud_output);
+    // // @TODO: cluster pointcloud output
+    // // clusterRobotMeshes(cloud_output, cloud_output);
 
-    // @TODO: extract cluster on base origin
+    // // @TODO: extract cluster on base origin
 
-    // @TODO: remove selected cluster of points
+    // // @TODO: remove selected cluster of points
+
+    // // Transform the point cloud to the base frame
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
+    // pcl_ros::transformPointCloud("base", rclcpp::Time(0), *cloud_input, "world", *cloud_transformed, *m_tf_buffer);
+
+    // // Remove points that are 30cm wide, 80cm long, and 30cm high around the base origin
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+    // Eigen::Vector4f min_point(-0.15, -0.4, -0.15, 1);
+    // Eigen::Vector4f max_point(0.15, 0.4, 0.15, 1);
+
+    // // Remove points that are within the box
+    // pcl::CropBox<pcl::PointXYZ> crop_box;
+    // crop_box.setInputCloud(cloud_transformed);
+    // crop_box.setMin(min_point);
+    // crop_box.setMax(max_point);
+    // crop_box.setNegative(true);
+    // crop_box.filter(*cloud_filtered);
+
+    // // Transform the point cloud back to the world frame
+    // pcl_ros::transformPointCloud("world", rclcpp::Time(0), *cloud_filtered, "base", *cloud_output, *m_tf_buffer);
+
+    *cloud_output = *cloud_input;
   }
 
   void RobotClusterRemoval::setRobotMeshResolution(const double& resolution)
@@ -82,7 +106,7 @@ namespace LTM {
 
       // Transform the point cloud to the world frame
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
-      transformPointCloud(cloud, cloud_transformed, "world"); // @TODO: Parameterize the target frame
+      transformPointCloud(cloud, cloud_transformed, "world", link_name); // @TODO: Parameterize the target frame
 
       return cloud_transformed;
     } catch (const std::out_of_range &e) {
@@ -92,7 +116,7 @@ namespace LTM {
   }
 
   void RobotClusterRemoval::transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame) const
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame, const std::string &source_frame) const
   {
     // // Check if the transform is available
     // if (!m_tf_buffer->canTransform(target_frame, source_frame, rclcpp::Time(0))) {
@@ -101,7 +125,8 @@ namespace LTM {
     // }
 
     // Transform the point cloud
-    pcl_ros::transformPointCloud(target_frame, *cloud_input, *cloud_output, *m_tf_buffer);
+    // pcl_ros::transformPointCloud(target_frame, *cloud_input, *cloud_output, *m_tf_buffer);
+    pcl_ros::transformPointCloud(target_frame, rclcpp::Time(0), *cloud_input, source_frame, *cloud_output, *m_tf_buffer);
 
     // Set the frame ID
     cloud_output->header.frame_id = target_frame;
@@ -168,7 +193,7 @@ namespace LTM {
 
       // Load the mesh
       Assimp::Importer importer;
-      const aiScene *scene = importer.ReadFile(mesh_file_path, aiProcess_Triangulate);
+      const aiScene *scene = importer.ReadFile(mesh_file_path, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 
       // Check if the mesh was loaded
       if (!scene || scene->mNumMeshes == 0) {
@@ -192,7 +217,34 @@ namespace LTM {
       uniform_sampling.setInputCloud(cloud_original);
       uniform_sampling.filter(*cloud_sampled);
 
-      // TODO: Determine if the pointcloud are needed to rotate.
+      // // Recursively transform the orientation of this mesh according to parent link
+      // auto parent_link = link.second->getParent();
+      // while (parent_link->name != "base") {
+      //   // Get the parent link name
+      //   const std::string parent_link_name = parent_link->name;
+      //   std::cout << "Parent : " << parent_link_name <<std::endl;
+
+      //   // Get the parent link pose using joint origin and axis
+      //   // TODO: Get joint by parent
+      //   // urdf::JointSharedPtr joint = m_robot_model.joints_.at(parent_link_name);
+      //   const auto joint = m_robot_model.joints_.
+      //   tf2::Transform parent_link_pose;
+      //   parent_link_pose.setOrigin(tf2::Vector3(joint->parent_to_joint_origin_transform.position.x,
+      //     joint->parent_to_joint_origin_transform.position.y, joint->parent_to_joint_origin_transform.position.z));
+      //   parent_link_pose.setRotation(tf2::Quaternion(joint->parent_to_joint_origin_transform.rotation.x,
+      //     joint->parent_to_joint_origin_transform.rotation.y, joint->parent_to_joint_origin_transform.rotation.z,
+      //     joint->parent_to_joint_origin_transform.rotation.w));
+
+      //   // Transform the point cloud
+      //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
+      //   pcl_ros::transformPointCloud(*cloud_sampled, *cloud_transformed, parent_link_pose);
+
+      //   // Update the point cloud
+      //   *cloud_sampled = *cloud_transformed;
+
+      //   // Get the parent link of the parent link
+      //   parent_link = parent_link->getParent();
+      // }
 
       // Add the mesh point cloud to the map
       m_robot_meshes[link.first] = cloud_sampled;
