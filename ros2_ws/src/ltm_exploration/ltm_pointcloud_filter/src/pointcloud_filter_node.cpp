@@ -259,17 +259,17 @@ void PointCloudFilterNode::initializeRobotClusterRemoval()
   // Initialize the RobotClusterRemoval object
   m_robot_cluster_removal = std::make_unique<LTM::RobotClusterRemoval>(this->get_clock());
 
-  // Declare parameters for the RobotClusterRemoval object
-  declare_parameter("robot_cluster_removal.robot_description.package_name", "ltm_go2_description");
-  declare_parameter("robot_cluster_removal.robot_description.directory_name", "urdf");
-  declare_parameter("robot_cluster_removal.robot_description.file_name", "go2_description.urdf");
+  // Set the robot mesh resolution
   declare_parameter("robot_cluster_removal.robot_mesh_resolution", 0.01);
 
-  // Set the robot mesh resolution
   m_robot_cluster_removal->setRobotMeshResolution(
     this->get_parameter("robot_cluster_removal.robot_mesh_resolution").as_double());
 
   // Set the robot model from the URDF
+  declare_parameter("robot_cluster_removal.robot_description.package_name", "ltm_go2_description");
+  declare_parameter("robot_cluster_removal.robot_description.directory_name", "urdf");
+  declare_parameter("robot_cluster_removal.robot_description.file_name", "go2_description.urdf");
+
   std::string urdf_package_name = this->get_parameter("robot_cluster_removal.robot_description.package_name").as_string();
   std::string urdf_directory_name = this->get_parameter("robot_cluster_removal.robot_description.directory_name").as_string();
   std::string urdf_file_name = this->get_parameter("robot_cluster_removal.robot_description.file_name").as_string();
@@ -285,6 +285,22 @@ void PointCloudFilterNode::initializeRobotClusterRemoval()
   } else {
     RCLCPP_INFO(this->get_logger(), "Robot model set from URDF file: %s", urdf_filepath.c_str());
   }
+
+  // Set the robot crop box
+  declare_parameter("robot_cluster_removal.robot_crop_box.x_min", -1.0);
+  declare_parameter("robot_cluster_removal.robot_crop_box.x_max", 1.0);
+  declare_parameter("robot_cluster_removal.robot_crop_box.y_min", -1.0);
+  declare_parameter("robot_cluster_removal.robot_crop_box.y_max", 1.0);
+  declare_parameter("robot_cluster_removal.robot_crop_box.z_min", -1.0);
+  declare_parameter("robot_cluster_removal.robot_crop_box.z_max", 1.0);
+
+  double x_min = this->get_parameter("robot_cluster_removal.robot_crop_box.x_min").as_double();
+  double x_max = this->get_parameter("robot_cluster_removal.robot_crop_box.x_max").as_double();
+  double y_min = this->get_parameter("robot_cluster_removal.robot_crop_box.y_min").as_double();
+  double y_max = this->get_parameter("robot_cluster_removal.robot_crop_box.y_max").as_double();
+  double z_min = this->get_parameter("robot_cluster_removal.robot_crop_box.z_min").as_double();
+  double z_max = this->get_parameter("robot_cluster_removal.robot_crop_box.z_max").as_double();
+  m_robot_cluster_removal->setRobotCropBox(x_min, x_max, y_min, y_max, z_min, z_max);
 
   RCLCPP_INFO(this->get_logger(), "Robot cluster removal configured.");
 }

@@ -10,7 +10,6 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include <pcl/filters/crop_box.h>
 #include <pcl/filters/uniform_sampling.h>
 #include <urdf_parser/urdf_parser.h>
 #include <pcl_ros/transforms.hpp>
@@ -28,17 +27,6 @@ namespace LTM {
     initializeTransformListener(clock);
   }
 
-  bool RobotClusterRemoval::setRobotModel(const std::string &robot_description)
-  {
-    // Load the robot model from the URDF if it exists
-    if (!m_robot_model.initFile(robot_description)) {
-      std::cout << "Failed to load the robot model from URDF file." << std::endl;
-      return false;
-    }
-    generateRobotMeshes();
-    return true;
-  }
-
   RobotClusterRemoval::~RobotClusterRemoval()
   {
     // Reset the robot model
@@ -51,7 +39,7 @@ namespace LTM {
   }
 
   void RobotClusterRemoval::removeRobotCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output)
   {
     // *cloud_output = *cloud_input;
 
@@ -74,24 +62,35 @@ namespace LTM {
 
     // // Remove points that are 30cm wide, 80cm long, and 30cm high around the base origin
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-    Eigen::Vector4f min_point(-0.45, -0.5, -1.0, 1.0);
-    Eigen::Vector4f max_point(0.45, 0.5, 0.0, 1.0);
-
-    // Remove points that are within the box
-    pcl::CropBox<pcl::PointXYZ> crop_box;
-    crop_box.setInputCloud(cloud_transformed);
-    crop_box.setMin(min_point);
-    crop_box.setMax(max_point);
-    crop_box.setNegative(true);
-    crop_box.filter(*cloud_filtered);
+    cropPointCloud(cloud_transformed, cloud_filtered);
 
     // Transform the point cloud back to the world frame
     transformPointCloud(cloud_filtered, cloud_output, cloud_input->header.frame_id, "base");
   }
 
+  bool RobotClusterRemoval::setRobotModel(const std::string &robot_description)
+  {
+    // Load the robot model from the URDF if it exists
+    if (!m_robot_model.initFile(robot_description)) {
+      std::cout << "Failed to load the robot model from URDF file." << std::endl;
+      return false;
+    }
+    generateRobotMeshes();
+    return true;
+  }
+
   void RobotClusterRemoval::setRobotMeshResolution(const double& resolution)
   {
     m_robot_mesh_resolution = resolution;
+  }
+
+  void RobotClusterRemoval::setRobotCropBox(const double& x_min, const double& x_max, 
+    const double& y_min, const double& y_max, const double& z_min, const double& z_max)
+  {
+    // Set the crop box parameters
+    m_crop_box.setMin(Eigen::Vector4f(x_min, y_min, z_min, 1.0));
+    m_crop_box.setMax(Eigen::Vector4f(x_max, y_max, z_max, 1.0));
+    m_crop_box.setNegative(true);
   }
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr RobotClusterRemoval::getRobotMesh(
@@ -115,14 +114,14 @@ namespace LTM {
     }
   }
 
-  void RobotClusterRemoval::transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame, const std::string &source_frame) const
+  void RobotClusterRemoval::cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output)
   {
-    // Transform the point cloud from the source frame to the target frame
-    pcl_ros::transformPointCloud(target_frame, rclcpp::Time(0), *cloud_input, source_frame, *cloud_output, *m_tf_buffer);
+    // Set the input cloud
+    m_crop_box.setInputCloud(cloud_input);
 
-    // Set the frame ID
-    cloud_output->header.frame_id = target_frame;
+    // Filter the point cloud
+    m_crop_box.filter(*cloud_output);
   }
 
   void RobotClusterRemoval::drawRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
@@ -265,6 +264,16 @@ namespace LTM {
     const std::string relative_path = mesh_path.substr(pos);
 
     return ament_index_cpp::get_package_share_directory(package_name) + relative_path;
+  }
+
+void RobotClusterRemoval::transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame, const std::string &source_frame) const
+  {
+    // Transform the point cloud from the source frame to the target frame
+    pcl_ros::transformPointCloud(target_frame, rclcpp::Time(0), *cloud_input, source_frame, *cloud_output, *m_tf_buffer);
+
+    // Set the frame ID
+    cloud_output->header.frame_id = target_frame;
   }
 
   void RobotClusterRemoval::initializeTransformListener(const rclcpp::Clock::SharedPtr clock)

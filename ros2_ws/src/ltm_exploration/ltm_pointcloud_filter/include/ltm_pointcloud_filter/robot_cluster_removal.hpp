@@ -15,6 +15,7 @@
 #include <pcl/common/centroid.h>
 #include <pcl/common/common.h>
 #include <pcl/common/transforms.h>
+#include <pcl/filters/crop_box.h>
 
 #include <urdf/model.h>
 #include <tf2_ros/transform_listener.h>
@@ -32,24 +33,29 @@ namespace LTM {
       ~RobotClusterRemoval();
 
       void removeRobotCluster(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const;
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output);
 
       bool setRobotModel(const std::string &robot_description);
       void setRobotMeshResolution(const double& resolution);
+      void setRobotCropBox(const double& x_min, const double& x_max, const double& y_min, 
+        const double& y_max, const double& z_min, const double& z_max);
 
       pcl::PointCloud<pcl::PointXYZ>::Ptr getRobotMesh(const std::string &link_name) const;
       
     private:
-      void transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame,
-        const std::string &source_frame) const;
+      void cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output);
+
       void drawRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const;
       void clusterRobotMeshes(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output) const;
       void generateRobotMeshes();
-
       std::string resolveMeshPath(const std::string &mesh_path_uri) const;
+
+      void transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string &target_frame,
+        const std::string &source_frame) const;
       void initializeTransformListener(const rclcpp::Clock::SharedPtr clock);
       void setClock(const rclcpp::Clock::SharedPtr clock);
 
@@ -60,6 +66,8 @@ namespace LTM {
 
       ClusterMeshMap m_robot_meshes;
       double m_robot_mesh_resolution;
+
+      pcl::CropBox<pcl::PointXYZ> m_crop_box;
 
   }; // class RobotClusterRemoval
 } // namespace LTMPointcloudFilterNode

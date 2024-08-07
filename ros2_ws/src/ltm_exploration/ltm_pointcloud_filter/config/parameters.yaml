@@ -34,3 +34,12 @@ pointcloud_filter_node:
       mesh_resolution: 0.1
       robot_frame: "base"
       target_frame: "world"
+      crop_box: # meters, in robot frame
+        min:
+          x: -0.8
+          y: -0.5
+          z: -1.0
+        max:
+          x: 0.8
+          y: 0.5
+          z: 0.5
