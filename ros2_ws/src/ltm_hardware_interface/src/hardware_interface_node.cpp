@@ -26,8 +26,8 @@ HardwareInterfaceNode::HardwareInterfaceNode()
     "sportmodestate", 10, std::bind(&HardwareInterfaceNode::sportModeStateCallback, this, std::placeholders::_1));
   m_point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
     "utlidar/cloud", 10, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
-  m_front_video_sub = this->create_subscription<sensor_msgs::msg::Image>(
-    "front_camera/image_raw", 10, std::bind(&HardwareInterfaceNode::frontVideoCallback, this, std::placeholders::_1));
+  m_front_video_sub = this->create_subscription<unitree_go::msg::Go2FrontVideoData>(
+    "frontvideostream", 10, std::bind(&HardwareInterfaceNode::frontVideoCallback, this, std::placeholders::_1));
 
   // Create publishers
   m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
@@ -72,6 +72,7 @@ void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::Sh
 void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
 {
   // Update the odometry transform from base to world
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/sportmodestate message received!");
   m_odom_processing->updateOdom(msg->position, msg->imu_state.quaternion);
   m_tf_broadcaster->sendTransform(*(m_odom_processing->getOdomMsg()));
 }
@@ -79,6 +80,7 @@ void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportM
 void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
   // Change the frame_id of the point cloud message to "radar"
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/utlidar/cloud message received!");
   sensor_msgs::msg::PointCloud2 point_cloud_msg = *msg;
   point_cloud_msg.header.frame_id = "radar";
   m_point_cloud_pub->publish(point_cloud_msg);
@@ -86,6 +88,9 @@ void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointClou
 
 void HardwareInterfaceNode::frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg)
 {
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/frontvideostream message received!");
+
+
   // Publish the front camera video messages in 180p, 360p, and 720p
   m_front_camera_processing->updateFrontCameraMsgs(msg, this->now());
 

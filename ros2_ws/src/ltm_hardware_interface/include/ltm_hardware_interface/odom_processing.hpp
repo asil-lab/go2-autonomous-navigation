@@ -37,7 +37,7 @@ namespace LTM
       void initializeOdomTransformMsg();
 
       enum class TranslationIdx { X = 0, Y = 1, Z = 2 };
-      enum class OrientationIdx { X = 0, Y = 1, Z = 2, W = 3 };
+      enum class OrientationIdx { X = 1, Y = 2, Z = 3, W = 0 };
 
       rclcpp::Node::SharedPtr m_node;
       geometry_msgs::msg::TransformStamped::SharedPtr m_odom_msg;

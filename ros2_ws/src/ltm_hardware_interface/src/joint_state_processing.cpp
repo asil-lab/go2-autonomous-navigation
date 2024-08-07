@@ -23,6 +23,7 @@ JointStateProcessing::~JointStateProcessing()
 void JointStateProcessing::updateJointStateMsg(
   const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state)
 {
+  m_joint_state_msg->header.stamp = rclcpp::Clock().now();
   for (unsigned long int i = 0; i < m_joint_idx.size(); i++)
   {
     m_joint_state_msg->position[i] = motor_state[m_joint_idx[i]].q;
