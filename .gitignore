@@ -1,6 +1,7 @@
 # VSCode
 .vscode/
 temp
+*.pyc
 
 # ROS1 workspace
 .catkin_tools

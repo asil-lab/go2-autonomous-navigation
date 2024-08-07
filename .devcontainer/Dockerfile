@@ -40,48 +40,21 @@ RUN apt-get install -y \
     ros-noetic-controller-interface  ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller \
     ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller ros-noetic-xacro \
     ros-noetic-robot-state-publisher ros-noetic-joint-state-publisher ros-noetic-joint-state-publisher-gui \
-    ros-noetic-rviz
+    ros-noetic-rviz ros-noetic-velodyne-gazebo-plugins
 
-# Install ROS2 Foxy
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-RUN "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | \
-    tee /etc/apt/sources.list.d/ros2.list > /dev/null
-RUN apt-get update && apt-get upgrade -y && apt-get install -y ros-foxy-desktop python3-argcomplete
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ROS2 Foxy dependencies
-RUN apt-get update && apt-get install -y python3-argcomplete ros-dev-tools
-
-# Install Unitree ROS2 dependencies
-RUN apt-get update && apt-get install -y ros-foxy-rmw-cyclonedds-cpp ros-foxy-rosidl-generator-dds-idl
-
-# Install Go2 dependencies
-RUN apt-get update && apt-get install -y nlohmann-json3-dev
+RUN apt-get update && apt-get install -y python3-argcomplete ros-dev-tools ros-foxy-rclcpp ros-foxy-rviz2
+RUN apt-get update && apt-get install -y ros-foxy-sensor-msgs ros-foxy-geometry-msgs ros-foxy-std-msgs ros-foxy-visualization-msgs ros-foxy-vision-msgs
+RUN apt-get update && apt-get install -y ros-foxy-tf2 ros-foxy-tf2-ros ros-foxy-tf2-sensor-msgs ros-foxy-tf2-py \
+    ros-foxy-tf2-msgs ros-foxy-tf2-eigen ros-foxy-tf2-geometry-msgs ros-foxy-tf2-tools
 
 # Install PCL, Eigen3, and OpenCV
-RUN apt-get update && apt-get install -y libpcl-dev libeigen3-dev libopencv-dev
-RUN apt-get update && apt-get install -y ros-foxy-pcl-conversions ros-foxy-pcl-msgs ros-foxy-pcl-ros
+RUN apt-get install -y libpcl-dev libeigen3-dev libopencv-dev assimp-utils
+RUN apt-get install -y ros-foxy-pcl-conversions ros-foxy-pcl-msgs ros-foxy-pcl-ros
 
-# # Clone the ros1_bridge repository
-# RUN cd /root/ros1_bridge_ws/src && \
-#     git clone https://github.com/ros2/ros1_bridge.git
-
-# # Install dependencies and build ros1_bridge
-# RUN cd /root/ros1_bridge_ws && \
-#     rosdep install --from-paths src --ignore-src --rosdistro foxy -y && \
-#     colcon build --symlink-install --packages-select ros1_bridge
-
-# # Source setup files and setup environment
-# RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc && \
-#     echo "source /opt/ros/foxy/setup.bash" >> /root/.bashrc && \
-#     echo "source /root/ros1_bridge_ws/install/local_setup.bash" >> /root/.bashrc
-
-# # initilize the catkin workspace
-# RUN catkin init
-# RUN catkin config --extend /opt/ros/noetic
-# RUN catkin config -DCMAKE_BUILD_TYPE=Release
-
-# Clean up
-RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV SHELL /bin/bash
 
