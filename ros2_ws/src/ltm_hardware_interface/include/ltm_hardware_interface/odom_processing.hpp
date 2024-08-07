@@ -12,7 +12,6 @@
 #include <string>
 
 #include <rclcpp/rclcpp.hpp>
-#include <tf2_ros/transform_broadcaster.h>
 
 // #define ODOM_FRAME_ID "odom"
 #define ODOM_FRAME_ID "world"
@@ -25,12 +24,12 @@ namespace LTM
   class OdomProcessing
   {
     public:
-      OdomProcessing(const rclcpp::Node::SharedPtr& node);
+      OdomProcessing();
       ~OdomProcessing();
 
       void updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
         const std::array<float, ORIENTATION_SIZE>& orientation);
-      void broadcastOdomTransform();
+      geometry_msgs::msg::TransformStamped::SharedPtr getOdomMsg() const;
 
     private:
       void updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation);
@@ -41,7 +40,6 @@ namespace LTM
       enum class OrientationIdx { X = 0, Y = 1, Z = 2, W = 3 };
 
       rclcpp::Node::SharedPtr m_node;
-      std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
       geometry_msgs::msg::TransformStamped::SharedPtr m_odom_msg;
 
   };  // class OdomProcessing

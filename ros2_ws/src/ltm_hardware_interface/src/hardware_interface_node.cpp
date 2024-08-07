@@ -14,7 +14,10 @@ HardwareInterfaceNode::HardwareInterfaceNode()
   // Initialize processing classes
   m_front_camera_processing = std::make_shared<FrontCameraProcessing>();
   m_joint_state_processing = std::make_shared<JointStateProcessing>();
-  m_odom_processing = std::make_shared<OdomProcessing>(this->shared_from_this());
+  m_odom_processing = std::make_shared<OdomProcessing>();
+
+  // Initialize the transform broadcaster
+  m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
   // Create subscriptions
   m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
@@ -62,15 +65,15 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/lowstate message received!");
-  updateJointStateMsg(msg->motor_state);
-  publishJointState();
+  m_joint_state_processing->updateJointStateMsg(msg->motor_state);
+  m_joint_state_pub->publish(*(m_joint_state_processing->getJointStateMsg()));
 }
 
 void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
 {
   // Update the odometry transform from base to world
   m_odom_processing->updateOdom(msg->position, msg->imu_state.quaternion);
-  m_odom_processing->broadcastOdomTransform();
+  m_tf_broadcaster->sendTransform(*(m_odom_processing->getOdomMsg()));
 }
 
 void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)

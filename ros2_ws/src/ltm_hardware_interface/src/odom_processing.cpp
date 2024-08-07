@@ -8,22 +8,20 @@
 
 using namespace LTM;
 
-OdomProcessing::OdomProcessing(const rclcpp::Node::SharedPtr& node)
+OdomProcessing::OdomProcessing()
 {
-  m_node = node;
-  m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
   initializeOdomTransformMsg();
 }
 
 OdomProcessing::~OdomProcessing()
 {
-  m_tf_broadcaster.reset();
   m_odom_msg.reset();
 }
 
 void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
   const std::array<float, ORIENTATION_SIZE>& orientation)
 {
+  m_odom_msg->header.stamp = rclcpp::Clock().now();
   updateOdomTranslation(translation);
   updateOdomOrientation(orientation);
 }
@@ -43,10 +41,9 @@ void OdomProcessing::updateOdomOrientation(const std::array<float, ORIENTATION_S
   m_odom_msg->transform.rotation.w = orientation[static_cast<int>(OrientationIdx::W)];
 }
 
-void OdomProcessing::broadcastOdomTransform()
+geometry_msgs::msg::TransformStamped::SharedPtr OdomProcessing::getOdomMsg() const
 {
-  m_odom_msg->header.stamp = m_node->now();
-  m_tf_broadcaster->sendTransform(*m_odom_msg);
+  return m_odom_msg;
 }
 
 void OdomProcessing::initializeOdomTransformMsg()

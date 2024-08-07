@@ -44,6 +44,8 @@ namespace LTM
     std::shared_ptr<JointStateProcessing> m_joint_state_processing;
     std::shared_ptr<OdomProcessing> m_odom_processing;
 
+    std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
+
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
     rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_sub;
