@@ -61,9 +61,9 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 
 void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
-  // Update the joint state message from the motor state
-  m_joint_state_processing->updateJointStateMsg(msg->motor_state);
-  m_joint_state_pub->publish(*(m_joint_state_processing->getJointStateMsg()));
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/lowstate message received!");
+  updateJointStateMsg(msg->motor_state);
+  publishJointState();
 }
 
 void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)

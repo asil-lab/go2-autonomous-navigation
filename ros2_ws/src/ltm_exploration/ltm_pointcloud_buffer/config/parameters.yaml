@@ -1,0 +1,8 @@
+pointcloud_buffer_node:
+  ros__parameters:
+    buffer_time: 1.0 # time unit in seconds
+    source_frame: "radar"
+    target_frame: "world"
+    topics:
+      raw_pointcloud_topic: "/point_cloud/raw"
+      buffered_pointcloud_topic: "/point_cloud/buffer"
