@@ -26,6 +26,13 @@ void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& trans
   updateOdomOrientation(orientation);
 }
 
+void OdomProcessing::updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr pose_stamped)
+{
+  m_odom_msg->header.stamp = pose_stamped->header.stamp;
+  updateOdomTranslation(pose_stamped->pose.position);
+  updateOdomOrientation(pose_stamped->pose.orientation);
+}
+
 void OdomProcessing::updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation)
 {
   m_odom_msg->transform.translation.x = translation[static_cast<int>(TranslationIdx::X)];
@@ -33,12 +40,24 @@ void OdomProcessing::updateOdomTranslation(const std::array<float, TRANSLATION_S
   m_odom_msg->transform.translation.z = translation[static_cast<int>(TranslationIdx::Z)];
 }
 
-void OdomProcessing::updateOdomOrientation(const std::array<float, ORIENTATION_SIZE>& orientation)
+void OdomProcessing::updateOdomOrientation(const std::array<float, ORIENTATION_SIZE>& rotation)
 {
-  m_odom_msg->transform.rotation.x = orientation[static_cast<int>(OrientationIdx::X)];
-  m_odom_msg->transform.rotation.y = orientation[static_cast<int>(OrientationIdx::Y)];
-  m_odom_msg->transform.rotation.z = orientation[static_cast<int>(OrientationIdx::Z)];
-  m_odom_msg->transform.rotation.w = orientation[static_cast<int>(OrientationIdx::W)];
+  m_odom_msg->transform.rotation.x = rotation[static_cast<int>(OrientationIdx::X)];
+  m_odom_msg->transform.rotation.y = rotation[static_cast<int>(OrientationIdx::Y)];
+  m_odom_msg->transform.rotation.z = rotation[static_cast<int>(OrientationIdx::Z)];
+  m_odom_msg->transform.rotation.w = rotation[static_cast<int>(OrientationIdx::W)];
+}
+
+void OdomProcessing::updateOdomTranslation(const geometry_msgs::msg::Point& translation)
+{
+  m_odom_msg->transform.translation.x = translation.x;
+  m_odom_msg->transform.translation.y = translation.y;
+  m_odom_msg->transform.translation.z = translation.z;
+}
+
+void OdomProcessing::updateOdomOrientation(const geometry_msgs::msg::Quaternion& rotation)
+{
+  m_odom_msg->transform.rotation = rotation;
 }
 
 geometry_msgs::msg::TransformStamped::SharedPtr OdomProcessing::getOdomMsg() const

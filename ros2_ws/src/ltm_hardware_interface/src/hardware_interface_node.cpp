@@ -22,12 +22,14 @@ HardwareInterfaceNode::HardwareInterfaceNode()
   // Create subscriptions
   m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
     "lowstate", 10, std::bind(&HardwareInterfaceNode::lowStateCallback, this, std::placeholders::_1));
-  m_sport_mode_state_sub = this->create_subscription<unitree_go::msg::SportModeState>(
-    "sportmodestate", 10, std::bind(&HardwareInterfaceNode::sportModeStateCallback, this, std::placeholders::_1));
-  m_point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    "utlidar/cloud", 10, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
+  // m_sport_mode_state_sub = this->create_subscription<unitree_go::msg::SportModeState>(
+  //   "sportmodestate", 10, std::bind(&HardwareInterfaceNode::sportModeStateCallback, this, std::placeholders::_1));
   m_front_video_sub = this->create_subscription<unitree_go::msg::Go2FrontVideoData>(
     "frontvideostream", 10, std::bind(&HardwareInterfaceNode::frontVideoCallback, this, std::placeholders::_1));
+  m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+    "utlidar/robot_pose", 10, std::bind(&HardwareInterfaceNode::robotPoseCallback, this, std::placeholders::_1));
+  m_point_cloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+    "utlidar/cloud", 10, std::bind(&HardwareInterfaceNode::pointCloudCallback, this, std::placeholders::_1));
 
   // Create publishers
   m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
@@ -77,15 +79,6 @@ void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportM
   m_tf_broadcaster->sendTransform(*(m_odom_processing->getOdomMsg()));
 }
 
-void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
-{
-  // Change the frame_id of the point cloud message to "radar"
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/utlidar/cloud message received!");
-  sensor_msgs::msg::PointCloud2 point_cloud_msg = *msg;
-  point_cloud_msg.header.frame_id = "radar";
-  m_point_cloud_pub->publish(point_cloud_msg);
-}
-
 void HardwareInterfaceNode::frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg)
 {
   RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/frontvideostream message received!");
@@ -97,6 +90,23 @@ void HardwareInterfaceNode::frontVideoCallback(const unitree_go::msg::Go2FrontVi
   m_front_video_180p_pub->publish(*(m_front_camera_processing->getFrontCamera180pMsg()));
   m_front_video_360p_pub->publish(*(m_front_camera_processing->getFrontCamera360pMsg()));
   m_front_video_720p_pub->publish(*(m_front_camera_processing->getFrontCamera720pMsg()));
+}
+
+void HardwareInterfaceNode::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
+  // Update the odometry transform from base to world
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/utlidar/cloud message received!");
+  m_odom_processing->updateOdom(msg);
+  m_tf_broadcaster->sendTransform(*(m_odom_processing->getOdomMsg()));
+}
+
+void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+{
+  // Change the frame_id of the point cloud message to "radar"
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/utlidar/cloud message received!");
+  sensor_msgs::msg::PointCloud2 point_cloud_msg = *msg;
+  point_cloud_msg.header.frame_id = "radar";
+  m_point_cloud_pub->publish(point_cloud_msg);
 }
 
 int main(int argc, char * argv[])

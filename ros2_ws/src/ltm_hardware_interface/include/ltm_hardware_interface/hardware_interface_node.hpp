@@ -9,6 +9,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -37,8 +38,9 @@ namespace LTM
   private:
     void lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg);
     void sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg);
-    void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg);
+    void robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
     std::shared_ptr<FrontCameraProcessing> m_front_camera_processing;
     std::shared_ptr<JointStateProcessing> m_joint_state_processing;
@@ -48,8 +50,9 @@ namespace LTM
 
     rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
     rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_sub;
     rclcpp::Subscription<unitree_go::msg::Go2FrontVideoData>::SharedPtr m_front_video_sub;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr m_robot_pose_sub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_sub;
 
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr m_joint_state_pub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_point_cloud_pub;

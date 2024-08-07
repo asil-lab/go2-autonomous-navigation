@@ -27,6 +27,7 @@ void FrontCameraProcessing::updateFrontCameraMsgs(const unitree_go::msg::Go2Fron
   // Front camera 180p
   m_front_camera_180p_msg->header.stamp = timestamp;
   m_front_camera_180p_msg->data = msg->video180p;
+  std::cout << msg->video180p.size() << std::endl;
 
   // Front camera 360p
   m_front_camera_360p_msg->header.stamp = timestamp;

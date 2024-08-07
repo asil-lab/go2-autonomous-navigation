@@ -7,6 +7,9 @@
 #ifndef LTM_HARDWARE_INTERFACE__ODOM_PROCESSING_HPP_
 #define LTM_HARDWARE_INTERFACE__ODOM_PROCESSING_HPP_
 
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
 #include <string>
@@ -29,11 +32,17 @@ namespace LTM
 
       void updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
         const std::array<float, ORIENTATION_SIZE>& orientation);
+      void updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr pose_stamped);
+
       geometry_msgs::msg::TransformStamped::SharedPtr getOdomMsg() const;
 
     private:
       void updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation);
-      void updateOdomOrientation(const std::array<float, ORIENTATION_SIZE>& orientation);
+      void updateOdomOrientation(const std::array<float, ORIENTATION_SIZE>& rotation);
+
+      void updateOdomTranslation(const geometry_msgs::msg::Point& translation);
+      void updateOdomOrientation(const geometry_msgs::msg::Quaternion& rotation);
+
       void initializeOdomTransformMsg();
 
       enum class TranslationIdx { X = 0, Y = 1, Z = 2 };
