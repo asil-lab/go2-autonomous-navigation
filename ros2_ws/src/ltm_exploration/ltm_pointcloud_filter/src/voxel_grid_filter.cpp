@@ -18,16 +18,13 @@ VoxelGridFilter::VoxelGridFilter()
 void VoxelGridFilter::filter(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output)
 {
-  pcl::VoxelGrid<pcl::PointXYZ> m_voxel_grid_filter;
   m_voxel_grid_filter.setInputCloud(cloud_input);
   m_voxel_grid_filter.filter(*cloud_output);
 }
 
 void VoxelGridFilter::setLeafSize(const double& x, const double& y, const double& z)
 {
-  m_leaf_size_x = x;
-  m_leaf_size_y = y;
-  m_leaf_size_z = z;
+  m_voxel_grid_filter.setLeafSize(x, y, z);
 }
 
 // End of file: ltm_pointcloud_filter/src/voxel_grid_filter.cpp

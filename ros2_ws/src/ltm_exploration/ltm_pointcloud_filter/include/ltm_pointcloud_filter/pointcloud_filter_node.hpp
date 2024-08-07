@@ -30,7 +30,7 @@
 
 #include <string>
 
-#include <ltm_pointcloud_filter/ground_plane_removal.hpp>
+#include <ltm_pointcloud_filter/ground_plane_segmentation.hpp>
 #include <ltm_pointcloud_filter/robot_cluster_removal.hpp>
 #include <ltm_pointcloud_filter/voxel_grid_filter.hpp>
 
@@ -55,7 +55,7 @@ namespace LTM // TODO: Change this to LTM
     sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const;
 
-    void initializeGroundPlaneRemoval();
+    void initializeGroundPlaneSegmentation();
     void initializeRobotClusterRemoval();
     void initializeVoxelGridFilter();
 
@@ -66,7 +66,7 @@ namespace LTM // TODO: Change this to LTM
 
     double m_voxel_grid_leaf_size;
 
-    std::unique_ptr<LTM::GroundPlaneRemoval> m_ground_plane_removal;
+    std::unique_ptr<LTM::GroundPlaneSegmentation> m_ground_plane_segmentation;
     std::unique_ptr<LTM::RobotClusterRemoval> m_robot_cluster_removal;
     std::unique_ptr<LTM::VoxelGridFilter> m_voxel_grid_filter;
 

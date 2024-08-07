@@ -26,9 +26,7 @@ namespace LTM {
       void setLeafSize(const double& x, const double& y, const double& z);
 
     private:
-      double m_leaf_size_x;
-      double m_leaf_size_y;
-      double m_leaf_size_z;
+      pcl::VoxelGrid<pcl::PointXYZ> m_voxel_grid_filter;
 
   }; // class VoxelGridFilter
 } // namespace LTM

@@ -4,8 +4,8 @@
  * Date: 31-07-2024.
  */
 
-#ifndef LTM_POINTCLOUD_FILTER__GROUND_PLANE_REMOVAL_HPP_
-#define LTM_POINTCLOUD_FILTER__GROUND_PLANE_REMOVAL_HPP_
+#ifndef LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_HPP_
+#define LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_HPP_
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
@@ -15,11 +15,11 @@
 
 namespace LTM
 {
-  class GroundPlaneRemoval
+  class GroundPlaneSegmentation
   {
   public:
-    GroundPlaneRemoval();
-    ~GroundPlaneRemoval();
+    GroundPlaneSegmentation();
+    ~GroundPlaneSegmentation();
 
     bool segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
       pcl::PointIndices::Ptr inliers, pcl::ModelCoefficients::Ptr coefficients) const;
@@ -33,7 +33,7 @@ namespace LTM
     std::unique_ptr<pcl::SACSegmentation<pcl::PointXYZ>> m_sac_segmentation;
     std::unique_ptr<pcl::ExtractIndices<pcl::PointXYZ>> m_extract_indices;
 
-  }; // class GroundPlaneRemoval
+  }; // class GroundPlaneSegmentation
 } // namespace LTMPointcloudFilter
 
-#endif // LTM_POINTCLOUD_FILTER__GROUND_PLANE_REMOVAL_HPP_
+#endif // LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_HPP_

@@ -4,7 +4,7 @@
  * Date: 30-07-2024.
  */
 
-#include "ltm_pointcloud_filter/ground_plane_removal.hpp"
+#include "ltm_pointcloud_filter/ground_plane_segmentation.hpp"
 
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
@@ -15,7 +15,7 @@
 
 namespace LTM
 {
-  GroundPlaneRemoval::GroundPlaneRemoval()
+  GroundPlaneSegmentation::GroundPlaneSegmentation()
   {
     // Set up the SACSegmentation object and the ExtractIndices object
     m_sac_segmentation = std::make_unique<pcl::SACSegmentation<pcl::PointXYZ>>();
@@ -37,14 +37,14 @@ namespace LTM
     m_sac_segmentation->setProbability(0.99);
   }
 
-  GroundPlaneRemoval::~GroundPlaneRemoval()
+  GroundPlaneSegmentation::~GroundPlaneSegmentation()
   {
     // Delete the pointers
     m_sac_segmentation.reset();
     m_extract_indices.reset();
   }
 
-  bool GroundPlaneRemoval::segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+  bool GroundPlaneSegmentation::segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
     pcl::PointIndices::Ptr inliers, pcl::ModelCoefficients::Ptr coefficients) const
   {
     // Perform the segmentation and store the inliers and coefficients
@@ -55,7 +55,7 @@ namespace LTM
     return !inliers->indices.empty();
   }
 
-  void GroundPlaneRemoval::removePlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+  void GroundPlaneSegmentation::removePlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered, pcl::PointIndices::Ptr inliers) const
   {
     // Extract the ground plane from the point cloud using the inliers
@@ -65,7 +65,7 @@ namespace LTM
     m_extract_indices->filter(*cloud_filtered);
   }
 
-  void GroundPlaneRemoval::configureSACSegmentationParameters(
+  void GroundPlaneSegmentation::configureSACSegmentationParameters(
     const double& distance_threshold, int max_iterations, const double& probability)
   {
     m_sac_segmentation->setDistanceThreshold(distance_threshold);
@@ -73,3 +73,5 @@ namespace LTM
     m_sac_segmentation->setProbability(probability);
   }
 } // namespace LTMPointcloudFilter
+
+// End of file: ltm_pointcloud_filter/ground_plane_segmentation.cpp

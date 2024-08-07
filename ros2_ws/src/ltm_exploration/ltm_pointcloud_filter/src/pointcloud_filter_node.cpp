@@ -37,8 +37,9 @@ PointCloudFilterNode::PointCloudFilterNode()
   bool in_simulation = this->get_parameter("in_simulation").as_bool();
 
   // Initialize filtering objects
-  initializeGroundPlaneRemoval();
+  initializeGroundPlaneSegmentation();
   initializeRobotClusterRemoval();
+  initializeVoxelGridFilter();
 
   // Configure ROS subscribers and publishers
   configureRosSubscribers(in_simulation);
@@ -70,13 +71,13 @@ PointCloudFilterNode::~PointCloudFilterNode()
 //   pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 //   pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
-//   if (!m_ground_plane_removal->segmentPlane(cloud_downsampled, inliers, coefficients)) {
+//   if (!m_ground_plane_segmentation->segmentPlane(cloud_downsampled, inliers, coefficients)) {
 //     RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model for the given dataset.");
 //     return;
 //   }
 
 //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
-//   m_ground_plane_removal->removePlane(cloud_downsampled, cloud_plane_removed, inliers);
+//   m_ground_plane_segmentation->removePlane(cloud_downsampled, cloud_plane_removed, inliers);
 
 //   // // Create the KdTree object for the search method of the extraction
 //   // pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
@@ -173,11 +174,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
 
   // Downsample the pointcloud using leaf size
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
-  // m_voxel_grid_filter->filter(cloud, cloud_downsampled); // Why isn't this working?
-  pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
-  voxel_grid.setInputCloud(cloud_input);
-  voxel_grid.setLeafSize(0.1, 0.1, 0.1);
-  voxel_grid.filter(*cloud_downsampled);
+  m_voxel_grid_filter->filter(cloud_input, cloud_downsampled);
 
   // Remove the ground plane from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
@@ -209,11 +206,11 @@ void PointCloudFilterNode::removeGroundPlane(const pcl::PointCloud<pcl::PointXYZ
 {
   pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
   pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-  if (!m_ground_plane_removal->segmentPlane(cloud_input, inliers, coefficients)) {
+  if (!m_ground_plane_segmentation->segmentPlane(cloud_input, inliers, coefficients)) {
     RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model from input pointcloud.");
     return; // TODO: Return buffer instead?
   }
-  m_ground_plane_removal->removePlane(cloud_input, cloud_filtered, inliers);
+  m_ground_plane_segmentation->removePlane(cloud_input, cloud_filtered, inliers);
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudFilterNode::convertPointCloud2ToPCL(
@@ -232,12 +229,12 @@ sensor_msgs::msg::PointCloud2::SharedPtr PointCloudFilterNode::convertPCLToPoint
   return msg;
 }
 
-void PointCloudFilterNode::initializeGroundPlaneRemoval()
+void PointCloudFilterNode::initializeGroundPlaneSegmentation()
 {
-  // Initialize the GroundPlaneRemoval object
-  m_ground_plane_removal = std::make_unique<LTM::GroundPlaneRemoval>();
+  // Initialize the GroundPlaneSegmentation object
+  m_ground_plane_segmentation = std::make_unique<LTM::GroundPlaneSegmentation>();
 
-  // Declare parameters for the GroundPlaneRemoval object
+  // Declare parameters for the GroundPlaneSegmentation object
   declare_parameter("ground_plane_removal.sac_segmentation.distance_threshold", 0.01);
   declare_parameter("ground_plane_removal.sac_segmentation.max_iterations", 1000);
   declare_parameter("ground_plane_removal.sac_segmentation.probability", 0.99);
@@ -247,7 +244,7 @@ void PointCloudFilterNode::initializeGroundPlaneRemoval()
   int sac_segmentation_max_iterations = this->get_parameter("ground_plane_removal.sac_segmentation.max_iterations").as_int();
   double sac_segmentation_probability = this->get_parameter("ground_plane_removal.sac_segmentation.probability").as_double();
 
-  m_ground_plane_removal->configureSACSegmentationParameters(
+  m_ground_plane_segmentation->configureSACSegmentationParameters(
     sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
   RCLCPP_INFO(this->get_logger(), "Ground plane removal, SAC segmentation parameters configured: \n Distance threshold: %f m\n Max iterations: %d\n Probability: %f",
     sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
