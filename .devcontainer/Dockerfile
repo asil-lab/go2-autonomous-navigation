@@ -54,6 +54,9 @@ RUN apt-get update && apt-get install -y ros-foxy-tf2 ros-foxy-tf2-ros ros-foxy-
 RUN apt-get install -y libpcl-dev libeigen3-dev libopencv-dev assimp-utils
 RUN apt-get install -y ros-foxy-pcl-conversions ros-foxy-pcl-msgs ros-foxy-pcl-ros
 
+# Install SLAM and Navigation packages
+RUN apt-get install -y ros-foxy-navigation2 ros-foxy-nav2-bringup ros-foxy-slam-toolbox
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV SHELL /bin/bash
