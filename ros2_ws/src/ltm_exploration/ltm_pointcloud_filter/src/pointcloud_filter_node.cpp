@@ -39,6 +39,7 @@ PointCloudFilterNode::PointCloudFilterNode()
   // Initialize filtering objects
   initializeGroundPlaneSegmentation();
   initializeRobotClusterRemoval();
+  initializeStatisticalOutlierRemoval();
   initializeVoxelGridFilter();
 
   // Configure ROS subscribers and publishers
@@ -173,22 +174,22 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   }
 
   // // Downsample the pointcloud using leaf size
-  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
-  // m_voxel_grid_filter->filter(cloud_input, cloud_downsampled);
-
-  // // Remove statistical outliers from the pointcloud
-  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_outliers_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  // m_statistical_outlier_removal->filter(cloud_downsampled, cloud_outliers_removed);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
+  m_voxel_grid_filter->filter(cloud_input, cloud_downsampled);
 
   // Remove the ground plane from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  removeGroundPlane(cloud_input, cloud_plane_removed);
+  removeGroundPlane(cloud_downsampled, cloud_plane_removed);
 
   // Remove the robot clusters from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_robot_removed(new pcl::PointCloud<pcl::PointXYZ>);
   m_robot_cluster_removal->removeRobotCluster(cloud_plane_removed, cloud_robot_removed);
 
-  publishFilteredPointCloud(cloud_robot_removed, msg->header.frame_id, msg->header.stamp);
+  // // Remove statistical outliers from the pointcloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_outliers_removed(new pcl::PointCloud<pcl::PointXYZ>);
+  m_statistical_outlier_removal->filter(cloud_robot_removed, cloud_outliers_removed);
+
+  publishFilteredPointCloud(cloud_outliers_removed, msg->header.frame_id, msg->header.stamp);
 }
 
 void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
