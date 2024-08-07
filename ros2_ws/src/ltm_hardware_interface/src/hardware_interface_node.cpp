@@ -69,7 +69,8 @@ void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::Sh
 void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
 {
   // Update the odometry transform from base to world
-  m_odom_processing->updateOdom(msg->position, msg->imu_state.quaternion);
+  m_odom_processing->updateOdomTranslation(msg->position);
+  m_odom_processing->updateOdomOrientation(msg->imu_state.quaternion);
   m_odom_processing->broadcastOdomTransform();
 }
 
