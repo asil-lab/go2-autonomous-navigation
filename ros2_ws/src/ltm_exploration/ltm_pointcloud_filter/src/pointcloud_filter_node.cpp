@@ -235,14 +235,14 @@ void PointCloudFilterNode::initializeGroundPlaneSegmentation()
   m_ground_plane_segmentation = std::make_unique<LTM::GroundPlaneSegmentation>();
 
   // Declare parameters for the GroundPlaneSegmentation object
-  declare_parameter("ground_plane_removal.sac_segmentation.distance_threshold", 0.01);
-  declare_parameter("ground_plane_removal.sac_segmentation.max_iterations", 1000);
-  declare_parameter("ground_plane_removal.sac_segmentation.probability", 0.99);
+  declare_parameter("ground_plane_segmentation.distance_threshold", 0.01);
+  declare_parameter("ground_plane_segmentation.max_iterations", 1000);
+  declare_parameter("ground_plane_segmentation.probability", 0.99);
 
   // Set the parameters for the SAC segmentation
-  double sac_segmentation_distance_threshold = this->get_parameter("ground_plane_removal.sac_segmentation.distance_threshold").as_double();
-  int sac_segmentation_max_iterations = this->get_parameter("ground_plane_removal.sac_segmentation.max_iterations").as_int();
-  double sac_segmentation_probability = this->get_parameter("ground_plane_removal.sac_segmentation.probability").as_double();
+  double sac_segmentation_distance_threshold = this->get_parameter("ground_plane_segmentation.distance_threshold").as_double();
+  int sac_segmentation_max_iterations = this->get_parameter("ground_plane_segmentation.max_iterations").as_int();
+  double sac_segmentation_probability = this->get_parameter("ground_plane_segmentation.probability").as_double();
 
   m_ground_plane_segmentation->configureSACSegmentationParameters(
     sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
