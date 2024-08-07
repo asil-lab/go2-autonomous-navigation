@@ -29,12 +29,12 @@ class KeyboardTeleopNode(Node):
         """
         self.get_logger().info(msg)
         
-        self.max_linear_x = 0.2
-        self.max_linear_y = 0.2
-        self.max_angular_z = 0.5
+        self.max_linear_x = 0.1
+        self.max_linear_y = 0.1
+        self.max_angular_z = 0.1
         
         self.controller_msg = WirelessController()
-        self.controller_pub = self.create_publisher(WirelessController, 'wireless_controller', 10)
+        self.controller_pub = self.create_publisher(WirelessController, 'wirelesscontroller', 10)
         
         self.get_logger().info('Keyboard Teleop Node has been initialized.')
 
@@ -60,17 +60,17 @@ class KeyboardTeleopNode(Node):
         while not self.done:
             self.get_key()
             if self.key == 'w':
-                self.controller_msg.lx = self.max_linear_x
+                self.controller_msg.ly = self.max_linear_x
             elif self.key == 's':
-                self.controller_msg.lx = -self.max_linear_x
+                self.controller_msg.ly = -self.max_linear_x
             elif self.key == 'a':
-                self.controller_msg.ly = self.max_linear_y
+                self.controller_msg.lx = -self.max_linear_y
             elif self.key == 'd':
-                self.controller_msg.ly = -self.max_linear_y
+                self.controller_msg.lx = self.max_linear_y
             elif self.key == 'q':
-                self.controller_msg.rx = self.max_angular_z
-            elif self.key == 'e':
                 self.controller_msg.rx = -self.max_angular_z
+            elif self.key == 'e':
+                self.controller_msg.rx = self.max_angular_z
             else:
                 self.reset_controller_msg()
             self.publish_controller_msg()
