@@ -32,6 +32,14 @@ class KeyboardTeleopNode(Node):
         self.max_linear_x = 0.1
         self.max_linear_y = 0.1
         self.max_angular_z = 0.1
+        self.key_mapping = {    # (lx, ly, rx, ry)
+            'a': (-self.max_linear_y, 0.0, 0.0, 0.0),
+            'd': (self.max_linear_y, 0.0, 0.0, 0.0),
+            'w': (0.0, self.max_linear_x, 0.0, 0.0),
+            's': (0.0, -self.max_linear_x, 0.0, 0.0),
+            'q': (0.0, 0.0, -self.max_angular_z, 0.0),
+            'e': (0.0, 0.0, self.max_angular_z, 0.0),
+        }
         
         self.controller_msg = WirelessController()
         self.controller_pub = self.create_publisher(WirelessController, 'wirelesscontroller', 10)
@@ -58,31 +66,24 @@ class KeyboardTeleopNode(Node):
         
     def run(self):
         while not self.done:
+            # Get the key
             self.get_key()
-            if self.key == 'w':
-                self.controller_msg.ly = self.max_linear_x
-            elif self.key == 's':
-                self.controller_msg.ly = -self.max_linear_x
-            elif self.key == 'a':
-                self.controller_msg.lx = -self.max_linear_y
-            elif self.key == 'd':
-                self.controller_msg.lx = self.max_linear_y
-            elif self.key == 'q':
-                self.controller_msg.rx = -self.max_angular_z
-            elif self.key == 'e':
-                self.controller_msg.rx = self.max_angular_z
+            
+            # Check if the key is in the key mapping
+            if self.key in self.key_mapping.keys():
+                lx, ly, rx, ry = self.key_mapping[self.key]
+                self.controller_msg.lx = lx
+                self.controller_msg.ly = ly
+                self.controller_msg.rx = rx
+                self.controller_msg.ry = ry
             else:
+                if self.key == '\x03':
+                    self.done = True
                 self.reset_controller_msg()
+                
+            # Publish the controller message
             self.publish_controller_msg()
-            
-            if self.key == '\x03':
-                self.done = True
-                self.reset_controller_msg()
-                self.publish_controller_msg()
-                self.get_logger().info('Exiting...')
-                break
-            
-            self.get_logger().info('Publishing Wireless Controller Message: {}'.format(self.controller_msg))
+            self.get_logger().info('Publishing Controller Message: {self.controller_msg}')
     
     def destroy_node(self):
         self.reset_controller_msg()
