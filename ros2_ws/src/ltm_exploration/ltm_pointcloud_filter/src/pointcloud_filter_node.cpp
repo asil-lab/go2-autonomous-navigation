@@ -176,9 +176,13 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
   m_voxel_grid_filter->filter(cloud_input, cloud_downsampled);
 
+  // Remove statistical outliers from the pointcloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_outliers_removed(new pcl::PointCloud<pcl::PointXYZ>);
+  m_statistical_outlier_removal->filter(cloud_downsampled, cloud_outliers_removed);
+
   // Remove the ground plane from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  removeGroundPlane(cloud_downsampled, cloud_plane_removed);
+  removeGroundPlane(cloud_outliers_removed, cloud_plane_removed);
 
   // Remove the robot clusters from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_robot_removed(new pcl::PointCloud<pcl::PointXYZ>);
@@ -283,6 +287,25 @@ void PointCloudFilterNode::initializeRobotClusterRemoval()
   }
 
   RCLCPP_INFO(this->get_logger(), "Robot cluster removal configured.");
+}
+
+void PointCloudFilterNode::initializeStatisticalOutlierRemoval()
+{
+  // Initialize the StatisticalPointcloudFilter object
+  m_statistical_outlier_removal = std::make_unique<LTM::StatisticalPointcloudFilter>();
+
+  // Declare parameters for the StatisticalPointcloudFilter object
+  declare_parameter("statistical_outlier_removal.mean_k", 50);
+  declare_parameter("statistical_outlier_removal.stddev_mul_thresh", 1.0);
+
+  // Set the parameters for the Statistical Outlier Removal filter
+  int mean_k = this->get_parameter("statistical_outlier_removal.mean_k").as_int();
+  double stddev_mul_thresh = this->get_parameter("statistical_outlier_removal.stddev_mul_thresh").as_double();
+  m_statistical_outlier_removal->setMeanK(mean_k);
+  m_statistical_outlier_removal->setStddevMulThresh(stddev_mul_thresh);
+
+  RCLCPP_INFO(this->get_logger(), "Statistical outlier removal configured: \n Mean K: %d\n Stddev Mul Thresh: %f",
+    mean_k, stddev_mul_thresh);
 }
 
 void PointCloudFilterNode::initializeVoxelGridFilter()

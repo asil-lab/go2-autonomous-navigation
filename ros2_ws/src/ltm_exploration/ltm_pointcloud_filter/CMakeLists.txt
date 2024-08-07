@@ -39,6 +39,7 @@ add_executable(pointcloud_filter_node
   src/pointcloud_filter_node.cpp
   src/ground_plane_segmentation.cpp
   src/robot_cluster_removal.cpp
+  src/statistical_outlier_removal.cpp
   src/voxel_grid_filter.cpp
 )
 

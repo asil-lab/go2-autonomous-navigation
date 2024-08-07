@@ -1,22 +1,5 @@
 pointcloud_filter_node:
   ros__parameters:
-
-    ground_plane_segmentation:
-      distance_threshold: 0.1 # meters
-      max_iterations: 5000
-      probability: 0.99
-
-    voxel_grid_filter:
-      leaf_size: # meters
-        x: 0.1
-        y: 0.1
-        z: 0.1
-
-    passthrough:
-      filter_field_name: "Z"
-      min_limit: 0.0
-      max_limit: 1.0
-
     topics:
       robot_description_topic: "/robot_description"
       sim:
@@ -25,6 +8,21 @@ pointcloud_filter_node:
       real:
         raw_pointcloud_topic: "/point_cloud/buffer"
         filtered_pointcloud_topic: "/point_cloud/filtered"
+
+    voxel_grid_filter:
+      leaf_size: # meters
+        x: 0.1
+        y: 0.1
+        z: 0.1
+
+    statistical_outlier_removal:
+      mean_k: 50
+      std_dev_mul_thresh: 1.0
+
+    ground_plane_segmentation:
+      distance_threshold: 0.1 # meters
+      max_iterations: 5000
+      probability: 0.99
 
     robot_cluster_removal:
       robot_description:

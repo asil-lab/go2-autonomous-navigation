@@ -32,6 +32,7 @@
 
 #include <ltm_pointcloud_filter/ground_plane_segmentation.hpp>
 #include <ltm_pointcloud_filter/robot_cluster_removal.hpp>
+#include <ltm_pointcloud_filter/statistical_outlier_removal.hpp>
 #include <ltm_pointcloud_filter/voxel_grid_filter.hpp>
 
 namespace LTM // TODO: Change this to LTM
@@ -57,6 +58,7 @@ namespace LTM // TODO: Change this to LTM
 
     void initializeGroundPlaneSegmentation();
     void initializeRobotClusterRemoval();
+    void initializeStatisticalOutlierRemoval();
     void initializeVoxelGridFilter();
 
     void configureRosSubscribers(bool in_simulation);
@@ -68,6 +70,7 @@ namespace LTM // TODO: Change this to LTM
 
     std::unique_ptr<LTM::GroundPlaneSegmentation> m_ground_plane_segmentation;
     std::unique_ptr<LTM::RobotClusterRemoval> m_robot_cluster_removal;
+    std::unique_ptr<LTM::StatisticalPointcloudFilter> m_statistical_outlier_removal;
     std::unique_ptr<LTM::VoxelGridFilter> m_voxel_grid_filter;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_raw_pointcloud_sub;
