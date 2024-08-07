@@ -48,6 +48,7 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 
 void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
+    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/lowstate message received!");
   updateJointStateMsg(msg->motor_state);
   publishJointState();
 }
