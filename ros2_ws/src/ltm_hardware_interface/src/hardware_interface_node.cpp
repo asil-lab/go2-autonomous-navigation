@@ -32,9 +32,9 @@ HardwareInterfaceNode::HardwareInterfaceNode()
   // Create publishers
   m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
   m_point_cloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("point_cloud/raw", 10);
-  m_front_video_180p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/180p", 10);
-  m_front_video_360p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/360p", 10);
-  m_front_video_720p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/720p", 10);
+  m_front_video_180p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/res_180p", 10);
+  m_front_video_360p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/res_360p", 10);
+  m_front_video_720p_pub = this->create_publisher<sensor_msgs::msg::Image>("front_camera/res_720p", 10);
 
   RCLCPP_INFO(this->get_logger(), "LTM Hardware Interface Node initialized.");
 }
