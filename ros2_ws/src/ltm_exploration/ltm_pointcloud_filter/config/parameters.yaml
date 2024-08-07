@@ -36,10 +36,10 @@ pointcloud_filter_node:
       target_frame: "world"
       crop_box: # meters, in robot frame
         min:
-          x: -0.8
-          y: -0.5
-          z: -1.0
+          x: -0.3
+          y: -0.2
+          z: -1.5
         max:
-          x: 0.8
-          y: 0.5
-          z: 0.5
+          x: 0.35
+          y: 0.2
+          z: 0.1

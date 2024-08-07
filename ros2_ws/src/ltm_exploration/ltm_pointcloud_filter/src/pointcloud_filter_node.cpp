@@ -172,17 +172,17 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
     return;
   }
 
-  // Downsample the pointcloud using leaf size
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
-  m_voxel_grid_filter->filter(cloud_input, cloud_downsampled);
+  // // Downsample the pointcloud using leaf size
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
+  // m_voxel_grid_filter->filter(cloud_input, cloud_downsampled);
 
-  // Remove statistical outliers from the pointcloud
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_outliers_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  m_statistical_outlier_removal->filter(cloud_downsampled, cloud_outliers_removed);
+  // // Remove statistical outliers from the pointcloud
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_outliers_removed(new pcl::PointCloud<pcl::PointXYZ>);
+  // m_statistical_outlier_removal->filter(cloud_downsampled, cloud_outliers_removed);
 
   // Remove the ground plane from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  removeGroundPlane(cloud_outliers_removed, cloud_plane_removed);
+  removeGroundPlane(cloud_input, cloud_plane_removed);
 
   // Remove the robot clusters from the pointcloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_robot_removed(new pcl::PointCloud<pcl::PointXYZ>);
@@ -287,20 +287,22 @@ void PointCloudFilterNode::initializeRobotClusterRemoval()
   }
 
   // Set the robot crop box
-  declare_parameter("robot_cluster_removal.robot_crop_box.x_min", -1.0);
-  declare_parameter("robot_cluster_removal.robot_crop_box.x_max", 1.0);
-  declare_parameter("robot_cluster_removal.robot_crop_box.y_min", -1.0);
-  declare_parameter("robot_cluster_removal.robot_crop_box.y_max", 1.0);
-  declare_parameter("robot_cluster_removal.robot_crop_box.z_min", -1.0);
-  declare_parameter("robot_cluster_removal.robot_crop_box.z_max", 1.0);
+  declare_parameter("robot_cluster_removal.crop_box.min.x", -1.0);
+  declare_parameter("robot_cluster_removal.crop_box.max.x", 1.0);
+  declare_parameter("robot_cluster_removal.crop_box.min.y", -1.0);
+  declare_parameter("robot_cluster_removal.crop_box.max.y", 1.0);
+  declare_parameter("robot_cluster_removal.crop_box.min.z", -1.0);
+  declare_parameter("robot_cluster_removal.crop_box.max.z", 1.0);
 
-  double x_min = this->get_parameter("robot_cluster_removal.robot_crop_box.x_min").as_double();
-  double x_max = this->get_parameter("robot_cluster_removal.robot_crop_box.x_max").as_double();
-  double y_min = this->get_parameter("robot_cluster_removal.robot_crop_box.y_min").as_double();
-  double y_max = this->get_parameter("robot_cluster_removal.robot_crop_box.y_max").as_double();
-  double z_min = this->get_parameter("robot_cluster_removal.robot_crop_box.z_min").as_double();
-  double z_max = this->get_parameter("robot_cluster_removal.robot_crop_box.z_max").as_double();
+  double x_min = this->get_parameter("robot_cluster_removal.crop_box.min.x").as_double();
+  double x_max = this->get_parameter("robot_cluster_removal.crop_box.max.x").as_double();
+  double y_min = this->get_parameter("robot_cluster_removal.crop_box.min.y").as_double();
+  double y_max = this->get_parameter("robot_cluster_removal.crop_box.max.y").as_double();
+  double z_min = this->get_parameter("robot_cluster_removal.crop_box.min.z").as_double();
+  double z_max = this->get_parameter("robot_cluster_removal.crop_box.max.z").as_double();
   m_robot_cluster_removal->setRobotCropBox(x_min, x_max, y_min, y_max, z_min, z_max);
+  RCLCPP_INFO(this->get_logger(), "Voxel grid filter leaf size configured: \n min x: %f m\n max x: %f m\n min y: %f m\n max y: %f m\n min z: %f m\n max z: %f m",
+    x_min, x_max, y_min, y_max, z_min, z_max);
 
   RCLCPP_INFO(this->get_logger(), "Robot cluster removal configured.");
 }
