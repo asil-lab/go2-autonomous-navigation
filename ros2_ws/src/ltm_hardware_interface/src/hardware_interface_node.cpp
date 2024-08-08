@@ -77,6 +77,7 @@ void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportM
     RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/sportmodestate message received!");
   m_odom_processing->updateOdom(msg->position, msg->imu_state.quaternion);
   m_tf_broadcaster->sendTransform(*(m_odom_processing->getOdomMsg()));
+  m_tf_broadcaster->sendTransform(*(m_odom_processing->getBaseFootprintMsg()));
 }
 
 void HardwareInterfaceNode::frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg)
