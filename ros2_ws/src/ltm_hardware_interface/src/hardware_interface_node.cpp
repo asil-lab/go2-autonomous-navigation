@@ -66,7 +66,7 @@ HardwareInterfaceNode::~HardwareInterfaceNode()
 
 void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
-    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/lowstate message received!");
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/lowstate message received!");
   m_joint_state_processing->updateJointStateMsg(msg->motor_state);
   m_joint_state_pub->publish(*(m_joint_state_processing->getJointStateMsg()));
 }
@@ -74,7 +74,7 @@ void HardwareInterfaceNode::lowStateCallback(const unitree_go::msg::LowState::Sh
 void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
 {
   // Update the odometry transform from base to world
-    RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/sportmodestate message received!");
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/sportmodestate message received!");
   m_odom_processing->updateOdom(msg->position, msg->imu_state.quaternion);
   m_tf_broadcaster->sendTransform(*(m_odom_processing->getOdomMsg()));
   m_tf_broadcaster->sendTransform(*(m_odom_processing->getBaseFootprintMsg()));
@@ -83,7 +83,6 @@ void HardwareInterfaceNode::sportModeStateCallback(const unitree_go::msg::SportM
 void HardwareInterfaceNode::frontVideoCallback(const unitree_go::msg::Go2FrontVideoData::SharedPtr msg)
 {
   RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/frontvideostream message received!");
-
 
   // Publish the front camera video messages in 180p, 360p, and 720p
   m_front_camera_processing->updateFrontCameraMsgs(msg, this->now());
@@ -96,9 +95,10 @@ void HardwareInterfaceNode::frontVideoCallback(const unitree_go::msg::Go2FrontVi
 void HardwareInterfaceNode::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
 {
   // Update the odometry transform from base to world
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/utlidar/cloud message received!");
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "/utlidar/robot_pose message received!");
   m_odom_processing->updateOdom(msg);
   m_tf_broadcaster->sendTransform(*(m_odom_processing->getOdomMsg()));
+  m_tf_broadcaster->sendTransform(*(m_odom_processing->getBaseFootprintMsg()));
 }
 
 void HardwareInterfaceNode::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
