@@ -17,7 +17,7 @@ def generate_launch_description():
     pointcloud_buffer_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_pointcloud_buffer'), 
-                         'launch', 'pointcloud_buffer.launch.py')
+                'launch', 'pointcloud_buffer.launch.py')
         )
     )
     
@@ -25,7 +25,7 @@ def generate_launch_description():
     pointcloud_filter_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_pointcloud_filter'), 
-                         'launch', 'pointcloud_filter.launch.py')
+                'launch', 'pointcloud_filter.launch.py')
         ),
         launch_arguments=[('in_simulation', 'false')]
     )
@@ -50,14 +50,6 @@ def generate_launch_description():
         arguments=['0', '0', '0', '0', '0', '0', '1', 'map', 'odom']
     )
 
-    # # Base-to-base_footprint static transform node
-    # base_to_footprint_static_tf_node = Node(
-    #     package='tf2_ros',
-    #     executable='static_transform_publisher',
-    #     name='static_transform_publisher',
-    #     arguments=['0', '0', '0', '0', '0', '0', '1', 'base', 'base_footprint']
-    # )
-
     # Online asynchronous SLAM node
     online_async_slam_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -66,9 +58,6 @@ def generate_launch_description():
         ),
         launch_arguments=[
             ('use_sim_time', 'false'),
-            ('odom_frame',  'world' ),
-            ('map_frame',   'map'   ),
-            ('base_frame',  'base'  ),
         ]
     )
     
@@ -78,6 +67,5 @@ def generate_launch_description():
         pointcloud_filter_node,
         pointcloud_to_laserscan_node,
         map_to_dom_static_tf_node,
-        # base_to_footprint_static_tf_node,
         # online_async_slam_node,
     ])

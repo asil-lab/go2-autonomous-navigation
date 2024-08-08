@@ -58,7 +58,7 @@ namespace LTM {
 
     // Transform the point cloud to the base frame
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
-    transformPointCloud(cloud_input, cloud_transformed, "base", cloud_input->header.frame_id);
+    transformPointCloud(cloud_input, cloud_transformed, "base_footprint", cloud_input->header.frame_id);
 
     // // Remove points that are 30cm wide, 80cm long, and 30cm high around the base origin
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
