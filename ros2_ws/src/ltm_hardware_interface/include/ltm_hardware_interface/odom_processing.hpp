@@ -17,7 +17,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 // #define ODOM_FRAME_ID "odom"
-#define ODOM_FRAME_ID "world"
+#define ODOM_FRAME_ID "odom"
 #define ODOM_CHILD_FRAME_ID "base"
 #define TRANSLATION_SIZE 3
 #define ORIENTATION_SIZE 4

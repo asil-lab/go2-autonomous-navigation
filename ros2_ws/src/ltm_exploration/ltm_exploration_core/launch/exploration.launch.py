@@ -31,19 +31,53 @@ def generate_launch_description():
     )
     
     # Pointcloud-to-laserscan node
-    pointcloud_to_laserscan_config = os.path.join(
-        get_package_share_directory('ltm_exploration_core'), 'config', 'parameters.yaml')
+    # pointcloud_to_laserscan_config = os.path.join(
+    #     get_package_share_directory('ltm_exploration_core'), 'config', 'parameters.yaml')
     pointcloud_to_laserscan_node = Node(
         package='pointcloud_to_laserscan',
         executable='pointcloud_to_laserscan_node',
         name='pointcloud_to_laserscan_node',
         output='screen',
-        remappings=[('cloud_in', 'point_cloud/filtered'),],
+        remappings=[('cloud_in', 'point_cloud/filtered')],
         # parameters=[pointcloud_to_laserscan_config],
     )
+
+    # Map-to-odom static transform node
+    map_to_dom_static_tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher',
+        arguments=['0', '0', '0', '0', '0', '0', '1', 'map', 'odom']
+    )
+
+    # # Base-to-base_footprint static transform node
+    # base_to_footprint_static_tf_node = Node(
+    #     package='tf2_ros',
+    #     executable='static_transform_publisher',
+    #     name='static_transform_publisher',
+    #     arguments=['0', '0', '0', '0', '0', '0', '1', 'base', 'base_footprint']
+    # )
+
+    # Online asynchronous SLAM node
+    online_async_slam_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('slam_toolbox'),
+                            'launch', 'online_async_launch.py')
+        ),
+        launch_arguments=[
+            ('use_sim_time', 'false'),
+            ('odom_frame',  'world' ),
+            ('map_frame',   'map'   ),
+            ('base_frame',  'base'  ),
+        ]
+    )
     
+    # Return launch description
     return LaunchDescription([
         pointcloud_buffer_node,
         pointcloud_filter_node,
         pointcloud_to_laserscan_node,
+        map_to_dom_static_tf_node,
+        # base_to_footprint_static_tf_node,
+        # online_async_slam_node,
     ])

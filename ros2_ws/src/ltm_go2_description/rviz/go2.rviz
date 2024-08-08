@@ -8,9 +8,11 @@ Panels:
         - /Status1
         - /RobotModel1
         - /RobotModel1/Description Topic1
-        - /TF1
         - /PointCloud21
         - /PointCloud22
+        - /PointCloud22/Topic1
+        - /LaserScan1
+        - /LaserScan1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 1088
   - Class: rviz_common/Selection
@@ -274,9 +276,9 @@ Visualization Manager:
           Value: true
         imu:
           Value: true
-        radar:
+        odom:
           Value: true
-        world:
+        radar:
           Value: true
       Marker Scale: 0.4000000059604645
       Name: TF
@@ -284,7 +286,7 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        world:
+        odom:
           base:
             FL_hip:
               FL_thigh:
@@ -339,7 +341,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -359,7 +361,7 @@ Visualization Manager:
         Value: /point_cloud/buffer
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -388,15 +390,48 @@ Visualization Manager:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
-        Reliability Policy: Reliable
+        Reliability Policy: System Default
         Value: /point_cloud/filtered
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/LaserScan
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: LaserScan
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.05000000074505806
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /scan
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: world
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -436,7 +471,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.8683478832244873
+      Distance: 9.225502014160156
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -451,10 +486,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.39539891481399536
+      Pitch: 0.909796953201294
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.9854183197021484
+      Yaw: 2.4558987617492676
     Saved: ~
 Window Geometry:
   Displays:

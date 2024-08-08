@@ -33,7 +33,7 @@ pointcloud_filter_node:
       min_cluster_size: 100
       mesh_resolution: 0.1
       robot_frame: "base"
-      target_frame: "world"
+      target_frame: "odom"
       crop_box: # meters, in robot frame
         min:
           x: -0.3

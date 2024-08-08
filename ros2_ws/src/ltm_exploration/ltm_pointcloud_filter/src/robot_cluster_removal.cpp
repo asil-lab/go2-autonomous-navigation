@@ -65,7 +65,9 @@ namespace LTM {
     cropPointCloud(cloud_transformed, cloud_filtered);
 
     // Transform the point cloud back to the world frame
-    transformPointCloud(cloud_filtered, cloud_output, cloud_input->header.frame_id, "base");
+    // As of now, keep the cloud in base frame
+    // transformPointCloud(cloud_filtered, cloud_output, cloud_input->header.frame_id, "base");
+    *cloud_output = *cloud_filtered;
   }
 
   bool RobotClusterRemoval::setRobotModel(const std::string &robot_description)
@@ -105,7 +107,7 @@ namespace LTM {
 
       // Transform the point cloud to the world frame
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
-      transformPointCloud(cloud, cloud_transformed, "world", link_name); // @TODO: Parameterize the target frame
+      transformPointCloud(cloud, cloud_transformed, "odom", link_name); // @TODO: Parameterize the target frame
 
       return cloud_transformed;
     } catch (const std::out_of_range &e) {
