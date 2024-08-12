@@ -110,7 +110,7 @@ void PointCloudBufferNode::initializePointcloudBuffer()
   // Extract the parameters
   declare_parameter("buffer_time", 0.5);
   declare_parameter("source_frame", "radar");
-  declare_parameter("target_frame", "world");
+  declare_parameter("target_frame", "odom");
 
   double buffer_time = this->get_parameter("buffer_time").as_double();
   m_source_frame = this->get_parameter("source_frame").as_string();

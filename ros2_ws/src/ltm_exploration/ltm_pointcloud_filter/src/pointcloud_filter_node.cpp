@@ -182,6 +182,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   removeGroundPlane(cloud_downsampled, cloud_plane_removed);
 
   // Remove the robot clusters from the pointcloud
+  // As of now, returns the pointcloud in the base frame
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_robot_removed(new pcl::PointCloud<pcl::PointXYZ>);
   m_robot_cluster_removal->removeRobotCluster(cloud_plane_removed, cloud_robot_removed);
 
@@ -189,7 +190,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_outliers_removed(new pcl::PointCloud<pcl::PointXYZ>);
   m_statistical_outlier_removal->filter(cloud_robot_removed, cloud_outliers_removed);
 
-  publishFilteredPointCloud(cloud_outliers_removed, msg->header.frame_id, msg->header.stamp);
+  publishFilteredPointCloud(cloud_outliers_removed, "base_footprint", msg->header.stamp);
 }
 
 void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
