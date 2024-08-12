@@ -51,7 +51,7 @@ bt_navigator:
   ros__parameters:
     use_sim_time: True
     global_frame: map
-    robot_base_frame: base_link
+    robot_base_frame: base
     odom_topic: /odom
     enable_groot_monitoring: True
     groot_zmq_publisher_port: 1666
