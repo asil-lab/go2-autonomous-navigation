@@ -274,7 +274,11 @@ Visualization Manager:
           Value: true
         base:
           Value: true
+        base_footprint:
+          Value: true
         imu:
+          Value: true
+        map:
           Value: true
         odom:
           Value: true
@@ -286,6 +290,8 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
+        map:
+          {}
         odom:
           base:
             FL_hip:
@@ -323,6 +329,8 @@ Visualization Manager:
                       {}
                   RR_foot:
                     {}
+            base_footprint:
+              {}
             imu:
               {}
             radar:
@@ -428,10 +436,30 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz_default_plugins/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map_updates
+      Use Timestamp: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -471,7 +499,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 9.225502014160156
+      Distance: 4.509139537811279
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -486,10 +514,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.909796953201294
+      Pitch: 0.3497970402240753
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.4558987617492676
+      Yaw: 5.845923900604248
     Saved: ~
 Window Geometry:
   Displays:

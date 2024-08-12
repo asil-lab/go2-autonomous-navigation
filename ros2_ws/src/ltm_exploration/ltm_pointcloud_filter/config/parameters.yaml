@@ -11,9 +11,9 @@ pointcloud_filter_node:
 
     voxel_grid_filter:
       leaf_size: # meters
-        x: 0.001
-        y: 0.001
-        z: 0.001
+        x: 0.01
+        y: 0.01
+        z: 0.01
 
     statistical_outlier_removal:
       mean_k: 50

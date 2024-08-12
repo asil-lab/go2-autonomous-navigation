@@ -42,9 +42,9 @@ void OdomProcessing::updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr
   updateOdomOrientation(pose_stamped->pose.orientation);
 
   // Update base_footprint
-  m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
+  m_base_footprint_msg->header.stamp = pose_stamped->header.stamp;
   updateBaseFootprintTranslation(pose_stamped->pose.position);
-  updateBaseFootprintOrientation(pose_stamped->pose.orientation);
+  // updateBaseFootprintOrientation(pose_stamped->pose.orientation);
 }
 
 geometry_msgs::msg::TransformStamped::SharedPtr OdomProcessing::getOdomMsg() const
