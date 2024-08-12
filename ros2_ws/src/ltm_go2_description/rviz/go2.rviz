@@ -13,6 +13,8 @@ Panels:
         - /PointCloud22/Topic1
         - /LaserScan1
         - /LaserScan1/Topic1
+        - /Map1
+        - /Map1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 1088
   - Class: rviz_common/Selection
@@ -444,7 +446,7 @@ Visualization Manager:
       Name: Map
       Topic:
         Depth: 5
-        Durability Policy: Volatile
+        Durability Policy: Transient Local
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /map
@@ -499,25 +501,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 4.509139537811279
+      Distance: 9.0433988571167
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.6013566255569458
-        Y: -0.9606097936630249
-        Z: 0.2916592061519623
+        X: 0.3537599742412567
+        Y: -1.1356419324874878
+        Z: 0.10116763412952423
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3497970402240753
+      Pitch: 0.7597969770431519
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.845923900604248
+      Yaw: 4.220914840698242
     Saved: ~
 Window Geometry:
   Displays:

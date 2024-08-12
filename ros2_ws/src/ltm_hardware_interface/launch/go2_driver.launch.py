@@ -13,6 +13,14 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
+    # RViz with Go2
+    rviz_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_go2_description'), 
+                'launch', 'go2_rviz.launch.py')
+        ),
+    )
+
     # URDF file location
     urdf_location = os.path.join(
         get_package_share_directory("ltm_go2_description"), "urdf", "go2_description.urdf")
@@ -45,4 +53,5 @@ def generate_launch_description():
     return LaunchDescription([
         go2_driver_node,
         robot_state_publisher_node,
+        rviz_node,
     ])
