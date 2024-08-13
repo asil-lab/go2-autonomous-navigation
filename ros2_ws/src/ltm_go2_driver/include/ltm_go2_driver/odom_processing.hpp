@@ -7,6 +7,8 @@
 #ifndef LTM_GO2_DRIVER__ODOM_PROCESSING_HPP_
 #define LTM_GO2_DRIVER__ODOM_PROCESSING_HPP_
 
+#pragma once
+
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 
@@ -17,9 +19,9 @@
 
 #include <string>
 
-#define ROS_NODE_NAME "odom_processing_node"
-#define ROS_SUB_TOPIC "utlidar/robot_pose"
-#define ROS_SUB_QUEUE_SIZE 10
+#define ODOM_PROCESSING_NODE_NAME "odom_processing_node"
+#define ODOM_PROCESSING_SUB_TOPIC "utlidar/robot_pose"
+#define ODOM_PROCESSING_SUB_QUEUE_SIZE 10
 
 #define ODOM_FRAME_ID "odom"
 #define ODOM_CHILD_FRAME_ID "base"

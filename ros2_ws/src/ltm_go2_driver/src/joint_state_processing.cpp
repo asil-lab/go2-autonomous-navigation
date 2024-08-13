@@ -8,7 +8,7 @@
 
 using namespace LTM;
 
-JointStateProcessing::JointStateProcessing() : Node(ROS_NODE_NAME)
+JointStateProcessing::JointStateProcessing() : Node(JOINT_STATE_PROCESSING_NODE_NAME)
 
 {
   initializeJointStateMsg();
@@ -59,9 +59,9 @@ void JointStateProcessing::initializeROS()
 {
   // Initialize the ROS publishers and subscribers
   m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
-    ROS_SUB_TOPIC, ROS_SUB_QUEUE_SIZE, 
+    JOINT_STATE_PROCESSING_SUB_TOPIC, JOINT_STATE_PROCESSING_SUB_QUEUE_SIZE, 
     std::bind(&JointStateProcessing::lowStateCallback, this, std::placeholders::_1));
-  m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>(ROS_PUB_TOPIC, ROS_PUB_QUEUE_SIZE);
+  m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>(JOINT_STATE_PROCESSING_PUB_TOPIC, JOINT_STATE_PROCESSING_PUB_QUEUE_SIZE);
 }
 
 void JointStateProcessing::initializeJointStateMsg()

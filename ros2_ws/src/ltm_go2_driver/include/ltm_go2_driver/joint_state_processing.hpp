@@ -15,11 +15,11 @@
 #include <string>
 #include <vector>
 
-#define ROS_NODE_NAME "joint_state_processing_node"
-#define ROS_SUB_TOPIC "lowstate"
-#define ROS_SUB_QUEUE_SIZE 10
-#define ROS_PUB_TOPIC "joint_states"
-#define ROS_PUB_QUEUE_SIZE 10
+#define JOINT_STATE_PROCESSING_NODE_NAME "joint_state_processing_node"
+#define JOINT_STATE_PROCESSING_SUB_TOPIC "lowstate"
+#define JOINT_STATE_PROCESSING_SUB_QUEUE_SIZE 10
+#define JOINT_STATE_PROCESSING_PUB_TOPIC "joint_states"
+#define JOINT_STATE_PROCESSING_PUB_QUEUE_SIZE 10
 
 #define MOTOR_SIZE 20
 #define JOINT_STATE_FRAME_ID "joint_link"

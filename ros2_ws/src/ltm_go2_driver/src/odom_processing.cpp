@@ -8,7 +8,7 @@
 
 using namespace LTM;
 
-OdomProcessing::OdomProcessing() : Node(ROS_NODE_NAME)
+OdomProcessing::OdomProcessing() : Node(ODOM_PROCESSING_NODE_NAME)
 {
   initializeROS();
   initializeOdomTransformMsg();
@@ -208,7 +208,7 @@ double OdomProcessing::getQuaternionNorm(const geometry_msgs::msg::Quaternion& q
 void OdomProcessing::initializeROS()
 {
   m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-    ROS_SUB_TOPIC, ROS_SUB_QUEUE_SIZE, 
+    ODOM_PROCESSING_SUB_TOPIC, ODOM_PROCESSING_SUB_QUEUE_SIZE, 
     std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
 
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this); 
