@@ -58,13 +58,14 @@ namespace LTM
       JointStateProcessing();
       ~JointStateProcessing();
 
+    sensor_msgs::msg::JointState::SharedPtr getJointStateMsg() const;
+
     private:
       void lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg);
       void publishJointStateMsg() const;
 
       void updateJointStateMsg(
         const std::array<unitree_go::msg::MotorState, MOTOR_SIZE>& motor_state);
-      sensor_msgs::msg::JointState::SharedPtr getJointStateMsg() const;
 
       void initializeROS();
       void initializeJointStateMsg();

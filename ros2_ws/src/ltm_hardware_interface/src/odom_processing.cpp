@@ -8,7 +8,7 @@
 
 using namespace LTM;
 
-OdomProcessing::OdomProcessing()
+OdomProcessing::OdomProcessing() : Node(ROS_NODE_NAME)
 {
   initializeOdomTransformMsg();
   initializeBaseFootprintMsg();
@@ -18,6 +18,19 @@ OdomProcessing::~OdomProcessing()
 {
   m_odom_msg.reset();
   m_base_footprint_msg.reset();
+
+}
+
+void OdomProcessing::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
+  updateOdom(msg);
+  broadcastTransform(m_odom_msg);
+  broadcastTransform(m_base_footprint_msg);
+}
+
+void OdomProcessing::broadcastTransform(const geometry_msgs::msg::TransformStamped::SharedPtr msg) const
+{
+  m_tf_broadcaster->sendTransform(*msg);
 }
 
 void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
@@ -185,6 +198,15 @@ double OdomProcessing::getQuaternionNorm(const geometry_msgs::msg::Quaternion& q
 {
   return quaternion.x * quaternion.x + quaternion.y * quaternion.y +
     quaternion.z * quaternion.z + quaternion.w * quaternion.w;
+}
+
+void OdomProcessing::initializeROS()
+{
+  m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+    ROBOT_POSE_TOPIC, ROS_SUB_QUEUE_SIZE, 
+    std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
+
+  m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this); 
 }
 
 void OdomProcessing::initializeOdomTransformMsg()
