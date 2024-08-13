@@ -14,7 +14,7 @@ JointStateProcessing::JointStateProcessing() : Node(ROS_NODE_NAME)
   initializeJointStateMsg();
   initializeJointIdx();
   initializeROS();
-  RCLCPP_INFO_ONCE(this->get_logger(), "Joint State Processing Node initialized.");
+  RCLCPP_INFO(this->get_logger(), "Joint State Processing Node initialized.");
 }
 
 JointStateProcessing::~JointStateProcessing()
@@ -23,12 +23,12 @@ JointStateProcessing::~JointStateProcessing()
   m_joint_idx.clear();
   m_low_state_sub.reset();
   m_joint_state_pub.reset();
-  RCLCPP_WARN_ONCE(this->get_logger(), "Joint State Processing Node destroyed.");
+  RCLCPP_WARN(this->get_logger(), "Joint State Processing Node destroyed.");
 }
 
 void JointStateProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
-  RCLCPP_INFO_THROTTLE(this->get_logger(), rclcpp::Clock().now(), 10000, "Received LowState message.");
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
   updateJointStateMsg(msg->motor_state);
   publishJointStateMsg();
 }

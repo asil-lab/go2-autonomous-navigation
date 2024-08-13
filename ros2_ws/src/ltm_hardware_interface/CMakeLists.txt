@@ -30,17 +30,17 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
 # Create executable
-add_executable(hardware_interface_node 
-  src/hardware_interface_node.cpp 
-  src/front_camera_processing.cpp 
+add_executable(go2_driver_node 
+  src/go2_driver_node.cpp 
+  # src/front_camera_processing.cpp 
   src/joint_state_processing.cpp
   src/odom_processing.cpp 
 )
-target_include_directories(hardware_interface_node PUBLIC
+target_include_directories(go2_driver_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(hardware_interface_node
+ament_target_dependencies(go2_driver_node
   rclcpp
   ament_index_cpp
   std_msgs
@@ -54,7 +54,7 @@ ament_target_dependencies(hardware_interface_node
 )
 
 # Install executable
-install(TARGETS hardware_interface_node
+install(TARGETS go2_driver_node
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
