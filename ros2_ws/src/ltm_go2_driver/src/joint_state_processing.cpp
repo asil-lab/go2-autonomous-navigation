@@ -4,7 +4,7 @@
  * Date: 04-08-2024.
  */
 
-#include <ltm_hardware_interface/joint_state_processing.hpp>
+#include <ltm_go2_driver/joint_state_processing.hpp>
 
 using namespace LTM;
 

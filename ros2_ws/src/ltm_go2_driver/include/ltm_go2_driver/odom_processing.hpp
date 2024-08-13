@@ -4,8 +4,8 @@
  * Date: 04-08-2024.
  */
 
-#ifndef LTM_HARDWARE_INTERFACE__ODOM_PROCESSING_HPP_
-#define LTM_HARDWARE_INTERFACE__ODOM_PROCESSING_HPP_
+#ifndef LTM_GO2_DRIVER__ODOM_PROCESSING_HPP_
+#define LTM_GO2_DRIVER__ODOM_PROCESSING_HPP_
 
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_broadcaster.h>
@@ -90,6 +90,6 @@ namespace LTM
   };  // class OdomProcessing
 } // namespace LTM
 
-#endif  // LTM_HARDWARE_INTERFACE__ODOM_PROCESSING_HPP_
+#endif  // LTM_GO2_DRIVER__ODOM_PROCESSING_HPP_
 
 // End of file: odom_processing.hpp

@@ -4,8 +4,8 @@
  * Date: 04-08-2024.
  */
 
-#ifndef LTM_HARDWARE_INTERFACE__JOINT_STATE_PROCESSING_HPP_
-#define LTM_HARDWARE_INTERFACE__JOINT_STATE_PROCESSING_HPP_
+#ifndef LTM_GO2_DRIVER__JOINT_STATE_PROCESSING_HPP_
+#define LTM_GO2_DRIVER__JOINT_STATE_PROCESSING_HPP_
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -81,6 +81,6 @@ namespace LTM
   };  // class JointStateProcessing
 } // namespace LTM
 
-#endif  // LTM_HARDWARE_INTERFACE__JOINT_STATE_PROCESSING_HPP_
+#endif  // LTM_GO2_DRIVER__JOINT_STATE_PROCESSING_HPP_
 
 // End of file: joint_state_processing.hpp

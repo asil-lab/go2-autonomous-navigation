@@ -4,7 +4,7 @@
  * Date: 04-08-2024.
  */
 
-#include <ltm_hardware_interface/odom_processing.hpp>
+#include <ltm_go2_driver/odom_processing.hpp>
 
 using namespace LTM;
 

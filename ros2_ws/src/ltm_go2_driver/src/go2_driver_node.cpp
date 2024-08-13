@@ -4,13 +4,13 @@
  * Date: 13-08-2024.
  */
 
-#ifndef LTM_HARDWARE_INTERFACE__GO2_DRIVER_NODE_CPP_
-#define LTM_HARDWARE_INTERFACE__GO2_DRIVER_NODE_CPP_
+#ifndef LTM_GO2_DRIVER__GO2_DRIVER_NODE_CPP_
+#define LTM_GO2_DRIVER__GO2_DRIVER_NODE_CPP_
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <ltm_hardware_interface/joint_state_processing.hpp>
-#include <ltm_hardware_interface/odom_processing.hpp>
+#include <ltm_go2_driver/joint_state_processing.hpp>
+#include <ltm_go2_driver/odom_processing.hpp>
 
 int main(int argc, char **argv)
 {
@@ -31,6 +31,6 @@ int main(int argc, char **argv)
   return 0;
 }
 
-#endif  // LTM_HARDWARE_INTERFACE__GO2_DRIVER_NODE_CPP_
+#endif  // LTM_GO2_DRIVER__GO2_DRIVER_NODE_CPP_
 
-// End of file: ros2_ws/src/ltm_hardware_interface/src/go2_driver_node.cpp
+// End of file: ros2_ws/src/ltm_go2_driver/src/go2_driver_node.cpp
