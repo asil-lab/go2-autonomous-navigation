@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ltm_hardware_interface</name>
+  <name>ltm_go2_driver</name>
   <version>0.0.0</version>
-  <description>This package contains the hardware interface for the LTM robot.</description>
+  <description>This package contains the driver to convert custom Unitree messages to standard ROS messages.</description>
   <maintainer email="bec_alexanderjames@outlook.com">Alexander James Becoy</maintainer>
   <license>TODO: License declaration</license>
 
