@@ -11,6 +11,7 @@
 
 #include <ltm_go2_driver/joint_state_processing.hpp>
 #include <ltm_go2_driver/odom_processing.hpp>
+#include <ltm_go2_driver/point_cloud_processing.hpp>
 
 int main(int argc, char **argv)
 {
@@ -19,11 +20,13 @@ int main(int argc, char **argv)
   // Create nodes
   rclcpp::Node::SharedPtr joint_state_processing_node = std::make_shared<LTM::JointStateProcessing>();
   rclcpp::Node::SharedPtr odom_processing_node = std::make_shared<LTM::OdomProcessing>();
+  rclcpp::Node::SharedPtr point_cloud_processing_node = std::make_shared<LTM::PointCloudProcessing>();
 
   // Create executor, and add nodes
   rclcpp::executors::MultiThreadedExecutor executor;
   executor.add_node(joint_state_processing_node);
   executor.add_node(odom_processing_node);
+  executor.add_node(point_cloud_processing_node);
 
   executor.spin();
   rclcpp::shutdown();

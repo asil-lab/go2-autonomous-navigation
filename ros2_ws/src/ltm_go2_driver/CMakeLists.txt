@@ -35,6 +35,7 @@ add_executable(go2_driver_node
   # src/front_camera_processing.cpp 
   src/joint_state_processing.cpp
   src/odom_processing.cpp 
+  src/point_cloud_processing.cpp
 )
 target_include_directories(go2_driver_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
