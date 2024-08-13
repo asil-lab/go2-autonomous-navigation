@@ -4,20 +4,38 @@
  * Date: 04-08-2024.
  */
 
-#include <ltm_hardware_interface/joint_state_processing.hpp>
+#include <ltm_go2_driver/joint_state_processing.hpp>
 
 using namespace LTM;
 
-JointStateProcessing::JointStateProcessing()
+JointStateProcessing::JointStateProcessing() : Node(JOINT_STATE_PROCESSING_NODE_NAME)
+
 {
   initializeJointStateMsg();
   initializeJointIdx();
+  initializeROS();
+  RCLCPP_INFO(this->get_logger(), "Joint State Processing Node initialized.");
 }
 
 JointStateProcessing::~JointStateProcessing()
 {
   m_joint_state_msg.reset();
   m_joint_idx.clear();
+  m_low_state_sub.reset();
+  m_joint_state_pub.reset();
+  RCLCPP_WARN(this->get_logger(), "Joint State Processing Node destroyed.");
+}
+
+void JointStateProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
+{
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
+  updateJointStateMsg(msg->motor_state);
+  publishJointStateMsg();
+}
+
+void JointStateProcessing::publishJointStateMsg() const
+{
+  m_joint_state_pub->publish(*m_joint_state_msg);
 }
 
 void JointStateProcessing::updateJointStateMsg(
@@ -37,6 +55,15 @@ sensor_msgs::msg::JointState::SharedPtr JointStateProcessing::getJointStateMsg()
   return m_joint_state_msg;
 }
 
+void JointStateProcessing::initializeROS()
+{
+  // Initialize the ROS publishers and subscribers
+  m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
+    JOINT_STATE_PROCESSING_SUB_TOPIC, JOINT_STATE_PROCESSING_SUB_QUEUE_SIZE, 
+    std::bind(&JointStateProcessing::lowStateCallback, this, std::placeholders::_1));
+  m_joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>(JOINT_STATE_PROCESSING_PUB_TOPIC, JOINT_STATE_PROCESSING_PUB_QUEUE_SIZE);
+}
+
 void JointStateProcessing::initializeJointStateMsg()
 {
   // Initialize the joint state message
@@ -47,10 +74,10 @@ void JointStateProcessing::initializeJointStateMsg()
 
   // Set the joint state message names
   m_joint_state_msg->name = {
-    "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint", 
-    "FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
-    "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint", 
-    "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint"};
+    JOINT_FR_HIP_NAME, JOINT_FR_THIGH_NAME, JOINT_FR_CALF_NAME,
+    JOINT_FL_HIP_NAME, JOINT_FL_THIGH_NAME, JOINT_FL_CALF_NAME,
+    JOINT_RR_HIP_NAME, JOINT_RR_THIGH_NAME, JOINT_RR_CALF_NAME,
+    JOINT_RL_HIP_NAME, JOINT_RL_THIGH_NAME, JOINT_RL_CALF_NAME};
 
   // Set zero values for the joint state message
   m_joint_state_msg->position = initializeZeroVector(m_joint_state_msg->name.size());

@@ -31,9 +31,9 @@ def generate_launch_description():
 
     # Go2 driver node
     go2_driver_node = Node(
-        package='ltm_hardware_interface',
-        executable='hardware_interface_node',
-        name='hardware_interface_node',
+        package='ltm_go2_driver',
+        executable='go2_driver_node',
+        name='go2_driver_node',
         output='screen',
     )
 

@@ -4,7 +4,7 @@
  * Date: 04-08-2024.
  */
 
-#include <ltm_hardware_interface/front_camera_processing.hpp>
+#include <ltm_go2_driver/front_camera_processing.hpp>
 
 using namespace LTM;
 

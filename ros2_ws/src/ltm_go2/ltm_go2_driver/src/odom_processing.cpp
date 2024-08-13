@@ -4,20 +4,38 @@
  * Date: 04-08-2024.
  */
 
-#include <ltm_hardware_interface/odom_processing.hpp>
+#include <ltm_go2_driver/odom_processing.hpp>
 
 using namespace LTM;
 
-OdomProcessing::OdomProcessing()
+OdomProcessing::OdomProcessing() : Node(ODOM_PROCESSING_NODE_NAME)
 {
+  initializeROS();
   initializeOdomTransformMsg();
   initializeBaseFootprintMsg();
+  RCLCPP_INFO(this->get_logger(), "Odom Processing Node initialized.");
 }
 
 OdomProcessing::~OdomProcessing()
 {
   m_odom_msg.reset();
   m_base_footprint_msg.reset();
+  m_robot_pose_sub.reset();
+  m_tf_broadcaster.reset();
+  RCLCPP_WARN(this->get_logger(), "Odom Processing Node destroyed.");
+}
+
+void OdomProcessing::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Robot Pose Message.");
+  updateOdom(msg);
+  broadcastTransform(m_odom_msg);
+  broadcastTransform(m_base_footprint_msg);
+}
+
+void OdomProcessing::broadcastTransform(const geometry_msgs::msg::TransformStamped::SharedPtr msg) const
+{
+  m_tf_broadcaster->sendTransform(*msg);
 }
 
 void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
@@ -185,6 +203,15 @@ double OdomProcessing::getQuaternionNorm(const geometry_msgs::msg::Quaternion& q
 {
   return quaternion.x * quaternion.x + quaternion.y * quaternion.y +
     quaternion.z * quaternion.z + quaternion.w * quaternion.w;
+}
+
+void OdomProcessing::initializeROS()
+{
+  m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+    ODOM_PROCESSING_SUB_TOPIC, ODOM_PROCESSING_SUB_QUEUE_SIZE, 
+    std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
+
+  m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this); 
 }
 
 void OdomProcessing::initializeOdomTransformMsg()
