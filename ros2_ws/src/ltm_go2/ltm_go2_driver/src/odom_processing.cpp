@@ -33,6 +33,14 @@ void OdomProcessing::robotPoseCallback(const geometry_msgs::msg::PoseStamped::Sh
   broadcastTransform(m_base_footprint_msg);
 }
 
+void OdomProcessing::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
+{
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Sport Mode State Message.");
+  updateOdom(msg->position, msg->imu_state.quaternion);
+  broadcastTransform(m_odom_msg);
+  broadcastTransform(m_base_footprint_msg);
+}
+
 void OdomProcessing::broadcastTransform(const geometry_msgs::msg::TransformStamped::SharedPtr msg) const
 {
   m_tf_broadcaster->sendTransform(*msg);
@@ -207,9 +215,13 @@ double OdomProcessing::getQuaternionNorm(const geometry_msgs::msg::Quaternion& q
 
 void OdomProcessing::initializeROS()
 {
-  m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-    ODOM_PROCESSING_SUB_TOPIC, ODOM_PROCESSING_SUB_QUEUE_SIZE, 
-    std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
+  // m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+  //   ODOM_PROCESSING_SUB_ROBOT_POSE_TOPIC, ODOM_PROCESSING_SUB_ROBOT_POSE_QUEUE_SIZE, 
+  //   std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
+  
+  m_sport_mode_state_sub = this->create_subscription<unitree_go::msg::SportModeState>(
+    ODOM_PROCESSING_SUB_SPORT_MODE_STATE_TOPIC, ODOM_PROCESSING_SUB_SPORT_MODE_STATE_QUEUE_SIZE, 
+    std::bind(&OdomProcessing::sportModeStateCallback, this, std::placeholders::_1));
 
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this); 
 }

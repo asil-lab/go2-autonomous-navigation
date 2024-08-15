@@ -32,6 +32,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 # Create executable
 add_executable(go2_driver_node 
   src/go2_driver_node.cpp 
+  src/cmd_vel_processing.cpp
   # src/front_camera_processing.cpp 
   src/joint_state_processing.cpp
   src/odom_processing.cpp 

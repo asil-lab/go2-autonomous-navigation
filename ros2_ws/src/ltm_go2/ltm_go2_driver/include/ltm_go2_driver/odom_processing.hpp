@@ -16,12 +16,17 @@
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
+#include <unitree_go/msg/sport_mode_state.hpp>
 
 #include <string>
 
 #define ODOM_PROCESSING_NODE_NAME "odom_processing_node"
-#define ODOM_PROCESSING_SUB_TOPIC "utlidar/robot_pose"
-#define ODOM_PROCESSING_SUB_QUEUE_SIZE 10
+
+#define ODOM_PROCESSING_SUB_ROBOT_POSE_TOPIC "utlidar/robot_pose"
+#define ODOM_PROCESSING_SUB_ROBOT_POSE_QUEUE_SIZE 10
+
+#define ODOM_PROCESSING_SUB_SPORT_MODE_STATE_TOPIC "sportmodestate"
+#define ODOM_PROCESSING_SUB_SPORT_MODE_STATE_QUEUE_SIZE 10
 
 #define ODOM_FRAME_ID "odom"
 #define ODOM_CHILD_FRAME_ID "base"
@@ -44,6 +49,7 @@ namespace LTM
 
     private:
       void robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+      void sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg);
       void broadcastTransform(const geometry_msgs::msg::TransformStamped::SharedPtr msg) const;
 
       void updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
@@ -87,6 +93,7 @@ namespace LTM
       geometry_msgs::msg::TransformStamped::SharedPtr m_base_footprint_msg;
 
       rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr m_robot_pose_sub;
+      rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;
       std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
 
   };  // class OdomProcessing
