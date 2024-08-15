@@ -57,7 +57,7 @@ void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& trans
   // Update base_footprint
   m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
   updateBaseFootprintTranslation(translation);
-  updateBaseFootprintOrientation(orientation);
+  // updateBaseFootprintOrientation(orientation);
 }
 
 void OdomProcessing::updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr pose_stamped)
