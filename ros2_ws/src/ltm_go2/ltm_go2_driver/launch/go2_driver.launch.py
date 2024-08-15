@@ -33,7 +33,6 @@ def generate_launch_description():
     go2_driver_node = Node(
         package='ltm_go2_driver',
         executable='go2_driver_node',
-        name='go2_driver_node',
         output='screen',
     )
 
