@@ -40,8 +40,8 @@ void CmdVelProcessing::publishWirelessController(
 
 void CmdVelProcessing::mapLinearVelocity(const geometry_msgs::msg::Vector3& linear_velocity)
 {
-  m_wireless_controller_msg->ly = boost::algorithm::clamp(-linear_velocity.x, -MAX_LINEAR_VELOCITY, MAX_LINEAR_VELOCITY);
-  m_wireless_controller_msg->lx = boost::algorithm::clamp(-linear_velocity.y, -MAX_LINEAR_VELOCITY, MAX_LINEAR_VELOCITY);
+  m_wireless_controller_msg->ly = boost::algorithm::clamp(linear_velocity.x, -MAX_LINEAR_VELOCITY_X, MAX_LINEAR_VELOCITY_X);
+  m_wireless_controller_msg->lx = boost::algorithm::clamp(-linear_velocity.y, -MAX_LINEAR_VELOCITY_Y, MAX_LINEAR_VELOCITY_Y);
 }
 
 void CmdVelProcessing::mapAngularVelocity(const double& angular_velocity)
