@@ -9,17 +9,22 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    # RViz with Go2
-    rviz_node = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('ltm_go2_description'), 
-                'launch', 'go2_rviz.launch.py')
+    #Declare the launch arguments
+    declared_arguments = [
+        DeclareLaunchArgument(
+            'rviz',
+            default_value='true',
+            description='Flag to indicate if RViz should be launched'
         ),
-    )
+    ]
+
+    # Get the launch configuration variables
+    rviz = LaunchConfiguration('rviz', default='true')
 
     # URDF file location
     urdf_location = os.path.join(
@@ -49,7 +54,16 @@ def generate_launch_description():
         arguments=[urdf_location],
     )
 
-    return LaunchDescription([
+    # RViz with Go2
+    rviz_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_go2_description'), 
+                'launch', 'go2_rviz.launch.py')
+        ),
+        condition=IfCondition(rviz),
+    )
+
+    return LaunchDescription(declared_arguments + [
         go2_driver_node,
         robot_state_publisher_node,
         rviz_node,
