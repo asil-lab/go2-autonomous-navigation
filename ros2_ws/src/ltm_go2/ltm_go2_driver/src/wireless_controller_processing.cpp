@@ -20,6 +20,7 @@ WirelessControllerProcessing::WirelessControllerProcessing() : Node(WIRELESS_CON
 WirelessControllerProcessing::~WirelessControllerProcessing()
 {
   m_cmd_vel_sub.reset();
+  m_toggle_searchlight_sub.reset();
   m_wireless_controller_pub.reset();
   m_wireless_controller_msg.reset();
   RCLCPP_WARN(this->get_logger(), "WirelessControllerProcessing node has been destroyed.");
@@ -29,13 +30,21 @@ void WirelessControllerProcessing::cmdVelCallback(const geometry_msgs::msg::Twis
 {
   mapLinearVelocity(msg->linear);
   mapAngularVelocity(msg->angular.z);
-  publishWirelessController(m_wireless_controller_msg);
+  publishWirelessController();
 }
 
-void WirelessControllerProcessing::publishWirelessController(
-    const unitree_go::msg::WirelessController::SharedPtr msg) const
+void WirelessControllerProcessing::toggleSearchlightCallback(const std_msgs::msg::Empty::SharedPtr msg)
 {
-  m_wireless_controller_pub->publish(*msg);
+  (void) msg;
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Received toggle searchlight message.");
+  setSearchlightKeys();
+  publishWirelessController();
+  resetKeys();
+}
+
+void WirelessControllerProcessing::publishWirelessController() const
+{
+  m_wireless_controller_pub->publish(*m_wireless_controller_msg);
 }
 
 void WirelessControllerProcessing::mapLinearVelocity(const geometry_msgs::msg::Vector3& linear_velocity)
@@ -49,18 +58,40 @@ void WirelessControllerProcessing::mapAngularVelocity(const double& angular_velo
   m_wireless_controller_msg->rx = boost::algorithm::clamp(-angular_velocity, -MAX_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
 }
 
+void WirelessControllerProcessing::setKey(uint16_t key)
+{
+  m_wireless_controller_msg->keys = key;
+}
+
+void WirelessControllerProcessing::setSearchlightKeys()
+{
+  setKey(KEYS_SEARCHLIGHT);
+}
+
+void WirelessControllerProcessing::setSitDownKeys()
+{
+  setKey(KEYS_SIT_DOWN);
+}
+
+void WirelessControllerProcessing::resetKeys()
+{
+  setKey(KEYS_EMPTY);
+}
+
 void WirelessControllerProcessing::initializeROS()
 {
   m_cmd_vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
-      WIRELESS_CONTROLLER_PROCESSING_SUB_TOPIC,
-      WIRELESS_CONTROLLER_PROCESSING_SUB_QUEUE_SIZE,
-      std::bind(&WirelessControllerProcessing::cmdVelCallback, this, std::placeholders::_1)
+    CMD_VEL_SUB_TOPIC, CMD_SUB_QUEUE_SIZE,
+    std::bind(&WirelessControllerProcessing::cmdVelCallback, this, std::placeholders::_1)
+  );
+
+  m_toggle_searchlight_sub = this->create_subscription<std_msgs::msg::Empty>(
+    TOGGLE_SEARCHLIGHT_SUB_TOPIC, TOGGLE_SEARCHLIGHT_QUEUE_SIZE,
+    std::bind(&WirelessControllerProcessing::toggleSearchlightCallback, this, std::placeholders::_1)
   );
 
   m_wireless_controller_pub = this->create_publisher<unitree_go::msg::WirelessController>(
-      CMD_VEL_PUBLISH_TOPIC,
-      CMD_VEL_PUBLISH_QUEUE_SIZE
-  );
+    CMD_VEL_PUB_TOPIC, CMD_VEL_PUB_QUEUE_SIZE);
 }
 
 void WirelessControllerProcessing::initializeWirelessControllerMsg()
