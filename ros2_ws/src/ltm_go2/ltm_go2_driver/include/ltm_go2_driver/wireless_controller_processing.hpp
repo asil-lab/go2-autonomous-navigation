@@ -4,8 +4,8 @@
  * Date: 13-08-2024.
  */
 
-#ifndef LTM_GO2_DRIVER__CMD_VEL_PROCESSING_HPP_
-#define LTM_GO2_DRIVER__CMD_VEL_PROCESSING_HPP_
+#ifndef LTM_GO2_DRIVER__WIRELESS_CONTROLLER_PROCESSING_HPP_
+#define LTM_GO2_DRIVER__WIRELESS_CONTROLLER_PROCESSING_HPP_
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -15,10 +15,10 @@
 
 #include <string>
 
-#define CMD_VEL_PROCESSING_NODE_NAME "cmd_vel_processing_node"
+#define WIRELESS_CONTROLLER_PROCESSING_NODE_NAME "cmd_vel_processing_node"
 
-#define CMD_VEL_PROCESSING_SUB_TOPIC "cmd_vel"
-#define CMD_VEL_PROCESSING_SUB_QUEUE_SIZE 10
+#define WIRELESS_CONTROLLER_PROCESSING_SUB_TOPIC "cmd_vel"
+#define WIRELESS_CONTROLLER_PROCESSING_SUB_QUEUE_SIZE 10
 
 #define CMD_VEL_PUBLISH_TOPIC "wirelesscontroller"
 #define CMD_VEL_PUBLISH_QUEUE_SIZE 10
@@ -29,11 +29,11 @@
 
 namespace LTM
 {
-  class CmdVelProcessing : public rclcpp::Node
+  class WirelessControllerProcessing : public rclcpp::Node
   {
     public:
-      CmdVelProcessing();
-      ~CmdVelProcessing();
+      WirelessControllerProcessing();
+      ~WirelessControllerProcessing();
 
     private:
       void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
@@ -50,9 +50,9 @@ namespace LTM
       rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr m_cmd_vel_sub;
       rclcpp::Publisher<unitree_go::msg::WirelessController>::SharedPtr m_wireless_controller_pub;
 
-  }; // class CmdVelProcessing
+  }; // class WirelessControllerProcessing
 } // namespace LTM
 
-#endif // LTM_GO2_DRIVER__CMD_VEL_PROCESSING_HPP_
+#endif // LTM_GO2_DRIVER__WIRELESS_CONTROLLER_PROCESSING_HPP_
 
-// End of file: ros2_ws/src/ltm_go2/ltm_go2_driver/include/ltm_go2_driver/cmd_vel_processing.hpp
+// End of file: ros2_ws/src/ltm_go2/ltm_go2_driver/include/ltm_go2_driver/wireless_controller_processing.hpp
