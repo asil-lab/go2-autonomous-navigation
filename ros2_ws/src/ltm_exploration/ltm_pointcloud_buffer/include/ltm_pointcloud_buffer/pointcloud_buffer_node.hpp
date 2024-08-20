@@ -36,11 +36,13 @@ namespace LTM
   private:
     void timerCallback();
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+    void publishPointcloudBuffer() const;
 
     void updateInputPointcloudMsg(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void bufferPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);
+    void removeRobotFromPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out) const;
     void clearPointcloudBuffer();
-    void publishPointcloudBuffer();
 
     void initializeROSTopics();
     void initializeTFListener();
