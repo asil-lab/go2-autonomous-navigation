@@ -22,7 +22,7 @@ class Vertex:
         return self.x == other.x and self.y == other.y
     
     def __str__(self) -> str:
-        return f'The vertex is at ({self.x}, {self.y})'
+        return f'({self.x}, {self.y})'
     
     def __repr__(self) -> str:
         return f'({self.x}, {self.y})'
@@ -39,7 +39,7 @@ class Edge:
         self.distance = self.calculate_distance(a, b)
 
     def __str__(self) -> str:
-        return f'The edge is from {self.vertex_a} to {self.vertex_b} with a distance of {self.distance}'
+        return f'{self.start} -> {self.end}'
     
     def __repr__(self) -> str:
         return f'{self.start} -> {self.end}'
@@ -58,12 +58,27 @@ class Graph:
         return f'The graph has {len(self.vertices)} vertices and {len(self.edges)} edges'
     
     def add_vertex(self, vertex: Vertex) -> None:
+        # Check if the vertex already exists
         if vertex in self.vertices:
+            print('Vertex %s already exists in the graph' % vertex)
             return
+        
+        # Add the vertex to the graph, and create an empty adjacency list for the vertex
         self.vertices.append(vertex)
         self.adjacency_list[vertex] = []
     
     def add_edge(self, edge: Edge) -> None:
+        # Check if the edge already exists
+        if edge in self.edges:
+            print('Edge %s already exists in the graph' % edge)
+            return
+        
+        # Check if the vertices of the edge are in the graph
+        if edge.vertex_a not in self.vertices or edge.vertex_b not in self.vertices:
+            print('Vertices %s and %s of edge %s are not in the graph' % (edge.vertex_a, edge.vertex_b, edge))
+            return
+
+        # Add the edge to the graph and adjacency list
         self.edges.append(edge)
         self.adjacency_list[edge.vertex_a].append(edge)
         self.adjacency_list[edge.vertex_b].append(edge)
@@ -112,6 +127,15 @@ class Graph:
 
 
 class TSPSolver:
+    """The Traveling Salesman Problem (TSP) solver class using Pyomo and GLPK: http://www.opl.ufc.br/post/tsp/.
+    The solver is a whole linear programming model that solves the TSP problem for a given number of vertices.
+
+    NOTE: The solver uses the Miller-Tucker-Zemlin (MTZ) formulation to solve the TSP problem which is not the
+    most computationally efficient method. However, it is a good starting point for solving the TSP problem and
+    has ECS-coding style.
+
+    TODO: Look into more efficient TSP algorithms like the Christofides algorithm: https://en.wikipedia.org/wiki/Christofides_algorithm.
+    """
 
     def __init__(self, graph: Graph) -> None:
         self.graph = graph

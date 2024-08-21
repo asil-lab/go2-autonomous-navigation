@@ -76,4 +76,5 @@ def test_tsp_solver():
     tsp_solver.solve()
 
     # # Test the TSP solver
-    assert tsp_solver.get_path(vertex_a) == [vertex_a, vertex_e, vertex_d, vertex_c, vertex_b]
+    assert tsp_solver.get_path(vertex_e) == [vertex_e, vertex_d, vertex_c, vertex_b, vertex_a], \
+        "Path: %s != %s" % (tsp_solver.get_path(vertex_e), [vertex_e, vertex_d, vertex_c, vertex_b, vertex_a])
