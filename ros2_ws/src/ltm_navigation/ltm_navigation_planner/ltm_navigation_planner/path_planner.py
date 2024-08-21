@@ -171,9 +171,6 @@ class TSPSolver:
         self.define_cost()
         self.define_objective()
         self.define_constraints()
-
-    def get_distance(self, model, i, j) -> float:
-        return self.graph.get_distance(i, j)
     
     def define_variables(self) -> None:
         # Define the sets
@@ -225,11 +222,24 @@ class TSPSolver:
 
 class PathPlanner:
 
-    def __init__(self, graph: Graph):
-        self.graph = graph
+    def __init__(self, vertices: list) -> None:
+        self.graph = Graph()
+        self.start = None
+        self.construct_graph(vertices)
 
     def set_start(self, x: int, y: int) -> None:
-        self.start = self.graph.get_vertex(x, y)
+        # Set the starting position of the robot as a vertex in the graph
+        self.start = Vertex(x, y)
+        self.graph.add_vertex(self.start)
+    
+    def construct_graph(self, vertices: list) -> None:
+        # Add the vertices to the graph
+        for vertex in vertices:
+            self.graph.add_vertex(vertex)
 
-    
-    
+    def plan_path(self) -> list:
+        # Solve the TSP problem for the graph
+        tsp_solver = TSPSolver(self.graph)
+        tsp_solver.solve()
+        path = tsp_solver.get_path(self.start)
+        return path
