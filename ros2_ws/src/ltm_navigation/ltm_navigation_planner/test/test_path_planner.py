@@ -54,6 +54,21 @@ def test_graph():
     assert graph.get_neighbors(vertex_c) == [edge_bc]
     assert graph.get_distance(vertex_a, vertex_b) == edge_ab.distance
     assert graph.get_distance(vertex_b, vertex_c) == edge_bc.distance
+    assert graph.get_vertices() == [vertex_a, vertex_b, vertex_c]
+    assert graph.get_edges() == [edge_ab, edge_bc]
+    assert graph.get_adjacency_list() == {
+        vertex_a: [edge_ab], 
+        vertex_b: [edge_ab, edge_bc], 
+        vertex_c: [edge_bc]
+    }
+    assert graph.get_num_vertices() == 3
+    assert graph.get_num_edges() == 2
+    assert graph.get_num_neighbors(vertex_a) == 1
+    assert graph.get_num_neighbors(vertex_b) == 2
+    assert graph.get_num_neighbors(vertex_c) == 1
+    assert graph.get_vertex_index(vertex_a) == 0
+    assert graph.get_vertex_index(vertex_b) == 1
+    assert graph.get_vertex_index(vertex_c) == 2
 
 def test_tsp_solver():
     # Create a graph
