@@ -4,6 +4,7 @@ Revision: 1.0
 Date: 19-08-2024
 """
 
+from collections import deque
 import numpy as np
 import pyomo.environ as pyo
 
@@ -222,10 +223,10 @@ class TSPSolver:
 
 class PathPlanner:
 
-    def __init__(self, vertices: list) -> None:
+    def __init__(self) -> None:
         self.graph = Graph()
         self.start = None
-        self.construct_graph(vertices)
+        self.path = None
 
     def set_start(self, x: int, y: int) -> None:
         # Set the starting position of the robot as a vertex in the graph
@@ -237,9 +238,18 @@ class PathPlanner:
         for vertex in vertices:
             self.graph.add_vertex(vertex)
 
-    def plan_path(self) -> list:
+    def plan(self) -> np.ndarray:
+        assert self.start is not None, 'The starting position of the robot has not been set'
+        assert self.graph.get_num_vertices() > 0, 'The graph has no vertices'
+
         # Solve the TSP problem for the graph
         tsp_solver = TSPSolver(self.graph)
         tsp_solver.solve()
-        path = tsp_solver.get_path(self.start)
-        return path
+        self.path = deque(tsp_solver.get_path(self.start))
+        return self.path
+
+    def next_waypoint(self) -> Vertex:
+        if self.path is None:
+            print('The path has not been planned')
+            return None
+        return self.path.popleft()
