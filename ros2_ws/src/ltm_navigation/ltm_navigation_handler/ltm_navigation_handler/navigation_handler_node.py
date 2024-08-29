@@ -30,7 +30,9 @@ class NavigationHandlerNode(Node):
     def state_callback(self, msg):
         if self.map is not None:
             self.publish_map()
-        self.get_logger().info('State message received, publishing the map of the environment.')
+            self.get_logger().info('State message received, publishing the map of the environment.')
+        else:
+            self.get_logger().info('State message received, but the map is None')
 
     def publish_map(self):
         self.map_publisher.publish(self.map)
