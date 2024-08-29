@@ -13,7 +13,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    # Navigation node
+    # ROS2 nav2_bringup launch file
     nav2_params_filename = 'nav2_params.yaml'
     nav2_params_filepath = os.path.join(
         get_package_share_directory('ltm_navigation_core'), 'config', nav2_params_filename)
@@ -24,6 +24,24 @@ def generate_launch_description():
         launch_arguments=[('params_file', nav2_params_filepath)]
     )
 
+    # LTM Navigation Handler Node
+    navigation_handler_node = Node(
+        package='ltm_navigation_handler',
+        executable='navigation_handler_node',
+        name='navigation_handler_node',
+        output='screen',
+    )
+
+    # LTM Navigation Planner Node
+    navigation_planner_node = Node(
+        package='ltm_navigation_planner',
+        executable='path_planner',
+        name='path_planner',
+        output='screen',
+    )
+
     return LaunchDescription([
         navigation_node,
+        navigation_handler_node,
+        navigation_planner_node,
     ])
