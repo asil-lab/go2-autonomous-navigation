@@ -15,21 +15,22 @@ import pyomo.environ as pyo
 """
 
 class Vertex:
-    def __init__(self, x: float, y: float) -> None:
+    def __init__(self, x: float, y: float, yaw=0.0) -> None:
         self.x = x
         self.y = y
+        self.yaw = yaw
 
     def __eq__(self, other) -> bool:
         return self.x == other.x and self.y == other.y
     
     def __str__(self) -> str:
-        return f'({self.x}, {self.y})'
+        return f'({self.x}, {self.y}, {self.yaw})'
     
     def __repr__(self) -> str:
-        return f'({self.x}, {self.y})'
+        return f'({self.x}, {self.y}, {self.yaw})'
     
     def __hash__(self) -> int:
-        return hash((self.x, self.y))
+        return hash((self.x, self.y, self.yaw))
 
 
 class Edge:
@@ -232,6 +233,11 @@ class PathPlanner:
         # Set the starting position of the robot as a vertex in the graph
         self.start = Vertex(x, y)
         self.graph.add_vertex(self.start)
+
+    def set_waypoints(self, waypoints: np.ndarray) -> None:
+        # Convert the waypoints (y, x yaw) as vertices, and add them to the graph
+        vertices = [Vertex(waypoint[1], waypoint[0], waypoint[2]) for waypoint in waypoints]
+        self.construct_graph(vertices)
     
     def construct_graph(self, vertices: list) -> None:
         # Add the vertices to the graph
@@ -248,8 +254,13 @@ class PathPlanner:
         self.path = deque(tsp_solver.get_path(self.start))
         return self.path
 
-    def next_waypoint(self) -> Vertex:
+    def get_next_waypoint(self) -> Vertex:
         if self.path is None:
             print('The path has not been planned')
             return None
-        return self.path.popleft()
+        waypoint = self.path.popleft()
+        return {
+            'x': waypoint.x,
+            'y': waypoint.y,
+            'yaw': waypoint.yaw,
+        }

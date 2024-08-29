@@ -35,6 +35,7 @@ class MapReader:
 
     def __init__(self):
         self.map = None
+        self.transformed_map = None
         self.resolution = None
         self.origin = None
         self.width = None
@@ -51,14 +52,21 @@ class MapReader:
         self.height = height
 
     def read(self) -> np.ndarray:
+        # Transform the map into XY coordinates
+        self.transformed_map = self.transform_map(self.map)
+
+        # Preprocess the map
         padded_map = self.pad_map(self.map)
         smoothed_map = self.smooth_map(padded_map)
         sampled_map = self.monte_carlo(smoothed_map)
         truncated_map = self.truncate_map(sampled_map)
         self.map = self.smooth_map(truncated_map)
 
+        # Extract the contours from the map
         contours = self.extract_contours(self.map)
         self.contours = self.filter_contours(contours)
+
+        # Determine the waypoints and orientations
         self.waypoints = self.determine_waypoints(self.contours)
         self.orientations = self.determine_orientation(self.waypoints, truncated_map)
 
@@ -85,6 +93,22 @@ class MapReader:
     def smooth_map(self, input: np.ndarray) -> np.ndarray:
         return gaussian_filter(input, sigma=MAP_SMOOTHING_SIGMA)
     
+    def transform_map(self, input: np.ndarray) -> np.ndarray:
+        assert self.resolution is not None, 'Resolution is not set'
+        assert self.origin is not None, 'Origin is not set'
+        
+        # Create a meshgrid for the map
+        x = np.linspace(0.0, self.width * self.resolution, self.width)
+        y = np.linspace(0.0, self.height * self.resolution, self.height)
+        xx, yy = np.meshgrid(x, y)
+
+        # # Center the map around the origin
+        xx += self.origin[0]
+        yy += self.origin[1]
+
+        # Transform the map
+        return np.stack((yy, xx, input), axis=-1)
+
     def extract_contours(self, input: np.ndarray) -> list:
         return find_contours(input, MAP_CONTINUITY_THRESHOLD)
     
@@ -156,6 +180,9 @@ class MapReader:
         return orientations
     
     def combine_waypoints(self, waypoints: list, orientations: list) -> list:
-        waypoints = np.array(waypoints)
-        orientations = np.array(orientations)
-        return np.hstack((waypoints, orientations.reshape(-1, 1)))
+        output = np.zeros((len(waypoints), 3))
+        for i, waypoint in enumerate(waypoints):
+            image_y, image_x = waypoint[:2].astype(int)
+            pos_y, pos_x = self.transformed_map[image_y, image_x][:2]
+            output[i] = np.array([pos_x, pos_y, orientations[i]])
+        return output
