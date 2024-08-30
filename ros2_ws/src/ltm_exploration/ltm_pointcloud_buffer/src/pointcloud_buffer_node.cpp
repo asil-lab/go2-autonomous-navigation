@@ -7,6 +7,7 @@
 #include "ltm_pointcloud_buffer/pointcloud_buffer_node.hpp"
 
 #include <chrono>
+#include <pcl/filters/crop_box.h>
 
 using namespace LTM;
 
@@ -37,6 +38,13 @@ void PointCloudBufferNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   bufferPointCloud(convertPointCloud2ToPCL(msg));
 }
 
+void PointCloudBufferNode::publishPointcloudBuffer() const
+{
+  sensor_msgs::msg::PointCloud2::SharedPtr msg = convertPCLToPointCloud2(m_pointcloud_buffer);
+  msg->header.stamp = this->now();
+  m_pointcloud_publisher->publish(*msg);
+}
+
 void PointCloudBufferNode::updateInputPointcloudMsg(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
   m_recent_input_pointcloud_msg = msg;
@@ -44,19 +52,38 @@ void PointCloudBufferNode::updateInputPointcloudMsg(const sensor_msgs::msg::Poin
 
 void PointCloudBufferNode::bufferPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 {
-  *m_pointcloud_buffer += *(transformPointCloud(cloud));
+  // Remove the points on the robot from the pointcloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_no_robot(new pcl::PointCloud<pcl::PointXYZ>);
+  removeRobotFromPointCloud(cloud, cloud_no_robot);
+
+  // Transform the pointcloud to the target frame
+  *m_pointcloud_buffer += *(transformPointCloud(cloud_no_robot));
+}
+
+void PointCloudBufferNode::removeRobotFromPointCloud(
+  const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in,
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out) const
+{
+  // Remove the robot from the pointcloud in the radar frame
+  pcl::PointXYZ min_point, max_point; // TODO: Extract these from parameters
+  min_point.x = -0.55;
+  min_point.y = -0.25;
+  min_point.z = -0.35;
+  max_point.x = 0.55;
+  max_point.y = 0.25;
+  max_point.z = 0.10;
+
+  pcl::CropBox<pcl::PointXYZ> crop_box_filter;
+  crop_box_filter.setInputCloud(cloud_in);
+  crop_box_filter.setMin(Eigen::Vector4f(min_point.x, min_point.y, min_point.z, 1.0));
+  crop_box_filter.setMax(Eigen::Vector4f(max_point.x, max_point.y, max_point.z, 1.0));
+  crop_box_filter.setNegative(true);
+  crop_box_filter.filter(*cloud_out);
 }
 
 void PointCloudBufferNode::clearPointcloudBuffer()
 {
   m_pointcloud_buffer->clear();
-}
-
-void PointCloudBufferNode::publishPointcloudBuffer()
-{
-  sensor_msgs::msg::PointCloud2::SharedPtr msg = convertPCLToPointCloud2(m_pointcloud_buffer);
-  msg->header.stamp = this->now();
-  m_pointcloud_publisher->publish(*msg);
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudBufferNode::transformPointCloud(

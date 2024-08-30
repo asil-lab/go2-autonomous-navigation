@@ -15,6 +15,7 @@ Panels:
         - /LaserScan1/Topic1
         - /Map1
         - /Map1/Topic1
+        - /Pose1
       Splitter Ratio: 0.5
     Tree Height: 1088
   - Class: rviz_common/Selection
@@ -293,50 +294,49 @@ Visualization Manager:
       Show Names: false
       Tree:
         map:
-          {}
-        odom:
-          base:
-            FL_hip:
-              FL_thigh:
-                FL_calf:
-                  FL_calflower:
-                    FL_calflower1:
+          odom:
+            base:
+              FL_hip:
+                FL_thigh:
+                  FL_calf:
+                    FL_calflower:
+                      FL_calflower1:
+                        {}
+                    FL_foot:
                       {}
-                  FL_foot:
-                    {}
-            FR_hip:
-              FR_thigh:
-                FR_calf:
-                  FR_calflower:
-                    FR_calflower1:
+              FR_hip:
+                FR_thigh:
+                  FR_calf:
+                    FR_calflower:
+                      FR_calflower1:
+                        {}
+                    FR_foot:
                       {}
-                  FR_foot:
-                    {}
-            Head_upper:
-              Head_lower:
+              Head_upper:
+                Head_lower:
+                  {}
+              RL_hip:
+                RL_thigh:
+                  RL_calf:
+                    RL_calflower:
+                      RL_calflower1:
+                        {}
+                    RL_foot:
+                      {}
+              RR_hip:
+                RR_thigh:
+                  RR_calf:
+                    RR_calflower:
+                      RR_calflower1:
+                        {}
+                    RR_foot:
+                      {}
+              base_footprint:
                 {}
-            RL_hip:
-              RL_thigh:
-                RL_calf:
-                  RL_calflower:
-                    RL_calflower1:
-                      {}
-                  RL_foot:
-                    {}
-            RR_hip:
-              RR_thigh:
-                RR_calf:
-                  RR_calflower:
-                    RR_calflower1:
-                      {}
-                  RR_foot:
-                    {}
-            base_footprint:
-              {}
-            imu:
-              {}
-            radar:
-              {}
+              imu:
+                {}
+              radar:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -458,6 +458,65 @@ Visualization Manager:
         Value: /map_updates
       Use Timestamp: false
       Value: true
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz_default_plugins/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: PoseArray
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow (Flat)
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /all_waypoints
+      Value: true
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz_default_plugins/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: PoseArray
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow (Flat)
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /all_waypoints
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 138; 226; 52
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Shaft Length: 0.10000000149011612
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -500,26 +559,21 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz_default_plugins/Orbit
-      Distance: 9.0433988571167
+      Angle: 0
+      Class: rviz_default_plugins/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 0.3537599742412567
-        Y: -1.1356419324874878
-        Z: 0.10116763412952423
-      Focal Shape Fixed Size: true
-      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7597969770431519
+      Scale: 127.48705291748047
       Target Frame: <Fixed Frame>
-      Value: Orbit (rviz)
-      Yaw: 4.220914840698242
+      Value: TopDownOrtho (rviz_default_plugins)
+      X: 0.3537599742412567
+      Y: -1.1356419324874878
     Saved: ~
 Window Geometry:
   Displays:
