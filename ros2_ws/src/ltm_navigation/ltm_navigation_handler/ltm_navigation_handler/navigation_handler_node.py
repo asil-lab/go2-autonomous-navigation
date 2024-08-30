@@ -21,9 +21,6 @@ class NavigationHandlerNode(Node):
         self.state_subscriber = self.create_subscription(Empty, 'state', self.state_callback, 10)
         self.map_publisher = self.create_publisher(OccupancyGrid, 'buffered_map', 10)
 
-    def __del__(self):
-        self.get_logger().info('Navigation Handler Node has been terminated.')
-
     def map_callback(self, msg):
         self.map = msg
 

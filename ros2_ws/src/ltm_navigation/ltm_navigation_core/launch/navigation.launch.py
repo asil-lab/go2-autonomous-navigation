@@ -35,8 +35,8 @@ def generate_launch_description():
     # LTM Navigation Planner Node
     navigation_planner_node = Node(
         package='ltm_navigation_planner',
-        executable='path_planner',
-        name='path_planner',
+        executable='navigation_planner_node',
+        name='navigation_planner_node',
         output='screen',
     )
 

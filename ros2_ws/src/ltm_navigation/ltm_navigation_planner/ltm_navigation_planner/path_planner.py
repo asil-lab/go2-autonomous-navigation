@@ -229,7 +229,7 @@ class PathPlanner:
         self.start = None
         self.path = None
 
-    def set_start(self, x: int, y: int) -> None:
+    def set_start(self, x: float, y: float) -> None:
         # Set the starting position of the robot as a vertex in the graph
         self.start = Vertex(x, y)
         self.graph.add_vertex(self.start)

@@ -34,12 +34,18 @@ class MapReader:
     """
 
     def __init__(self):
-        self.map = None
-        self.transformed_map = None
         self.resolution = None
         self.origin = None
         self.width = None
         self.height = None
+
+        self.map = None
+        self.original_map = None
+        self.transformed_map = None
+        self.padded_map = None
+        self.smoothed_map = None
+        self.sampled_map = None
+        self.truncated_map = None
 
         self.contours = None
         self.waypoints = None
@@ -56,11 +62,11 @@ class MapReader:
         self.transformed_map = self.transform_map(self.map)
 
         # Preprocess the map
-        padded_map = self.pad_map(self.map)
-        smoothed_map = self.smooth_map(padded_map)
-        sampled_map = self.monte_carlo(smoothed_map)
-        truncated_map = self.truncate_map(sampled_map)
-        self.map = self.smooth_map(truncated_map)
+        self.padded_map = self.pad_map(self.map)
+        self.smoothed_map = self.smooth_map(self.padded_map)
+        self.sampled_map = self.monte_carlo(self.smoothed_map)
+        self.truncated_map = self.truncate_map(self.sampled_map)
+        self.map = self.smooth_map(self.truncated_map)
 
         # Extract the contours from the map
         contours = self.extract_contours(self.map)
@@ -68,15 +74,16 @@ class MapReader:
 
         # Determine the waypoints and orientations
         self.waypoints = self.determine_waypoints(self.contours)
-        self.orientations = self.determine_orientation(self.waypoints, truncated_map)
+        self.orientations = self.determine_orientation(self.waypoints, self.truncated_map)
 
         return self.combine_waypoints(self.waypoints, self.orientations)
 
     def read_map_list(self, map: list) -> None:
-        self.map = np.array(map).reshape(self.height, self.width).astype(np.uint8)
+        self.original_map = np.array(map).reshape(self.height, self.width).astype(np.uint8)
+        self.map = np.invert(self.original_map)
 
-        # Set the unknown cells to occupied
-        self.map = np.where(self.map == MAP_CELL_UNKNOWN, MAP_CELL_OCCUPIED, self.map)
+        # # Set the unknown cells to occupied
+        # self.map = np.where(self.original_map == MAP_CELL_UNKNOWN, MAP_CELL_OCCUPIED, self.original_map)
 
     def read_map_pgm(self, filename: str, byteorder='>') -> None:
         self.map = plt.imread(filename)
@@ -103,8 +110,8 @@ class MapReader:
         xx, yy = np.meshgrid(x, y)
 
         # # Center the map around the origin
-        xx += self.origin[0]
-        yy += self.origin[1]
+        xx += self.origin.x
+        yy += self.origin.y
 
         # Transform the map
         return np.stack((yy, xx, input), axis=-1)
@@ -186,3 +193,13 @@ class MapReader:
             pos_y, pos_x = self.transformed_map[image_y, image_x][:2]
             output[i] = np.array([pos_x, pos_y, orientations[i]])
         return output
+    
+    def get_maps(self) -> dict:
+        return {
+            'map': self.map,
+            'original_map': self.original_map,
+            'padded_map': self.padded_map,
+            'smoothed_map': self.smoothed_map,
+            'sampled_map': self.sampled_map,
+            'truncated_map': self.truncated_map
+        }
