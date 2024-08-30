@@ -71,8 +71,10 @@ class NavigationPlannerNode(Node):
         self.get_logger().info('Path has been planned.')
 
     def publish_waypoint(self, waypoint: dict) -> None:
-        assert waypoint is not None, 'The waypoint is None'
-
+        if len(waypoint) == 0:
+            self.get_logger().info('The path has been completed.')
+            return
+        
         pose = PoseStamped()
 
         pose.pose.position.x = waypoint['x']

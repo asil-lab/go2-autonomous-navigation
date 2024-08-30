@@ -236,7 +236,7 @@ class PathPlanner:
 
     def set_waypoints(self, waypoints: np.ndarray) -> None:
         # Convert the waypoints (y, x yaw) as vertices, and add them to the graph
-        vertices = [Vertex(waypoint[1], waypoint[0], waypoint[2]) for waypoint in waypoints]
+        vertices = [Vertex(waypoint[0], waypoint[1], waypoint[2]) for waypoint in waypoints]
         self.construct_graph(vertices)
     
     def construct_graph(self, vertices: list) -> None:

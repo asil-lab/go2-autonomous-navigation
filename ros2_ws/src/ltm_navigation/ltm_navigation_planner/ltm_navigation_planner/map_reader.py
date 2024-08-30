@@ -80,16 +80,12 @@ class MapReader:
 
     def read_map_list(self, map: list) -> None:
         self.original_map = np.array(map).reshape(self.height, self.width).astype(np.uint8)
-        self.map = np.invert(self.original_map)
 
-        # # Set the unknown cells to occupied
-        # self.map = np.where(self.original_map == MAP_CELL_UNKNOWN, MAP_CELL_OCCUPIED, self.original_map)
+        # Invert the map such that black is occupied space and white is free space
+        self.map = np.invert(self.original_map)
 
     def read_map_pgm(self, filename: str, byteorder='>') -> None:
         self.map = plt.imread(filename)
-    
-        # Set the unknown cells to occupied
-        # self.map = np.where(self.map == MAP_CELL_UNKNOWN, MAP_CELL_OCCUPIED, self.map)
 
     def pad_map(self, input: np.ndarray) -> np.ndarray:
         return np.pad(input, MAP_PADDING, mode='constant', constant_values=MAP_CELL_UNKNOWN)
