@@ -22,6 +22,7 @@ find_package(ament_index_cpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(unitree_api REQUIRED)
 find_package(unitree_go REQUIRED)
 find_package(urdf REQUIRED)
 find_package(ltm_go2_description REQUIRED)
@@ -33,6 +34,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 add_executable(go2_driver_node 
   src/go2_driver_node.cpp 
   # src/front_camera_processing.cpp 
+  src/gesture_processing.cpp
   src/joint_state_processing.cpp
   src/odom_processing.cpp 
   src/point_cloud_processing.cpp
@@ -48,6 +50,7 @@ ament_target_dependencies(go2_driver_node
   std_msgs
   geometry_msgs
   sensor_msgs
+  unitree_api
   unitree_go
   urdf
   tf2
