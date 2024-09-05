@@ -31,8 +31,8 @@ echo "ROS1 workspace built."
 # source $ROS2_INSTALL_PATH/setup.bash
 
 # Source both ROS1 Noetic and ROS2 Foxy installations to use ros1_bridge, in this order.
-echo "source $ROS1_INSTALL_PATH/setup.bash" >> ~/.bashrc
-echo "source $ROS2_INSTALL_PATH/setup.bash" >> ~/.bashrc
+# echo "source $ROS1_INSTALL_PATH/setup.bash" >> ~/.bashrc
+# echo "source $ROS2_INSTALL_PATH/setup.bash" >> ~/.bashrc
 
 # Source aliases
 echo "source ${ROOT}/.devcontainer/setup_aliases.sh" >> ~/.bashrc

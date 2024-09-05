@@ -1,8 +1,15 @@
-
-[submodule "ros1_ws/src/unitree_ros"]
-	path = ros1_ws/src/unitree_ros
-	url = https://github.com/unitreerobotics/unitree_ros.git
 [submodule "ros2_ws/src/ros1_bridge"]
 	path = ros2_ws/src/ros1_bridge
 	url = https://github.com/ros2/ros1_bridge.git
+	branch = foxy
+[submodule "ros1_ws/src/unitree_ros"]
+	path = ros1_ws/src/unitree_ros
+	url = https://github.com/AlexanderJamesBecoy/unitree_ros
+	branch = master
+[submodule "ros2_ws/src/unitree_ros2"]
+	path = ros2_ws/src/unitree_ros2
+	url = https://github.com/AlexanderJamesBecoy/unitree_ros2.git
+[submodule "ros2_ws/src/libs/pointcloud_to_laserscan"]
+	path = ros2_ws/src/libs/pointcloud_to_laserscan
+	url = https://github.com/ros-perception/pointcloud_to_laserscan.git
 	branch = foxy
