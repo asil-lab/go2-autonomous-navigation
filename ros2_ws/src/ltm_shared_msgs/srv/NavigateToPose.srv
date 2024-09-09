@@ -1,0 +1,4 @@
+geometry_msgs/PoseStamped goal
+---
+bool success
+builtin_interfaces/Time time
