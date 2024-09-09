@@ -21,6 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(ltm_shared_msgs REQUIRED)
 include_directories(include)
 
 # Add the navigation_service_node executable.
@@ -32,14 +33,15 @@ target_include_directories(navigation_service_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(
-  navigation_service_node
+ament_target_dependencies(navigation_service_node
   rclcpp
   tf2_ros
   geometry_msgs
   std_msgs
+  ltm_shared_msgs
 )
 
+# Install executables.
 install(TARGETS navigation_service_node
   DESTINATION lib/${PROJECT_NAME})
 

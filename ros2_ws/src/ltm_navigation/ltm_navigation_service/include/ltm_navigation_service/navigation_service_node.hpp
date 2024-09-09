@@ -7,10 +7,13 @@
 #ifndef LTM_NAVIGATION_SERVICE__NAVIGATION_SERVICE_NODE_HPP_
 #define LTM_NAVIGATION_SERVICE__NAVIGATION_SERVICE_NODE_HPP_
 
-#include "rclcpp/rclcpp.hpp"
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/qos.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <ltm_shared_msgs/srv/navigate_to_pose.hpp>
 
 #include <string>
 #include <vector>
@@ -24,17 +27,19 @@ namespace lTM
       ~NavigationServiceNode();
 
     private:
-      void navigationServiceCallback(
-        const std::shared_ptr<rmw_request_id_t> request_header,
-        const std::shared_ptr<geometry_msgs::msg::PoseStamped> request,
-        std::shared_ptr<geometry_msgs::msg::PoseStamped> response);
+      void navigateToPoseCallback(
+        const std::shared_ptr<ltm_shared_msgs::srv::NavigateToPose::Request> request,
+        std::shared_ptr<ltm_shared_msgs::srv::NavigateToPose::Response> response);
 
       void initializeService();
-
       void initializeROS2Topics();
+      void initializeTFListener();
 
-      rclcpp::Service<geometry_msgs::msg::PoseStamped>::SharedPtr m_navigation_service;
-      std::string m_service_name;
+      std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
+      std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
+
+      rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr m_pose_publisher;
+      rclcpp::Service<ltm_shared_msgs::srv::NavigateToPose>::SharedPtr m_navigation_to_pose_service;
 
   }; // class NavigationServiceNode
 } // namespace lTM
