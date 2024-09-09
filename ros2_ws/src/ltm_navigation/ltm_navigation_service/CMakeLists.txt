@@ -22,6 +22,8 @@ find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(ltm_shared_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(eigen3_cmake_module REQUIRED)
 include_directories(include)
 
 # Add the navigation_service_node executable.
@@ -39,6 +41,7 @@ ament_target_dependencies(navigation_service_node
   geometry_msgs
   std_msgs
   ltm_shared_msgs
+  Eigen3
 )
 
 # Install executables.

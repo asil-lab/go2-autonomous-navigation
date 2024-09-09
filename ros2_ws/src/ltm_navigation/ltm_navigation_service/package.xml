@@ -13,6 +13,7 @@
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>ltm_shared_msgs</depend>
+  <depend>Eigen3</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

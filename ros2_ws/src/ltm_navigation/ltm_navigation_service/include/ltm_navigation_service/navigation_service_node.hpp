@@ -13,10 +13,21 @@
 #include <tf2_ros/buffer.h>
 
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <ltm_shared_msgs/srv/navigate_to_pose.hpp>
 
 #include <string>
 #include <vector>
+#include <chrono>
+
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Dense>
+
+#define POSE_EIGEN_VECTOR_SIZE 7
+#define POSE_EIGEN_VECTOR_POSITION_OFFSET 0
+#define POSE_EIGEN_VECTOR_ORIENTATION_OFFSET 3
+#define POSE_EIGEN_VECTOR_POSITION_SIZE 3
+#define POSE_EIGEN_VECTOR_ORIENTATION_SIZE 4
 
 namespace lTM
 {
@@ -31,12 +42,21 @@ namespace lTM
         const std::shared_ptr<ltm_shared_msgs::srv::NavigateToPose::Request> request,
         std::shared_ptr<ltm_shared_msgs::srv::NavigateToPose::Response> response);
 
+      geometry_msgs::msg::PoseStamped getCurrentRobotPose();
+      Eigen::VectorXd convertPoseToEigen(geometry_msgs::msg::Pose pose);
+
       void initializeService();
-      void initializeROS2Topics();
-      void initializeTFListener();
+      void initializeRosTopic();
+      void initializeTfListener();
 
       std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;
       std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
+
+      double m_navigate_to_pose_timeout;
+      double m_navigate_to_pose_position_tolerance;
+      double m_navigate_to_pose_orientation_tolerance;
+      std::string m_robot_source_frame_name;
+      std::string m_robot_target_frame_name;
 
       rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr m_pose_publisher;
       rclcpp::Service<ltm_shared_msgs::srv::NavigateToPose>::SharedPtr m_navigation_to_pose_service;

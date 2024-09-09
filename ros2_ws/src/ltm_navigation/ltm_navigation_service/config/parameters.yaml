@@ -1,0 +1,16 @@
+navigation_service_node:
+  ros__parameters:
+
+    # ROS2 Navigation Service Parameters
+    # The following parameters are used to configure the ROS2 Navigation Service.
+
+    navigate_to_pose_service_name: "navigate_to_pose"
+    navigate_to_pose_timeout: 30.0 # seconds
+    navigate_to_pose_position_tolerance: 0.1 # meters
+    navigate_to_pose_orientation_tolerance: 0.1 # radians
+
+    goal_pose_topic_name: "goal_pose"
+    goal_pose_topic_queue_size: 10
+
+    robot_source_frame_name: "base"
+    robot_target_frame_name: "map"
