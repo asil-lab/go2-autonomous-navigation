@@ -52,7 +52,8 @@ void NavigationServiceNode::navigateToPoseCallback(
     {
       RCLCPP_INFO(this->get_logger(), "Reached goal pose");
       response->success = true;
-      // response->time_elapsed = this->get_clock()->now() - start_time;
+      response->time_elapsed.sec = (this->get_clock()->now() - start_time).seconds();
+      response->time_elapsed.nanosec = (this->get_clock()->now() - start_time).nanoseconds();
       return;
     }
   }

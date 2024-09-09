@@ -1,7 +1,4 @@
 geometry_msgs/PoseStamped goal
-float64 timeout
-float64 tolerance
-float64 max_velocity
 ---
 bool success
-builtin_interfaces/Time time
+builtin_interfaces/Time time_elapsed
