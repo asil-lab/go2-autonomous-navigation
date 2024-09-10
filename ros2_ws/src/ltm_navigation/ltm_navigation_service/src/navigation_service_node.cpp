@@ -32,14 +32,29 @@ void NavigationServiceNode::navigateToPoseCallback(
     request->goal.pose.position.x, request->goal.pose.position.y, request->goal.pose.position.z, 
     request->goal.pose.orientation.x, request->goal.pose.orientation.y,
     request->goal.pose.orientation.z, request->goal.pose.orientation.w);
+
+  publishGoalPose(request->goal);
   Eigen::VectorXd goal_pose_vector = convertPoseToEigen(request->goal.pose);
 
   rclcpp::Time start_time = rclcpp::Time(request->goal.header.stamp);
+  rclcpp::Time update_time = this->get_clock()->now();
+
   while (this->get_clock()->now() - start_time < rclcpp::Duration::from_seconds(m_navigate_to_pose_timeout))
   {
-    geometry_msgs::msg::PoseStamped current_pose = getCurrentRobotPose();
-    Eigen::VectorXd current_pose_vector = convertPoseToEigen(current_pose.pose);
-    
+    // Check if the service has been interrupted
+    if (!rclcpp::ok())
+    {
+      RCLCPP_WARN(this->get_logger(), "Navigation service interrupted");
+      response->success = false;
+      return;
+    }
+
+    // Skip the update if the update period has not been reached
+    if (this->get_clock()->now() - update_time < rclcpp::Duration::from_seconds(m_navigate_to_pose_update_period))
+      continue;
+
+    // Get the current robot pose and calculate the error
+    Eigen::VectorXd current_pose_vector = convertPoseToEigen(getCurrentRobotPose().pose);
     double position_error = (goal_pose_vector.block<POSE_EIGEN_VECTOR_POSITION_SIZE, 1>(
       POSE_EIGEN_VECTOR_POSITION_OFFSET, 0) - current_pose_vector.block<POSE_EIGEN_VECTOR_POSITION_SIZE, 1>(
         POSE_EIGEN_VECTOR_POSITION_OFFSET, 0)).norm();
@@ -48,6 +63,7 @@ void NavigationServiceNode::navigateToPoseCallback(
       POSE_EIGEN_VECTOR_ORIENTATION_OFFSET, 0) - current_pose_vector.block<POSE_EIGEN_VECTOR_ORIENTATION_SIZE, 1>(
         POSE_EIGEN_VECTOR_ORIENTATION_OFFSET, 0)).norm();
 
+    // Interrupt the service if the timeout has been reached
     if (position_error < m_navigate_to_pose_position_tolerance && orientation_error < m_navigate_to_pose_orientation_tolerance)
     {
       RCLCPP_INFO(this->get_logger(), "Reached goal pose");
@@ -56,10 +72,18 @@ void NavigationServiceNode::navigateToPoseCallback(
       response->time_elapsed.nanosec = (this->get_clock()->now() - start_time).nanoseconds();
       return;
     }
+
+    update_time = this->get_clock()->now();
   }
 
+  // If the goal pose has not been reached, return a failure
   RCLCPP_WARN(this->get_logger(), "Failed to reach goal pose");
   response->success = false;
+}
+
+void NavigationServiceNode::publishGoalPose(const geometry_msgs::msg::PoseStamped& goal_pose) const
+{
+  m_pose_publisher->publish(goal_pose);
 }
 
 geometry_msgs::msg::PoseStamped NavigationServiceNode::getCurrentRobotPose()
@@ -98,6 +122,7 @@ void NavigationServiceNode::initializeService()
 {
   declare_parameter("navigate_to_pose_service_name", "navigate_to_pose");
   declare_parameter("navigate_to_pose_timeout", 30.0);
+  declare_parameter("navigate_to_pose_update_rate", 1.0);
   declare_parameter("navigate_to_pose_position_tolerance", 0.1);
   declare_parameter("navigate_to_pose_orientation_tolerance", 0.1);
 
@@ -106,6 +131,7 @@ void NavigationServiceNode::initializeService()
     std::bind(&NavigationServiceNode::navigateToPoseCallback, 
       this, std::placeholders::_1, std::placeholders::_2));
   m_navigate_to_pose_timeout = this->get_parameter("navigate_to_pose_timeout").as_double();
+  m_navigate_to_pose_update_period = 1.0 / this->get_parameter("navigate_to_pose_update_rate").as_double();
   m_navigate_to_pose_position_tolerance = this->get_parameter("navigate_to_pose_position_tolerance").as_double();
   m_navigate_to_pose_orientation_tolerance = this->get_parameter("navigate_to_pose_orientation_tolerance").as_double();
 }
@@ -137,7 +163,12 @@ void NavigationServiceNode::initializeTfListener()
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<NavigationServiceNode>());
+  rclcpp::Node::SharedPtr navigation_service_node = std::make_shared<NavigationServiceNode>();
+
+  rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(navigation_service_node);
+  executor.spin();
+
   rclcpp::shutdown();
   return 0;
 }

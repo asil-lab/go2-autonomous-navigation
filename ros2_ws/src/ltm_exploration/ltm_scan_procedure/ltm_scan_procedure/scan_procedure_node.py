@@ -6,12 +6,16 @@ Date: 09-09-2024
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from tf2_ros import Buffer, TransformListener
 
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from std_msgs.msg import Empty
+from ltm_shared_msgs.srv import NavigateToPose
 
 import os
+from typing import Any
 import numpy as np
 from time import sleep
 
@@ -28,8 +32,12 @@ class ScanProcedureNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
+        self.navigate_to_pose_callback_group = MutuallyExclusiveCallbackGroup()
+
         self.trigger_sub = self.create_subscription(Empty, 'perform_scan', self.trigger_callback, 10)
         self.goal_pose_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
+        self.navigate_to_pose_client = self.create_client(
+            NavigateToPose, 'send_robot', callback_group=self.navigate_to_pose_callback_group)
 
         self.get_logger().info('Scan procedure node has been initialized.')
 
@@ -50,6 +58,24 @@ class ScanProcedureNode(Node):
         goal_pose.pose.position = position
         goal_pose.pose.orientation = orientation
         self.goal_pose_pub.publish(goal_pose)
+
+    def request_goal_pose(self, position: Point, orientation: Quaternion) -> bool:
+        """Sends a request to /navigate_to_pose service to navigate the robot to the desired pose.
+        
+        Args:
+            position (Point): The position of the goal pose.
+            orientation (Quaternion): The orientation of the goal pose.
+        """
+        navigate_to_pose_request = NavigateToPose.Request()
+        navigate_to_pose_request.goal.header.frame_id = 'map'
+        navigate_to_pose_request.goal.header.stamp = self.get_clock().now().to_msg()
+        navigate_to_pose_request.goal.pose.position = position
+        navigate_to_pose_request.goal.pose.orientation = orientation
+
+        navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
+        rclpy.spin_until_future_complete(self, navigate_to_pose_future)
+        self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
+        return navigate_to_pose_future.result().success
 
     def perform_scan(self) -> None:
         """ Perform scan procedure in the following order:
@@ -72,7 +98,6 @@ class ScanProcedureNode(Node):
             #     elif pose == 'sit':
             #         self.sit_down()
             self.rotate_robot(2 * np.pi / self.number_of_orientations)
-            sleep(10.0)
         # self.save_data()
         self.get_logger().info('Scan procedure at x: %f, y: %f, yaw: %f' % 
                                (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
@@ -101,14 +126,16 @@ class ScanProcedureNode(Node):
             angle (float): The angle to rotate the robot by.
         """
         if self.current_robot_position is None:
-            self.get_logger().error('The robot position is None.')
+            self.get_logger().error('The robot position is None. Ignoring...')
             return
         
         self.current_robot_yaw = self.normalize_yaw(self.current_robot_yaw + angle)
-        self.publish_goal_pose(
-            self.current_robot_position, 
-            self.yaw_to_quaternion(self.current_robot_yaw)
-        )
+        is_goal_reached = False
+        while not is_goal_reached:
+            self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
+            is_goal_reached = self.request_goal_pose(self.current_robot_position, 
+                                                     self.yaw_to_quaternion(self.current_robot_yaw))
+            self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
     def normalize_yaw(self, yaw: float) -> float:
         """Normalizes a yaw angle to be within the range [-pi, pi].
@@ -128,6 +155,8 @@ class ScanProcedureNode(Node):
         Returns:
             Quaternion: The quaternion representation of the yaw angle.
         """
+        assert isinstance(yaw, float), "Input to argument yaw is not of type float."
+
         quaternion = Quaternion()
         quaternion.z = np.sin(yaw / 2)
         quaternion.w = np.cos(yaw / 2)
@@ -141,12 +170,17 @@ class ScanProcedureNode(Node):
         Returns:
             float: The yaw angle representation of the quaternion.
         """
+        assert isinstance(quaternion, Quaternion), "Input to argument quaternion is not of type Quaternion."
+
         return np.arctan2(2 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y), 1 - 2 * (quaternion.y**2 + quaternion.z**2))
+
 
 def main():
     rclpy.init()
     scan_procedure_node = ScanProcedureNode()
-    rclpy.spin(scan_procedure_node)
+    executor = MultiThreadedExecutor()
+    executor.add_node(scan_procedure_node)
+    executor.spin()
     scan_procedure_node.destroy_node()
     rclpy.shutdown()
 

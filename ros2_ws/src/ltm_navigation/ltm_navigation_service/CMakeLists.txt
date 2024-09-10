@@ -48,6 +48,16 @@ ament_target_dependencies(navigation_service_node
 install(TARGETS navigation_service_node
   DESTINATION lib/${PROJECT_NAME})
 
+# Install launch files.
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+# Install the configuration files.
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}/
+)
+
 # Build the test scripts.
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

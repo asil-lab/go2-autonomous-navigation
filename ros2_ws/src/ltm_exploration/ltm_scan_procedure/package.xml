@@ -9,6 +9,8 @@
 
   <depend>rclpy</depend>
   <depend>tf2_ros</depend>
+  <depend>geometry_msgs</depend>
+  <depend>ltm_shared_msgs</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

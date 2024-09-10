@@ -41,6 +41,7 @@ namespace lTM
       void navigateToPoseCallback(
         const std::shared_ptr<ltm_shared_msgs::srv::NavigateToPose::Request> request,
         std::shared_ptr<ltm_shared_msgs::srv::NavigateToPose::Response> response);
+      void publishGoalPose(const geometry_msgs::msg::PoseStamped& goal_pose) const;
 
       geometry_msgs::msg::PoseStamped getCurrentRobotPose();
       Eigen::VectorXd convertPoseToEigen(geometry_msgs::msg::Pose pose);
@@ -53,6 +54,7 @@ namespace lTM
       std::shared_ptr<tf2_ros::TransformListener> m_tf_listener;
 
       double m_navigate_to_pose_timeout;
+      double m_navigate_to_pose_update_period;
       double m_navigate_to_pose_position_tolerance;
       double m_navigate_to_pose_orientation_tolerance;
       std::string m_robot_source_frame_name;
