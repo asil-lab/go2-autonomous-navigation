@@ -11,6 +11,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from tf2_ros import Buffer, TransformListener
 
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Empty
 from ltm_shared_msgs.srv import NavigateToPose
 
@@ -19,6 +20,8 @@ from typing import Any
 import numpy as np
 from time import sleep
 
+from ltm_scan_procedure.data_storage import DataStorage
+
 class ScanProcedureNode(Node):
 
     def __init__(self):
@@ -26,38 +29,42 @@ class ScanProcedureNode(Node):
 
         self.number_of_orientations = 8
 
+        # Initialize attributes
         self.current_robot_position = Point()
         self.current_robot_yaw = 0.0
+        self.is_scanning = False
 
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)
+        # Initialize data storage
+        self.data_storage = DataStorage()
+        self.get_logger().info(f"Saving files in {self.data_storage.storage_directory}.")
 
-        self.navigate_to_pose_callback_group = MutuallyExclusiveCallbackGroup()
-
-        self.trigger_sub = self.create_subscription(Empty, 'perform_scan', self.trigger_callback, 10)
-        self.goal_pose_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
-        self.navigate_to_pose_client = self.create_client(
-            NavigateToPose, 'send_robot', callback_group=self.navigate_to_pose_callback_group)
+        # Configure ROS2 entities'
+        self.configure_scan_procedure_parameters()
+        self.configure_pointcloud_sub()
+        self.configure_trigger_sub()
+        self.configure_navigate_to_pose_client()
+        self.configure_tf_listener()
 
         self.get_logger().info('Scan procedure node has been initialized.')
+
+    def point_cloud_callback(self, msg: PointCloud2) -> None:
+        """Callback function for the point cloud subscriber.
+        
+        Args:
+            msg (PointCloud2): The point cloud message received.
+        """
+        Ignore point cloud data if the node is not scanning
+        if not self.is_scanning:
+            return
+        
+        # Store the current point cloud data
+        self.get_logger().info('Point cloud received.')
+        self.data_storage.add_point_cloud(
+            self.data_storage.convert_point_cloud2_to_open3d(msg))
 
     def trigger_callback(self, msg) -> None:
         self.get_logger().info('Trigger has been received.')
         self.perform_scan()
-
-    def publish_goal_pose(self, position: Point, orientation: Quaternion) -> None:
-        """Publishes the goal pose to the goal_pose topic.
-        
-        Args:
-            position (Point): The position of the goal pose.
-            orientation (Quaternion): The orientation of the goal pose.
-        """
-        goal_pose = PoseStamped()
-        goal_pose.header.frame_id = 'map'
-        goal_pose.header.stamp = self.get_clock().now().to_msg()
-        goal_pose.pose.position = position
-        goal_pose.pose.orientation = orientation
-        self.goal_pose_pub.publish(goal_pose)
 
     def request_goal_pose(self, position: Point, orientation: Quaternion) -> bool:
         """Sends a request to /navigate_to_pose service to navigate the robot to the desired pose.
@@ -89,6 +96,8 @@ class ScanProcedureNode(Node):
         7. Save the 2D images and 3D point cloud data
         """
         self.get_current_robot_pose()
+        self.switch_scan_mode(False)
+
         for _ in range(self.number_of_orientations):
             # for pose in ['stand', 'look_down', 'sit']:
             #     self.capture_image_data(pose)
@@ -97,7 +106,11 @@ class ScanProcedureNode(Node):
             #         self.stand_up()
             #     elif pose == 'sit':
             #         self.sit_down()
+            
+            self.get_logger().info("Moving to next orientation...")
             self.rotate_robot(2 * np.pi / self.number_of_orientations)
+            self.collect_point_cloud_data()
+
         # self.save_data()
         self.get_logger().info('Scan procedure at x: %f, y: %f, yaw: %f' % 
                                (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
@@ -130,12 +143,33 @@ class ScanProcedureNode(Node):
             return
         
         self.current_robot_yaw = self.normalize_yaw(self.current_robot_yaw + angle)
-        is_goal_reached = False
-        while not is_goal_reached:
-            self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
-            is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-                                                     self.yaw_to_quaternion(self.current_robot_yaw))
-            self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
+        # is_goal_reached = False
+        # while not is_goal_reached:
+            # self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
+            # is_goal_reached = self.request_goal_pose(self.current_robot_position, 
+            #                                          self.yaw_to_quaternion(self.current_robot_yaw))
+            # self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
+        is_goal_reached = self.request_goal_pose(self.current_robot_position, 
+            self.yaw_to_quaternion(self.current_robot_yaw))
+        self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
+
+    def collect_point_cloud_data(self) -> None:
+        """Collects 3D point cloud data from the environment."""
+        # Activate the scan mode and wait for the point cloud data to be collected
+        self.get_logger().info("Collecting pointcloud...")
+        self.switch_scan_mode(True)
+        sleep(self.point_cloud_buffer_time)
+        self.switch_scan_mode(False)
+        self.get_logger().info("Pointcloud collected.")
+
+        # Save the point cloud data
+        self.get_logger().info("Saving pointcloud...")
+        # point_cloud_file_name = self.get_robot_state_stamp() + '.pcd'
+        point_cloud_file_name = 'test.pcd'
+        self.get_logger().info(f"Filename: {point_cloud_file_name}")
+        self.data_storage.save_point_cloud(point_cloud_file_name)
+        self.data_storage.reset_point_cloud()
+        self.get_logger().info("Pointcloud saved.")
 
     def normalize_yaw(self, yaw: float) -> float:
         """Normalizes a yaw angle to be within the range [-pi, pi].
@@ -172,7 +206,81 @@ class ScanProcedureNode(Node):
         """
         assert isinstance(quaternion, Quaternion), "Input to argument quaternion is not of type Quaternion."
 
-        return np.arctan2(2 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y), 1 - 2 * (quaternion.y**2 + quaternion.z**2))
+        return np.arctan2(
+            2 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y), 
+            1 - 2 * (quaternion.y**2 + quaternion.z**2)
+        )
+    
+    def get_robot_state_stamp(self) -> str:
+        """Returns the current robot state as a string."""
+        # Round the robot position to 3 decimal places
+        x = self.current_robot_position.x.round(3)
+        y = self.current_robot_position.y.round(3)
+        yaw = self.current_robot_yaw.round(3)
+
+        return 'x_%f_y_%f_yaw_%f' % (x, y, yaw)
+
+    def switch_scan_mode(self, mode: bool) -> None:
+        """Switches the scan mode to the specified mode.
+        
+        Args:
+            mode (bool): The mode to switch to.
+        """
+        self.is_scanning = mode
+    
+    def configure_scan_procedure_parameters(self) -> None:
+        """Configures the parameters for the scan procedure node."""
+
+        # Number of orientations to scan the environment at each waypoint
+        self.declare_parameter('scan_number_of_orientations', 8)
+        self.number_of_orientations = self.get_parameter('scan_number_of_orientations').value
+        self.get_logger().info('Number of orientations: %d' % (self.number_of_orientations))
+
+        # Time delay between each orientation step
+        self.declare_parameter('scan_delay_between_orientations', 1.0)
+        self.orientation_delay = self.get_parameter('scan_delay_between_orientations').value
+        self.get_logger().info('Time delay between each orientation step: %f s' % (self.orientation_delay))
+
+        # Time to buffer 3D point cloud data
+        self.declare_parameter('scan_pointcloud_buffer_time', 1.0)
+        self.point_cloud_buffer_time = self.get_parameter('scan_pointcloud_buffer_time').value
+        self.get_logger().info('Time to buffer 3D point cloud data: %f s' % (self.point_cloud_buffer_time))
+
+    def configure_pointcloud_sub(self) -> None:
+        """Configures the subscriber to the point cloud topic."""
+        self.declare_parameter('point_cloud_subscriber_topic_name', 'point_cloud/buffer')
+        self.declare_parameter('point_cloud_subscriber_queue_size', 10)
+
+        self.point_cloud_callback_group = MutuallyExclusiveCallbackGroup()
+        self.point_cloud_sub = self.create_subscription(
+            PointCloud2, self.get_parameter('point_cloud_subscriber_topic_name').value, 
+            self.point_cloud_callback, self.get_parameter('point_cloud_subscriber_queue_size').value,
+            callback_group=self.point_cloud_callback_group)
+
+    def configure_trigger_sub(self) -> None:
+        """Configures the subscriber to the trigger topic."""
+        self.declare_parameter('trigger_subscriber_topic_name', 'perform_scan')
+        self.declare_parameter('trigger_subscriber_queue_size', 10)
+
+        self.trigger_callback_group = MutuallyExclusiveCallbackGroup()
+        self.trigger_sub = self.create_subscription(
+            Empty, self.get_parameter('trigger_subscriber_topic_name').value, 
+            self.trigger_callback, self.get_parameter('trigger_subscriber_queue_size').value,
+            callback_group=self.trigger_callback_group)
+
+    def configure_navigate_to_pose_client(self) -> None:
+        """Configures the client to the navigate_to_pose service."""
+        self.declare_parameter('navigate_to_pose_service_name', 'send_robot')
+
+        self.navigate_to_pose_callback_group = MutuallyExclusiveCallbackGroup()
+        self.navigate_to_pose_client = self.create_client(
+            NavigateToPose, self.get_parameter('navigate_to_pose_service_name').value, 
+            callback_group=self.navigate_to_pose_callback_group)
+        
+    def configure_tf_listener(self) -> None:
+        """Configures the tf listener for the node."""
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
 
 def main():
