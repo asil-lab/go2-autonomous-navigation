@@ -23,7 +23,7 @@ def generate_launch_description():
         executable='scan_procedure_node',
         name='scan_procedure_node',
         output='screen',
-        parameters=[scan_procedure_config_filepath]
+        parameters=[scan_procedure_config_filepath],
     )
 
     return LaunchDescription([

@@ -1,4 +1,4 @@
-scanning_procedure_node:
+scan_procedure_node:
   ros__parameters:
     
     # ROS2 Scanning Procedure Parameters

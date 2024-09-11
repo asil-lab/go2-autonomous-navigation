@@ -53,7 +53,7 @@ class ScanProcedureNode(Node):
         Args:
             msg (PointCloud2): The point cloud message received.
         """
-        Ignore point cloud data if the node is not scanning
+        # Ignore point cloud data if the node is not scanning
         if not self.is_scanning:
             return
         
