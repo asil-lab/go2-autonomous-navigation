@@ -114,7 +114,6 @@ class ScanProcedureNode(Node):
             self.collect_point_cloud_data()
             self.save_point_cloud_data()
 
-        self.save_point_cloud_data()
         self.get_logger().info('Scan procedure at x: %f, y: %f, yaw: %f' % 
                                (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
 
@@ -126,11 +125,13 @@ class ScanProcedureNode(Node):
         try:
             # Get the current robot pose
             current_robot_pose = self.tf_buffer.lookup_transform('map', 'base', rclpy.time.Time()).transform
+
             # Store the current robot position and yaw
             self.current_robot_position.x = current_robot_pose.translation.x
             self.current_robot_position.y = current_robot_pose.translation.y
             self.current_robot_position.z = current_robot_pose.translation.z
             self.current_robot_yaw = self.quaternion_to_yaw(current_robot_pose.rotation)
+            
         except Exception as e:
             self.get_logger().error('Failed to get current robot position: %s' % str(e))
             self.current_robot_position = None
@@ -168,9 +169,9 @@ class ScanProcedureNode(Node):
         """Saves the point cloud data to a PCD file."""
         self.get_logger().info("Saving pointcloud...")
         point_cloud_file_name = self.get_robot_state_stamp(yaw=self.current_robot_yaw) + '.pcd'
-        self.data_storage.save_point_cloud(point_cloud_file_name)
+        is_save_successful = self.data_storage.save_point_cloud(point_cloud_file_name)
         self.data_storage.reset_point_cloud()
-        self.get_logger().info("Pointcloud saved.")
+        self.get_logger().info("Pointcloud saved: %s" % (str(is_save_successful)))
 
     def normalize_yaw(self, yaw: float) -> float:
         """Normalizes a yaw angle to be within the range [-pi, pi].

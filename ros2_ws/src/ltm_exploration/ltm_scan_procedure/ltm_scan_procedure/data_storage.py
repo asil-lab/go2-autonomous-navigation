@@ -97,14 +97,17 @@ class DataStorage:
         """ Clears the point cloud data. """
         self.point_cloud = o3d.geometry.PointCloud()
 
-    def save_point_cloud(self, file_name: str) -> None:
+    def save_point_cloud(self, file_name: str) -> bool:
         """ Saves the point cloud data to a PCD file.
 
         Args:
             file_name (str): The name of the file to be saved.
+
+        Returns:
+            (bool): Has the point cloud been saved successfully. 
         """
         file_path = os.path.join(self.storage_directory, file_name)
-        o3d.io.write_point_cloud(file_path, self.point_cloud, compressed=True)
+        return o3d.io.write_point_cloud(file_path, self.point_cloud, compressed=True)
 
     def create_storage_subdirectory(self, subdirectory_name: str) -> None:
         """ Creates a subdirectory in the storage directory.
