@@ -8,6 +8,7 @@ import numpy as np
 from ctypes import *
 
 import os
+from datetime.datetime import now
 from sensor_msgs.msg import PointCloud2, PointField
 from sensor_msgs_py import point_cloud2 as pc2
 import open3d as o3d
@@ -65,7 +66,7 @@ class DataStorage:
             IDX_RGB_IN_FIELD=3 # x, y, z, rgb
             
             # Get xyz
-            xyz = [(x,y,z) for x,y,z,rgb in cloud_data ] # (why cannot put this line below rgb?)
+            xyz = [(x,y,z) for x,y,z,rgb in cloud_data ]
 
             # Get rgb
             # Check whether int or float
@@ -105,11 +106,27 @@ class DataStorage:
         file_path = os.path.join(self.storage_directory, file_name)
         o3d.io.write_point_cloud(file_path, self.point_cloud, compressed=True)
 
+    def create_storage_subdirectory(self, subdirectory_name: str) -> None:
+        """ Creates a subdirectory in the storage directory.
+
+        Args:
+            subdirectory_name (str): The name of the subdirectory to be created.
+        """
+        subdirectory_path = os.path.join(self.storage_directory, subdirectory_name)
+
+        # Create the subdirectory if it does not exist
+        if not os.path.exists(subdirectory_path):
+            os.makedirs(subdirectory_path)
+            print(f'Subdirectory has been created at {subdirectory_path}.')
+
     def configure_storage_directory(self) -> None:
         """ Configures the storage directory for the data. """
         self.storage_directory = os.path.join(os.path.expanduser('~'), 'ltm_data')
+
+        # Create the storage directory if it does not exist
         if not os.path.exists(self.storage_directory):
             os.makedirs(self.storage_directory)
             print(f'Storage directory has been created at {self.storage_directory}.')
 
-    # TODO: Create a method that creates a directory given the position and orientation
+        # Create a directory for the current session based on the current date and time
+        self.storage_directory = os.path.join(self.storage_directory, now().strftime('%Y-%m-%d_%H-%M-%S'))

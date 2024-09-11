@@ -19,6 +19,7 @@ import os
 from typing import Any
 import numpy as np
 from time import sleep
+from datetime import datetime
 
 from ltm_scan_procedure.data_storage import DataStorage
 
@@ -97,6 +98,7 @@ class ScanProcedureNode(Node):
         """
         self.get_current_robot_pose()
         self.switch_scan_mode(False)
+        self.data_storage.create_storage_subdirectory(self.get_robot_state_stamp())
 
         for _ in range(self.number_of_orientations):
             # for pose in ['stand', 'look_down', 'sit']:
@@ -110,8 +112,9 @@ class ScanProcedureNode(Node):
             self.get_logger().info("Moving to next orientation...")
             self.rotate_robot(2 * np.pi / self.number_of_orientations)
             self.collect_point_cloud_data()
+            self.save_point_cloud_data()
 
-        # self.save_data()
+        self.save_point_cloud_data()
         self.get_logger().info('Scan procedure at x: %f, y: %f, yaw: %f' % 
                                (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
 
@@ -155,18 +158,16 @@ class ScanProcedureNode(Node):
 
     def collect_point_cloud_data(self) -> None:
         """Collects 3D point cloud data from the environment."""
-        # Activate the scan mode and wait for the point cloud data to be collected
         self.get_logger().info("Collecting pointcloud...")
         self.switch_scan_mode(True)
         sleep(self.point_cloud_buffer_time)
         self.switch_scan_mode(False)
         self.get_logger().info("Pointcloud collected.")
 
-        # Save the point cloud data
+    def save_point_cloud_data(self) -> None:
+        """Saves the point cloud data to a PCD file."""
         self.get_logger().info("Saving pointcloud...")
-        # point_cloud_file_name = self.get_robot_state_stamp() + '.pcd'
-        point_cloud_file_name = 'test.pcd'
-        self.get_logger().info(f"Filename: {point_cloud_file_name}")
+        point_cloud_file_name = self.get_robot_state_stamp(yaw=self.current_robot_yaw) + '.pcd'
         self.data_storage.save_point_cloud(point_cloud_file_name)
         self.data_storage.reset_point_cloud()
         self.get_logger().info("Pointcloud saved.")
@@ -211,14 +212,32 @@ class ScanProcedureNode(Node):
             1 - 2 * (quaternion.y**2 + quaternion.z**2)
         )
     
-    def get_robot_state_stamp(self) -> str:
-        """Returns the current robot state as a string."""
+    def get_robot_state_stamp(self, yaw=None, pose=None) -> str:
+        """Returns the current robot state as a string. 
+        
+        Args:
+            yaw (float): the orientation of the robot in the z-direction in the map frame. Default to None.
+            pose (str): the pose of the robot when scanning the environment. Default to None.
+
+        Returns:
+            str: robot stamp in (x, y, yaw, pose, time)
+        """
         # Round the robot position to 3 decimal places
         x = self.current_robot_position.x.round(3)
         y = self.current_robot_position.y.round(3)
-        yaw = self.current_robot_yaw.round(3)
 
-        return 'x_%f_y_%f_yaw_%f' % (x, y, yaw)
+        # Get current time
+        current_time = datetime.now().strftime('%H-%M-%S')
+
+        # If yaw is not provided, send x and y
+        if yaw is None:
+            return 'x_%s_y_%s_%s' % (str(x), str(y), current_time)
+
+        # pose is not provided, send x, y and yaw
+        if pose is None:
+            return 'x_%s_y_%s_yaw_%s_%s' % (str(x), str(y), str(yaw.round(3)), current_time)
+        
+        return 'x_%s_y_%s_yaw_%s_pose_%s_%s' % (str(x), str(y), str(yaw.round(3)), pose, current_time)
 
     def switch_scan_mode(self, mode: bool) -> None:
         """Switches the scan mode to the specified mode.
@@ -229,7 +248,7 @@ class ScanProcedureNode(Node):
         self.is_scanning = mode
     
     def configure_scan_procedure_parameters(self) -> None:
-        """Configures the parameters for the scan procedure node."""
+        """Configures the parameters for the scan procedure node. """
 
         # Number of orientations to scan the environment at each waypoint
         self.declare_parameter('scan_number_of_orientations', 8)
