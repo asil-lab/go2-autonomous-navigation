@@ -22,6 +22,7 @@ from time import sleep
 from datetime import datetime
 
 from ltm_scan_procedure.data_storage import DataStorage
+from ltm_scan_procedure.utils import yaw_to_quaternion, quaternion_to_yaw
 
 class ScanProcedureNode(Node):
 
@@ -147,7 +148,7 @@ class ScanProcedureNode(Node):
             self.current_robot_position.x = current_robot_pose.translation.x
             self.current_robot_position.y = current_robot_pose.translation.y
             self.current_robot_position.z = current_robot_pose.translation.z
-            self.current_robot_yaw = self.quaternion_to_yaw(current_robot_pose.rotation)
+            self.current_robot_yaw = quaternion_to_yaw(current_robot_pose.rotation)
             
         except Exception as e:
             self.get_logger().error('Failed to get current robot position: %s' % str(e))
@@ -168,10 +169,10 @@ class ScanProcedureNode(Node):
         # while not is_goal_reached:
             # self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
             # is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-            #                                          self.yaw_to_quaternion(self.current_robot_yaw))
+            #                                          yaw_to_quaternion(self.current_robot_yaw))
             # self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
         is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-            self.yaw_to_quaternion(self.current_robot_yaw))
+            yaw_to_quaternion(self.current_robot_yaw))
         self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
     def perform_gesture(self, gesture: str) -> None:
@@ -210,36 +211,6 @@ class ScanProcedureNode(Node):
             float: The normalized yaw angle.
         """
         return yaw % (2 * np.pi)
-
-    def yaw_to_quaternion(self, yaw: float) -> Quaternion:
-        """Converts a yaw angle to a quaternion.
-        Args:
-            yaw (float): The yaw angle to convert.
-
-        Returns:
-            Quaternion: The quaternion representation of the yaw angle.
-        """
-        assert isinstance(yaw, float), "Input to argument yaw is not of type float."
-
-        quaternion = Quaternion()
-        quaternion.z = np.sin(yaw / 2)
-        quaternion.w = np.cos(yaw / 2)
-        return quaternion
-
-    def quaternion_to_yaw(self, quaternion: Quaternion) -> float:
-        """Converts a quaternion to a yaw angle.
-        Args:
-            quaternion (Quaternion): The quaternion to convert.
-
-        Returns:
-            float: The yaw angle representation of the quaternion.
-        """
-        assert isinstance(quaternion, Quaternion), "Input to argument quaternion is not of type Quaternion."
-
-        return np.arctan2(
-            2 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y), 
-            1 - 2 * (quaternion.y**2 + quaternion.z**2)
-        )
     
     def get_robot_state_stamp(self, yaw=None, gesture=None) -> str:
         """Returns the current robot state as a string. 
