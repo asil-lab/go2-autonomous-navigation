@@ -34,6 +34,7 @@ class ScanProcedureNode(Node):
         self.configure_scan_procedure_parameters()
         self.current_robot_position = Point()
         self.current_robot_yaw = 0.0
+        self.current_robot_gesture = 'stand'
         self.is_scanning = False
 
         # Initialize data storage
@@ -124,11 +125,9 @@ class ScanProcedureNode(Node):
 
             # Perform gestures at each orientation
             for gesture in self.gesture_sequence:
-                self.get_logger().info('Performing gesture: %s' % gesture)
-                self.publish_gesture(gesture)
-                sleep(self.gesture_delay)
+                self.perform_gesture(gesture)
                 
-                # Collect 3D point cloud data
+                # Collect data at each gesture
                 self.collect_point_cloud_data()
                 self.save_point_cloud_data()
 
@@ -175,6 +174,16 @@ class ScanProcedureNode(Node):
             self.yaw_to_quaternion(self.current_robot_yaw))
         self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
+    def perform_gesture(self, gesture: str) -> None:
+        """Performs the specified gesture.
+        
+        Args:
+            gesture (str): The gesture to perform.
+        """
+        self.get_logger().info('Performing gesture: %s' % gesture)
+        self.publish_gesture(gesture)
+        sleep(self.gesture_delay)
+
     def collect_point_cloud_data(self) -> None:
         """Collects 3D point cloud data from the environment."""
         self.get_logger().info("Collecting pointcloud...")
@@ -186,7 +195,8 @@ class ScanProcedureNode(Node):
     def save_point_cloud_data(self) -> None:
         """Saves the point cloud data to a PCD file."""
         self.get_logger().info("Saving pointcloud...")
-        point_cloud_file_name = self.get_robot_state_stamp(yaw=self.current_robot_yaw) + '.pcd'
+        point_cloud_file_name = self.get_robot_state_stamp(
+            yaw=self.current_robot_yaw, gesture=self.current_robot_gesture) + '.pcd'
         is_save_successful = self.data_storage.save_point_cloud(point_cloud_file_name)
         self.data_storage.reset_point_cloud()
         self.get_logger().info("Pointcloud saved: %s" % (str(is_save_successful)))
