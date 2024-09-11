@@ -12,7 +12,7 @@ from tf2_ros import Buffer, TransformListener
 
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from sensor_msgs.msg import PointCloud2, Image
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, String
 from ltm_shared_msgs.srv import NavigateToPose
 
 import os
@@ -31,6 +31,7 @@ class ScanProcedureNode(Node):
         self.number_of_orientations = 8
 
         # Initialize attributes
+        self.configure_scan_procedure_parameters()
         self.current_robot_position = Point()
         self.current_robot_yaw = 0.0
         self.is_scanning = False
@@ -40,9 +41,9 @@ class ScanProcedureNode(Node):
         self.get_logger().info(f"Saving files in {self.data_storage.storage_directory}.")
 
         # Configure ROS2 entities'
-        self.configure_scan_procedure_parameters()
         self.configure_pointcloud_sub()
         self.configure_trigger_sub()
+        self.configure_gesture_pub()
         self.configure_navigate_to_pose_client()
         self.configure_tf_listener()
 
@@ -67,6 +68,22 @@ class ScanProcedureNode(Node):
         self.get_logger().info('Trigger has been received.')
         self.perform_scan()
 
+    def publish_gesture(self, gesture: str) -> None:
+        """Publishes the gesture to the gesture topic.
+        
+        Args:
+            gesture (str): The gesture to publish.
+        """
+        assert isinstance(gesture, str), "Input to argument gesture is not of type str."
+
+        if len(gesture) == 0:
+            self.get_logger().error('Gesture is empty. Ignoring...')
+            return
+
+        gesture_msg = String()
+        gesture_msg.data = gesture
+        self.gesture_pub.publish(gesture_msg)
+
     def request_goal_pose(self, position: Point, orientation: Quaternion) -> bool:
         """Sends a request to /navigate_to_pose service to navigate the robot to the desired pose.
         
@@ -89,10 +106,10 @@ class ScanProcedureNode(Node):
         """ Perform scan procedure in the following order:
         1. Get the current robot position and yaw
         2. for number of orientation steps:
-            3. for pose in [stand, looking down, sit]:
+            3. for gesture in [stand, looking down, sit]:
                 3. Capture 2D image data
                 4. Collect 3D point cloud data
-                5. Stand up and recover robot pose
+                5. Stand up and recover robot gesture
             6. Rotate robot by 360/number of orientations
         7. Save the 2D images and 3D point cloud data
         """
@@ -100,22 +117,23 @@ class ScanProcedureNode(Node):
         self.switch_scan_mode(False)
         self.data_storage.create_storage_subdirectory(self.get_robot_state_stamp())
 
+        # Perform scan procedure at each orientation
         for _ in range(self.number_of_orientations):
-            # for pose in ['stand', 'look_down', 'sit']:
-            #     self.capture_image_data(pose)
-            #     self.collect_point_cloud_data()
-            #     if pose == 'stand':
-            #         self.stand_up()
-            #     elif pose == 'sit':
-            #         self.sit_down()
-            
             self.get_logger().info("Moving to next orientation...")
             self.rotate_robot(2 * np.pi / self.number_of_orientations)
-            self.collect_point_cloud_data()
-            self.save_point_cloud_data()
+
+            # Perform gestures at each orientation
+            for gesture in self.gesture_sequence:
+                self.get_logger().info('Performing gesture: %s' % gesture)
+                self.publish_gesture(gesture)
+                sleep(self.gesture_delay)
+                
+                # Collect 3D point cloud data
+                self.collect_point_cloud_data()
+                self.save_point_cloud_data()
 
         self.get_logger().info('Scan procedure at x: %f, y: %f, yaw: %f' % 
-                               (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
+            (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
 
     def get_current_robot_pose(self) -> None:
         """Gets the current pose representation of the robot in the map frame.
@@ -213,15 +231,15 @@ class ScanProcedureNode(Node):
             1 - 2 * (quaternion.y**2 + quaternion.z**2)
         )
     
-    def get_robot_state_stamp(self, yaw=None, pose=None) -> str:
+    def get_robot_state_stamp(self, yaw=None, gesture=None) -> str:
         """Returns the current robot state as a string. 
         
         Args:
             yaw (float): the orientation of the robot in the z-direction in the map frame. Default to None.
-            pose (str): the pose of the robot when scanning the environment. Default to None.
+            gesture (str): the gesture of the robot when scanning the environment. Default to None.
 
         Returns:
-            str: robot stamp in (x, y, yaw, pose, time)
+            str: robot stamp in (x, y, yaw, gesture, time)
         """
         # Round the robot position to 3 decimal places
         x = self.current_robot_position.x.round(3)
@@ -234,11 +252,11 @@ class ScanProcedureNode(Node):
         if yaw is None:
             return 'x_%s_y_%s_%s' % (str(x), str(y), current_time)
 
-        # pose is not provided, send x, y and yaw
-        if pose is None:
+        # gesture is not provided, send x, y and yaw
+        if gesture is None:
             return 'x_%s_y_%s_yaw_%s_%s' % (str(x), str(y), str(yaw.round(3)), current_time)
         
-        return 'x_%s_y_%s_yaw_%s_pose_%s_%s' % (str(x), str(y), str(yaw.round(3)), pose, current_time)
+        return 'x_%s_y_%s_yaw_%s_gesture_%s_%s' % (str(x), str(y), str(yaw.round(3)), gesture, current_time)
 
     def switch_scan_mode(self, mode: bool) -> None:
         """Switches the scan mode to the specified mode.
@@ -266,6 +284,16 @@ class ScanProcedureNode(Node):
         self.point_cloud_buffer_time = self.get_parameter('scan_pointcloud_buffer_time').value
         self.get_logger().info('Time to buffer 3D point cloud data: %f s' % (self.point_cloud_buffer_time))
 
+        # Sequence of gestures to scan the environment
+        self.declare_parameter('scan_gesture_sequence', ['stand', 'recover'])
+        self.gesture_sequence = self.get_parameter('scan_gesture_sequence').value
+        self.get_logger().info('Gesture sequence: %s' % (str(self.gesture_sequence)))
+
+        # Time delay after each gesture
+        self.declare_parameter('scan_delay_between_gestures', 1.0)
+        self.gesture_delay = self.get_parameter('scan_delay_between_gestures').value
+        self.get_logger().info('Time delay between each gesture: %f s' % (self.gesture_delay))
+
     def configure_pointcloud_sub(self) -> None:
         """Configures the subscriber to the point cloud topic."""
         self.declare_parameter('point_cloud_subscriber_topic_name', 'point_cloud/buffer')
@@ -287,6 +315,15 @@ class ScanProcedureNode(Node):
             Empty, self.get_parameter('trigger_subscriber_topic_name').value, 
             self.trigger_callback, self.get_parameter('trigger_subscriber_queue_size').value,
             callback_group=self.trigger_callback_group)
+
+    def configure_gesture_pub(self) -> None:
+        """Configures the publisher to the gesture topic."""
+        self.declare_parameter('gesture_publisher_topic_name', 'gesture')
+        self.declare_parameter('gesture_publisher_queue_size', 10)
+
+        self.gesture_pub = self.create_publisher(
+            String, self.get_parameter('gesture_publisher_topic_name').value, 
+            self.get_parameter('gesture_publisher_queue_size').value)
 
     def configure_navigate_to_pose_client(self) -> None:
         """Configures the client to the navigate_to_pose service."""
