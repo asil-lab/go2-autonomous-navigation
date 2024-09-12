@@ -36,6 +36,7 @@ class ScanProcedureNode(Node):
         self.current_robot_position = Point()
         self.current_robot_yaw = 0.0
         self.current_robot_gesture = 'stand'
+        self.current_subdirectory = ""
         self.is_scanning = False
 
         # Initialize data storage
@@ -60,7 +61,7 @@ class ScanProcedureNode(Node):
         # Ignore point cloud data if the node is not scanning
         if not self.is_scanning:
             return
-        
+
         # Store the current point cloud data
         self.get_logger().info('Point cloud received.')
         self.data_storage.add_point_cloud(
@@ -116,21 +117,26 @@ class ScanProcedureNode(Node):
         7. Save the 2D images and 3D point cloud data
         """
         self.get_current_robot_pose()
-        self.switch_scan_mode(False)
-        self.data_storage.create_storage_subdirectory(self.get_robot_state_stamp())
+
+        self.current_subdirectory = self.get_robot_state_stamp()
+        self.data_storage.create_storage_subdirectory(self.current_subdirectory)
 
         # Perform scan procedure at each orientation
         for _ in range(self.number_of_orientations):
-            self.get_logger().info("Moving to next orientation...")
-            self.rotate_robot(2 * np.pi / self.number_of_orientations)
-
             # Perform gestures at each orientation
             for gesture in self.gesture_sequence:
                 self.perform_gesture(gesture)
+
+                # Stop if gesture is recover
+                if gesture == 'recover':
+                    continue
                 
                 # Collect data at each gesture
                 self.collect_point_cloud_data()
                 self.save_point_cloud_data()
+            
+            self.get_logger().info("Moving to next orientation...")
+            self.rotate_robot(2 * np.pi / self.number_of_orientations)
 
         self.get_logger().info('Scan procedure at x: %f, y: %f, yaw: %f' % 
             (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
@@ -182,6 +188,7 @@ class ScanProcedureNode(Node):
             gesture (str): The gesture to perform.
         """
         self.get_logger().info('Performing gesture: %s' % gesture)
+        self.current_robot_gesture = gesture
         self.publish_gesture(gesture)
         sleep(self.gesture_delay)
 
@@ -198,7 +205,8 @@ class ScanProcedureNode(Node):
         self.get_logger().info("Saving pointcloud...")
         point_cloud_file_name = self.get_robot_state_stamp(
             yaw=self.current_robot_yaw, gesture=self.current_robot_gesture) + '.pcd'
-        is_save_successful = self.data_storage.save_point_cloud(point_cloud_file_name)
+        is_save_successful = self.data_storage.save_point_cloud(
+            os.path.join(self.current_subdirectory, point_cloud_file_name))
         self.data_storage.reset_point_cloud()
         self.get_logger().info("Pointcloud saved: %s" % (str(is_save_successful)))
 
@@ -223,21 +231,22 @@ class ScanProcedureNode(Node):
             str: robot stamp in (x, y, yaw, gesture, time)
         """
         # Round the robot position to 3 decimal places
-        x = self.current_robot_position.x.round(3)
-        y = self.current_robot_position.y.round(3)
+        x = str(round(self.current_robot_position.x, 3))
+        y = str(round(self.current_robot_position.y, 3))
 
         # Get current time
         current_time = datetime.now().strftime('%H-%M-%S')
 
         # If yaw is not provided, send x and y
         if yaw is None:
-            return 'x_%s_y_%s_%s' % (str(x), str(y), current_time)
+            return 'x_%s_y_%s_%s' % (x, y, current_time)
+        yaw_str = str(round(yaw, 3))
 
         # gesture is not provided, send x, y and yaw
         if gesture is None:
-            return 'x_%s_y_%s_yaw_%s_%s' % (str(x), str(y), str(yaw.round(3)), current_time)
+            return 'x_%s_y_%s_yaw_%s_%s' % (x, y, yaw_str, current_time)
         
-        return 'x_%s_y_%s_yaw_%s_gesture_%s_%s' % (str(x), str(y), str(yaw.round(3)), gesture, current_time)
+        return 'x_%s_y_%s_yaw_%s_gesture_%s_%s' % (x, y, yaw_str, gesture, current_time)
 
     def switch_scan_mode(self, mode: bool) -> None:
         """Switches the scan mode to the specified mode.

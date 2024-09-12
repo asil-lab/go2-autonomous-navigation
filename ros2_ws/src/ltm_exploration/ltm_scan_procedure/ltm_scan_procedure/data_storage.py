@@ -8,7 +8,7 @@ import numpy as np
 from ctypes import *
 
 import os
-from datetime.datetime import now
+from datetime import datetime
 from sensor_msgs.msg import PointCloud2, PointField
 from sensor_msgs_py import point_cloud2 as pc2
 import open3d as o3d
@@ -132,4 +132,6 @@ class DataStorage:
             print(f'Storage directory has been created at {self.storage_directory}.')
 
         # Create a directory for the current session based on the current date and time
-        self.storage_directory = os.path.join(self.storage_directory, now().strftime('%Y-%m-%d_%H-%M-%S'))
+        session_directory_name = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        self.create_storage_subdirectory(session_directory_name)
+        self.storage_directory = os.path.join(self.storage_directory, session_directory_name)
