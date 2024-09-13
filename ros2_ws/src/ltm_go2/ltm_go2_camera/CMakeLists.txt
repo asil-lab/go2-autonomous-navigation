@@ -23,6 +23,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(unitree_sdk2 REQUIRED)
 include_directories(include)
 
@@ -36,6 +37,7 @@ ament_target_dependencies(
   rclcpp
   sensor_msgs
   OpenCV
+  cv_bridge
   unitree_sdk2
 )
 

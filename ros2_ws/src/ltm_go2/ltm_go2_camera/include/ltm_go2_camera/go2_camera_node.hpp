@@ -13,6 +13,8 @@
 
 #include <string>
 
+#include <opencv2/opencv.hpp>
+
 namespace LTM
 {
   class Go2CameraNode : public rclcpp::Node
@@ -25,8 +27,11 @@ namespace LTM
       void timerCallback();
       void publishImage(const sensor_msgs::msg::Image::SharedPtr msg);
 
+      std::string m_camera_address;
+      cv::VideoCapture m_cap;
+
       rclcpp::TimerBase::SharedPtr m_timer;
-      rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr m_image_pub;
+      rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_image_pub;
 
   }; // class Go2CameraNode
 } // namespace LTM
