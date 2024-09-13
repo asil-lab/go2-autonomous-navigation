@@ -27,11 +27,16 @@ namespace LTM
       void timerCallback();
       void publishImage(const sensor_msgs::msg::Image::SharedPtr msg);
 
+      void initializeCamera();
+      void initializeTimer();
+      void initializeImagePublisher();
+
       std::string m_camera_address;
       cv::VideoCapture m_cap;
 
       rclcpp::TimerBase::SharedPtr m_timer;
       rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_image_pub;
+      // TODO: Implement ROS service to request image instead of publishing at a fixed rate.
 
   }; // class Go2CameraNode
 } // namespace LTM
