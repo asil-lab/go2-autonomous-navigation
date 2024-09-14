@@ -30,25 +30,44 @@ Go2CameraNode::~Go2CameraNode()
 
 void Go2CameraNode::timerCallback()
 {
-  RCLCPP_INFO(this->get_logger(), "Timer callback triggered.");
-
-  cv::Mat frame;
-  m_cap >> frame;
-
-  if (frame.empty())
-  {
-    RCLCPP_ERROR(this->get_logger(), "Failed to capture frame.");
-    return;
-  }
-
-  sensor_msgs::msg::Image::SharedPtr msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
-  publishImage(msg);
+  publishImage(captureImage());
 }
 
-void Go2CameraNode::publishImage(const sensor_msgs::msg::Image::SharedPtr msg)
+void Go2CameraNode::serviceCallback(const std::shared_ptr<ltm_shared_msgs::srv::GetImage::Request> request,
+  std::shared_ptr<ltm_shared_msgs::srv::GetImage::Response> response)
+{
+  (void) request;
+  response->image = *(captureImage());
+}
+
+void Go2CameraNode::publishImage(const sensor_msgs::msg::Image::SharedPtr msg) const
 {
   RCLCPP_INFO(this->get_logger(), "Publishing image.");
   m_image_pub->publish(*msg);
+}
+
+sensor_msgs::msg::Image::SharedPtr Go2CameraNode::captureImage()
+{
+  // Initialize camera stream.
+  cv::Mat frame;
+  m_cap >> frame;
+
+  // Shutdown if camera fails to capture frame.
+  if (frame.empty())
+  {
+    RCLCPP_ERROR(this->get_logger(), "Failed to capture frame.");
+    return sensor_msgs::msg::Image::SharedPtr();
+  }
+
+  // Convert frame to image message.
+  sensor_msgs::msg::Image::SharedPtr image_msg 
+    = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frame).toImageMsg();
+
+  // Set image message header.
+  image_msg->header.frame_id = m_camera_frame_id;
+  image_msg->header.stamp = this->now();
+
+  return image_msg;
 }
 
 void Go2CameraNode::initializeCamera()
@@ -98,6 +117,20 @@ void Go2CameraNode::initializeStreamMode()
   initializeTimer();
 }
 
+void Go2CameraNode::initializeServiceMode()
+{
+  // Assert that service mode is enabled.
+  declare_parameter("service_mode", false);
+  if (!this->get_parameter("service_mode").as_bool())
+  {
+    RCLCPP_INFO(this->get_logger(), "Service mode is disabled.");
+    return;
+  }
+
+  // Initialize image service.
+  initializeImageService();
+}
+
 void Go2CameraNode::initializeTimer()
 {
   declare_parameter("image_pub_topic_rate", 24.0);
@@ -126,6 +159,16 @@ void Go2CameraNode::initializeImagePublisher()
   m_image_pub = this->create_publisher<sensor_msgs::msg::Image>(
     this->get_parameter("image_pub_topic_name").as_string(),
     this->get_parameter("image_pub_topic_queue_size").as_int());
+}
+
+void Go2CameraNode::initializeImageService()
+{
+  declare_parameter("image_service_name", "camera/raw");
+
+  // Initialize image service.
+  m_image_service = this->create_service<ltm_shared_msgs::srv::GetImage>(
+    this->get_parameter("image_service_name").as_string(),
+    std::bind(&Go2CameraNode::serviceCallback, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 int main(int argc, char * argv[])

@@ -22,6 +22,7 @@ list(APPEND CMAKE_PREFIX_PATH "/opt/unitree_robotics/lib/cmake")
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(ltm_shared_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(unitree_sdk2 REQUIRED)
@@ -36,6 +37,7 @@ ament_target_dependencies(
   go2_camera_node
   rclcpp
   sensor_msgs
+  ltm_shared_msgs
   OpenCV
   cv_bridge
   unitree_sdk2

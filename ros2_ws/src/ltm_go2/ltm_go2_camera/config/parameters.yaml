@@ -3,7 +3,9 @@ go2_camera_node:
 
     image_pub_topic_name: "camera/raw"
     image_pub_topic_queue_size: 10
-    image_pub_topic_rate: 30.0
+    image_pub_topic_rate: 24.0  # Hz
+
+    image_service_name: "get_image"
 
     camera_frame_id: "camera_link"
     camera_address: # In string

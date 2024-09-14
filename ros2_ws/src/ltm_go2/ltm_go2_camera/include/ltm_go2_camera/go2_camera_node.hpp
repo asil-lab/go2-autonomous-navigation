@@ -10,6 +10,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <sensor_msgs/msg/image.hpp>
+#include <ltm_shared_msgs/srv/get_image.hpp>
 
 #include <string>
 
@@ -25,12 +26,19 @@ namespace LTM
 
     private:
       void timerCallback();
-      void publishImage(const sensor_msgs::msg::Image::SharedPtr msg);
+      void serviceCallback(const std::shared_ptr<ltm_shared_msgs::srv::GetImage::Request> request,
+        std::shared_ptr<ltm_shared_msgs::srv::GetImage::Response> response);
+      void publishImage(const sensor_msgs::msg::Image::SharedPtr msg) const;
 
-      void initializeStreamMode();
+      sensor_msgs::msg::Image::SharedPtr captureImage();
+
       void initializeCamera();
+      void initializeStreamMode();
+      void initializeServiceMode();
+
       void initializeTimer();
       void initializeImagePublisher();
+      void initializeImageService();
 
       std::string m_camera_frame_id;
       std::string m_camera_address;
@@ -38,7 +46,7 @@ namespace LTM
 
       rclcpp::TimerBase::SharedPtr m_timer;
       rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_image_pub;
-      // TODO: Implement ROS service to request image instead of publishing at a fixed rate.
+      rclcpp::Service<ltm_shared_msgs::srv::GetImage>::SharedPtr m_image_service;
 
   }; // class Go2CameraNode
 } // namespace LTM
