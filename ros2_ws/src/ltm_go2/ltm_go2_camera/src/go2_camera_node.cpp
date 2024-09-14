@@ -174,9 +174,11 @@ void Go2CameraNode::initializeImageService()
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<Go2CameraNode>());
+  rclcpp::executors::SingleThreadedExecutor executor;
+  auto go2_camera_node = std::make_shared<Go2CameraNode>();
+  executor.add_node(go2_camera_node);
+  executor.spin();
   rclcpp::shutdown();
-  return 0;
 }
 
 // Path: ros2_ws/src/ltm_go2/ltm_go2_camera/src/go2_camera_node.cpp
