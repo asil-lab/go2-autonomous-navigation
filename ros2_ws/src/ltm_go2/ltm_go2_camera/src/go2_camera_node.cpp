@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <stdio.h>
+#include <sstream>
 
 #include <cv_bridge/cv_bridge.h>
 
@@ -18,7 +19,6 @@ Go2CameraNode::Go2CameraNode() : Node("go2_camera_node")
   RCLCPP_INFO(this->get_logger(), "Go2CameraNode starting up.");
 
   initializeCamera();
-  initializeTimer();
   initializeImagePublisher();
   RCLCPP_INFO(this->get_logger(), "Go2CameraNode started.");
 }
@@ -53,9 +53,21 @@ void Go2CameraNode::publishImage(const sensor_msgs::msg::Image::SharedPtr msg)
 
 void Go2CameraNode::initializeCamera()
 {
-  m_camera_address = "udpsrc address=230.1.1.1 port=1720 multicast-iface=wlp2s0 ! application/x-rtp, media=video, encoding-name=H264 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! video/x-raw,width=1280,height=720,format=BGR ! appsink drop=1";
+  declare_parameter("camera_address.address", "230.1.1.1");
+  declare_parameter("camera_address.port", 1720);
+  declare_parameter("camera_address.multicast_iface", "wlp2s0");
+
+  std::stringstream camera_address_stream;
+  camera_address_stream << "udpsrc address=" << 
+    this->get_parameter("camera_address.address").as_string() << 
+    " port=" << this->get_parameter("camera_address.port").as_int() << 
+    " multicast-iface=" << this->get_parameter("camera_address.multicast_iface").as_string() 
+    << " ! application/x-rtp, media=video, encoding-name=H264 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! video/x-raw,width=1280,height=720,format=BGR ! appsink drop=1";
+
+  m_camera_address = camera_address_stream.str();
   m_cap.open(m_camera_address, cv::CAP_GSTREAMER);
 
+  // Shutdown if camera fails to open.
   if (!m_cap.isOpened())
   {
     RCLCPP_ERROR(this->get_logger(), "Failed to open camera.");
@@ -64,18 +76,46 @@ void Go2CameraNode::initializeCamera()
 
   RCLCPP_INFO(this->get_logger(), "Camera initialized.");
 }
-
-void Go2CameraNode::initializeTimer()
-{
-  m_timer = this->create_wall_timer(
-    std::chrono::milliseconds(10), std::bind(&Go2CameraNode::timerCallback, this));
-  RCLCPP_INFO(this->get_logger(), "Timer initialized.");
-}
-
 void Go2CameraNode::initializeImagePublisher()
 {
+  // Initialize image publisher if stream mode is enabled.
+  declare_parameter("stream_mode", false);
+  if (!this->get_parameter("stream_mode").as_bool())
+  {
+    RCLCPP_INFO(this->get_logger(), "Stream mode is disabled.");
+    return;
+  }
+
+  declare_parameter("image_pub_topic_name", "camera/raw");
+  declare_parameter("image_pub_topic_queue_size", 10);
+  declare_parameter("image_pub_topic_frame_id", "camera_link");
+  declare_parameter("image_pub_topic_rate", 24.0);
+
+
   m_image_pub = this->create_publisher<sensor_msgs::msg::Image>(
-    "go2_camera/image", 10);
+    this->get_parameter("image_pub_topic_name").as_string(),
+    this->get_parameter("image_pub_topic_queue_size").as_int());
+
+  // Assert that the camera frame id is not empty.
+  if (m_camera_frame_id.empty())
+  {
+    RCLCPP_ERROR(this->get_logger(), "Camera frame id is empty.");
+    rclcpp::shutdown();
+  }
+
+  m_camera_frame_id = this->get_parameter("image_pub_frame_id").as_string();
+
+  // Assert that the rate is not zero.
+  if (this->get_parameter("image_pub_topic_rate").as_double() == 0.0)
+  {
+    RCLCPP_ERROR(this->get_logger(), "Image publisher rate is zero.");
+    rclcpp::shutdown();
+  }
+
+  double period = (1.0 / this->get_parameter("image_pub_topic_rate").as_double()) * 1e9;
+  m_timer = this->create_wall_timer(
+    std::chrono::nanoseconds(period), std::bind(&Go2CameraNode::timerCallback, this));
+
   RCLCPP_INFO(this->get_logger(), "Image publisher initialized.");
 }
 
