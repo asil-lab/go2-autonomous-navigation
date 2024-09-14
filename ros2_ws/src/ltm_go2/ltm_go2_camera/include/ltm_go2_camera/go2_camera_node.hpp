@@ -27,7 +27,9 @@ namespace LTM
       void timerCallback();
       void publishImage(const sensor_msgs::msg::Image::SharedPtr msg);
 
+      void initializeStreamMode();
       void initializeCamera();
+      void initializeTimer();
       void initializeImagePublisher();
 
       std::string m_camera_frame_id;
