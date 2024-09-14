@@ -112,7 +112,8 @@ void Go2CameraNode::initializeImagePublisher()
     rclcpp::shutdown();
   }
 
-  double period = (1.0 / this->get_parameter("image_pub_topic_rate").as_double()) * 1e9;
+  unsigned long int period = static_cast<unsigned long int>(
+    1.0 / this->get_parameter("image_pub_topic_rate").as_double() * 1e9);
   m_timer = this->create_wall_timer(
     std::chrono::nanoseconds(period), std::bind(&Go2CameraNode::timerCallback, this));
 
