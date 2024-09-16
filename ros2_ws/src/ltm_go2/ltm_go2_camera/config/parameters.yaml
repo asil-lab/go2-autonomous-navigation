@@ -10,7 +10,7 @@ go2_camera_node:
     image_service_name: "get_image"
 
     camera_frame_id: "camera_link"
-    camera_address: # In string
+    camera_stream: # In string
       address: "230.1.1.1"
       port: 1720
       multicast_iface: "wlp2s0"
