@@ -13,7 +13,7 @@ from tf2_ros import Buffer, TransformListener
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Empty, String
-from ltm_shared_msgs.srv import NavigateToPose
+from ltm_shared_msgs.srv import GetImage, NavigateToPose
 
 import os
 from typing import Any
@@ -22,7 +22,7 @@ from time import sleep
 from datetime import datetime
 
 from ltm_scan_procedure.data_storage import DataStorage
-from ltm_scan_procedure.utils import yaw_to_quaternion, quaternion_to_yaw
+from ltm_scan_procedure.utils import yaw_to_quaternion, quaternion_to_yaw, normalize_yaw, image_msg_to_numpy
 
 class ScanProcedureNode(Node):
 
@@ -48,6 +48,7 @@ class ScanProcedureNode(Node):
         self.configure_trigger_sub()
         self.configure_gesture_pub()
         self.configure_navigate_to_pose_client()
+        self.configure_get_image_client()
         self.configure_tf_listener()
 
         self.get_logger().info('Scan procedure node has been initialized.')
@@ -105,6 +106,13 @@ class ScanProcedureNode(Node):
         self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
         return navigate_to_pose_future.result().success
 
+    def request_image(self) -> Image:
+        """Requests an image from the /get_image service."""
+        get_image_request = GetImage.Request()
+        get_image_future = self.get_image_client.call_async(get_image_request)
+        rclpy.spin_until_future_complete(self, get_image_future)
+        return get_image_future.result().image
+
     def perform_scan(self) -> None:
         """ Perform scan procedure in the following order:
         1. Get the current robot position and yaw
@@ -131,9 +139,13 @@ class ScanProcedureNode(Node):
                 if gesture == 'recover':
                     continue
                 
-                # Collect data at each gesture
+                # Collect 3D point cloud data
                 self.collect_point_cloud_data()
                 self.save_point_cloud_data()
+
+                # Collect 2D image data
+                self.collect_image_data()
+                self.save_image_data()
             
             self.get_logger().info("Moving to next orientation...")
             self.rotate_robot(2 * np.pi / self.number_of_orientations)
@@ -170,7 +182,7 @@ class ScanProcedureNode(Node):
             self.get_logger().error('The robot position is None. Ignoring...')
             return
         
-        self.current_robot_yaw = self.normalize_yaw(self.current_robot_yaw + angle)
+        self.current_robot_yaw = normalize_yaw(self.current_robot_yaw + angle)
         # is_goal_reached = False
         # while not is_goal_reached:
             # self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
@@ -193,7 +205,7 @@ class ScanProcedureNode(Node):
         sleep(self.gesture_delay)
 
     def collect_point_cloud_data(self) -> None:
-        """Collects 3D point cloud data from the environment."""
+        """Collects 3D point cloud data from the environment. """
         self.get_logger().info("Collecting pointcloud...")
         self.switch_scan_mode(True)
         sleep(self.point_cloud_buffer_time)
@@ -201,7 +213,7 @@ class ScanProcedureNode(Node):
         self.get_logger().info("Pointcloud collected.")
 
     def save_point_cloud_data(self) -> None:
-        """Saves the point cloud data to a PCD file."""
+        """Saves the point cloud data to a PCD file. """
         self.get_logger().info("Saving pointcloud...")
         point_cloud_file_name = self.get_robot_state_stamp(
             yaw=self.current_robot_yaw, gesture=self.current_robot_gesture) + '.pcd'
@@ -210,15 +222,20 @@ class ScanProcedureNode(Node):
         self.data_storage.reset_point_cloud()
         self.get_logger().info("Pointcloud saved: %s" % (str(is_save_successful)))
 
-    def normalize_yaw(self, yaw: float) -> float:
-        """Normalizes a yaw angle to be within the range [-pi, pi].
-        Args:
-            yaw (float): The yaw angle to normalize.
+    def collect_image_data(self) -> None:
+        """Collects 2D image data from the environment. """
+        self.get_logger().info("Collecting image...")
+        image_msg = self.request_image()
+        self.data_storage.add_image(image_msg_to_numpy(image_msg))
+        self.get_logger().info("Image collected.")
 
-        Returns:
-            float: The normalized yaw angle.
-        """
-        return yaw % (2 * np.pi)
+    def save_image_data(self) -> None:
+        """Saves the image data to a JPG file. """
+        self.get_logger().info("Saving image...")
+        image_file_name = self.get_robot_state_stamp(
+            yaw=self.current_robot_yaw, gesture=self.current_robot_gesture) + '.jpg'
+        self.data_storage.save_image(os.path.join(self.current_subdirectory, image_file_name))
+        self.get_logger().info("Image saved.")
     
     def get_robot_state_stamp(self, yaw=None, gesture=None) -> str:
         """Returns the current robot state as a string. 
@@ -323,6 +340,15 @@ class ScanProcedureNode(Node):
         self.navigate_to_pose_client = self.create_client(
             NavigateToPose, self.get_parameter('navigate_to_pose_service_name').value, 
             callback_group=self.navigate_to_pose_callback_group)
+        
+    def configure_get_image_client(self) -> None:
+        """Configures the client to the get_image service."""
+        self.declare_parameter('get_image_service_name', 'get_image')
+
+        self.get_image_callback_group = MutuallyExclusiveCallbackGroup()
+        self.get_image_client = self.create_client(
+            GetImage, self.get_parameter('get_image_service_name').value, 
+            callback_group=self.get_image_callback_group)
         
     def configure_tf_listener(self) -> None:
         """Configures the tf listener for the node."""

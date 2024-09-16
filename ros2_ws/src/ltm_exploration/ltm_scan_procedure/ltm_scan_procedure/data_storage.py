@@ -5,6 +5,7 @@ Date: 10-09-2024
 """
 
 import numpy as np
+import cv2 as cv
 from ctypes import *
 
 import os
@@ -40,6 +41,7 @@ class DataStorage:
 
         # Initialize attributes
         self.reset_point_cloud()
+        self.image = None
 
     def convert_point_cloud2_to_open3d(self, point_cloud2: PointCloud2) -> o3d.geometry.PointCloud:
         """ Converts a PointCloud2 message to an o3d point cloud.
@@ -108,6 +110,25 @@ class DataStorage:
         """
         file_path = os.path.join(self.storage_directory, file_name)
         return o3d.io.write_point_cloud(file_path, self.point_cloud, compressed=True)
+
+    def add_image(self, image: np.ndarray) -> None:
+        """ Adds an image to the data storage.
+
+        Args:
+            image (np.ndarray): The image to be added.
+        """
+        self.image = image
+
+    def save_image(self, file_name: str) -> None:
+        """ Saves the image data to a PNG file.
+
+        Args:
+            file_name (str): The name of the file to be saved.
+        """
+        assert self.image is not None, "No image data to save."
+
+        file_path = os.path.join(self.storage_directory, file_name)
+        cv.imwrite(file_path, self.image)
 
     def create_storage_subdirectory(self, subdirectory_name: str) -> None:
         """ Creates a subdirectory in the storage directory.

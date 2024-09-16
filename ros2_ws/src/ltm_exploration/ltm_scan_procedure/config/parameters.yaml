@@ -15,6 +15,8 @@ scan_procedure_node:
 
     navigate_to_pose_service_name: "send_robot"
 
+    get_image_service_name: "get_image"
+
     scan_number_of_orientations: 8            # Number of orientations to scan at each waypoint
     scan_delay_between_orientations: 1.0      # Delay between each orientation in seconds
     scan_pointcloud_buffer_time: 2.0         # Time to buffer pointclouds in seconds
