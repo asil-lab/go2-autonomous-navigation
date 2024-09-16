@@ -120,7 +120,7 @@ class DataStorage:
         self.image = image
 
     def save_image(self, file_name: str) -> None:
-        """ Saves the image data to a PNG file.
+        """ Saves the image data to a JPG file.
 
         Args:
             file_name (str): The name of the file to be saved.
