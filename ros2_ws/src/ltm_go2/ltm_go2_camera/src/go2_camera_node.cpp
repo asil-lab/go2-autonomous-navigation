@@ -72,16 +72,16 @@ sensor_msgs::msg::Image::SharedPtr Go2CameraNode::captureImage()
 
 void Go2CameraNode::initializeCamera()
 {
-  declare_parameter("camera_address.address", "230.1.1.1");
-  declare_parameter("camera_address.port", 1720);
-  declare_parameter("camera_address.multicast_iface", "wlp2s0");
+  declare_parameter("camera_stream.address", "230.1.1.1");
+  declare_parameter("camera_stream.port", 1720);
+  declare_parameter("camera_stream.multicast_iface", "wlp2s0");
 
   // Construct camera address string.
   std::stringstream camera_address_stream;
   camera_address_stream << "udpsrc address=" << 
-    this->get_parameter("camera_address.address").as_string() << 
-    " port=" << this->get_parameter("camera_address.port").as_int() << 
-    " multicast-iface=" << this->get_parameter("camera_address.multicast_iface").as_string() 
+    this->get_parameter("camera_stream.address").as_string() << 
+    " port=" << this->get_parameter("camera_stream.port").as_int() << 
+    " multicast-iface=" << this->get_parameter("camera_stream.multicast_iface").as_string() 
     << " ! application/x-rtp, media=video, encoding-name=H264 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! video/x-raw,width=1280,height=720,format=BGR ! appsink drop=1";
 
   // Open camera stream.
