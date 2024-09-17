@@ -16,9 +16,9 @@ scan_procedure_node:
 
     scan_number_of_orientations: 8            # Number of orientations to scan at each waypoint
     scan_delay_between_orientations: 1.0      # Delay between each orientation in seconds
-    scan_pointcloud_buffer_time: 2.0         # Time to buffer pointclouds in seconds
+    scan_pointcloud_buffer_time: 5.0         # Time to buffer pointclouds in seconds
     scan_gesture_sequence:                    # Sequence of gestures to perform during scan
     - "stand_up"
-    # - "sit"
+    - "sit"
     - "recover"
-    scan_gesture_delay: 1.0                   # Delay after a gesture in seconds
+    scan_gesture_delay: 5.0                   # Delay after a gesture in seconds

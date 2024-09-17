@@ -46,8 +46,19 @@ void PointCloudBufferNode::serviceCallback(
   RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Received service request to get pointcloud");
   (void) request;
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = transformPointCloud(convertPointCloud2ToPCL(m_recent_input_pointcloud_msg));
-  response->point_cloud = *convertPCLToPointCloud2(cloud);
+  // Get the most recent input pointcloud message
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in = convertPointCloud2ToPCL(m_recent_input_pointcloud_msg);
+
+  // Remove the robot from the pointcloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+  removeRobotFromPointCloud(cloud_in, cloud_filtered);
+
+  // Transform the pointcloud to the target frame
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud<pcl::PointXYZ>);
+  *cloud_out = *(transformPointCloud(cloud_filtered));
+
+  // Convert the pointcloud to a PointCloud2 message and send it as a response
+  response->point_cloud = *convertPCLToPointCloud2(cloud_out);
   response->point_cloud.header.stamp = this->now();
   response->point_cloud.header.frame_id = m_target_frame;
 }
