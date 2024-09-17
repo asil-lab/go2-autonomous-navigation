@@ -11,6 +11,7 @@
 #include <rclcpp/qos.hpp>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <ltm_shared_msgs/srv/get_point_cloud.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.hpp>
@@ -36,6 +37,9 @@ namespace LTM
   private:
     void timerCallback();
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+    void serviceCallback(
+      const std::shared_ptr<ltm_shared_msgs::srv::GetPointCloud::Request> request,
+      std::shared_ptr<ltm_shared_msgs::srv::GetPointCloud::Response> response);
     void publishPointcloudBuffer() const;
 
     void updateInputPointcloudMsg(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
@@ -45,6 +49,7 @@ namespace LTM
     void clearPointcloudBuffer();
 
     void initializeROSTopics();
+    void initializeROSService();
     void initializeTFListener();
     void initializePointcloudBuffer();
 
@@ -66,6 +71,7 @@ namespace LTM
     rclcpp::TimerBase::SharedPtr m_timer;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_subscription;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_publisher;
+    rclcpp::Service<ltm_shared_msgs::srv::GetPointCloud>::SharedPtr m_get_pointcloud_service;
 
   }; // class PointCloudBufferNode
 } // namespace LTM

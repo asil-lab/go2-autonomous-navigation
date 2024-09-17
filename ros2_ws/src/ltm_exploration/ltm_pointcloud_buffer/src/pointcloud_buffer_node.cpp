@@ -16,6 +16,7 @@ PointCloudBufferNode::PointCloudBufferNode()
 {
   initializePointcloudBuffer();
   initializeROSTopics();
+  initializeROSService();
   initializeTFListener();
   RCLCPP_INFO(this->get_logger(), "Pointcloud Buffer Node has been initialized");
 }
@@ -36,6 +37,19 @@ void PointCloudBufferNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Received pointcloud message with %d points", msg->width * msg->height);
   updateInputPointcloudMsg(msg);
   bufferPointCloud(convertPointCloud2ToPCL(msg));
+}
+
+void PointCloudBufferNode::serviceCallback(
+  const std::shared_ptr<ltm_shared_msgs::srv::GetPointCloud::Request> request,
+  std::shared_ptr<ltm_shared_msgs::srv::GetPointCloud::Response> response)
+{
+  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Received service request to get pointcloud");
+  (void) request;
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = transformPointCloud(convertPointCloud2ToPCL(m_recent_input_pointcloud_msg));
+  response->point_cloud = *convertPCLToPointCloud2(cloud);
+  response->point_cloud.header.stamp = this->now();
+  response->point_cloud.header.frame_id = m_target_frame;
 }
 
 void PointCloudBufferNode::publishPointcloudBuffer() const
@@ -125,6 +139,20 @@ void PointCloudBufferNode::initializeROSTopics()
     buffered_pointcloud_topic, 10);
 }
 
+void PointCloudBufferNode::initializeROSService()
+{
+  // Extract the parameters for services
+  declare_parameter("services.get_pointcloud_service", "get_pointcloud");
+
+  std::string get_pointcloud_service = 
+    this->get_parameter("services.get_pointcloud_service").as_string();
+  RCLCPP_INFO(this->get_logger(), "Creating service: %s", get_pointcloud_service.c_str());
+
+  // Create a service to get the buffered pointcloud
+  m_get_pointcloud_service = this->create_service<ltm_shared_msgs::srv::GetPointCloud>(get_pointcloud_service, 
+    std::bind(&PointCloudBufferNode::serviceCallback, this, std::placeholders::_1, std::placeholders::_2));
+}
+
 void PointCloudBufferNode::initializeTFListener()
 {
   // Create a buffer and listener for the tf2 transforms
@@ -172,7 +200,10 @@ sensor_msgs::msg::PointCloud2::SharedPtr PointCloudBufferNode::convertPCLToPoint
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<PointCloudBufferNode>());
+  rclcpp::executors::MultiThreadedExecutor executor;
+  auto node = std::make_shared<PointCloudBufferNode>();
+  executor.add_node(node);
+  executor.spin();
   rclcpp::shutdown();
   return 0;
 }

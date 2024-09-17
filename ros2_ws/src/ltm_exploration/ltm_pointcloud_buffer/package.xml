@@ -10,6 +10,7 @@
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>ltm_shared_msgs</depend>
   <depend>tf2_ros</depend>
   <depend>tf2</depend>
   <depend>pcl_ros</depend>
