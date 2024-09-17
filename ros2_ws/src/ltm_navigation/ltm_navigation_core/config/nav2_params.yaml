@@ -105,7 +105,7 @@ controller_server:
     goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25
-      yaw_goal_tolerance: 0.25
+      yaw_goal_tolerance: 0.01
       stateful: True
     # DWB parameters
     FollowPath:
@@ -113,8 +113,8 @@ controller_server:
       debug_trajectory_details: True
       min_vel_x: 0.0
       min_vel_y: 0.0
-      max_vel_x: 0.25
-      max_vel_y: 0.25
+      max_vel_x: 0.5
+      max_vel_y: 0.5
       max_vel_theta: 0.5
       min_speed_xy: 0.0
       max_speed_xy: 0.25
@@ -133,7 +133,7 @@ controller_server:
       sim_time: 1.7
       linear_granularity: 0.05
       angular_granularity: 0.025
-      transform_tolerance: 0.2
+      transform_tolerance: 0.1
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
       short_circuit_trajectory_evaluation: True

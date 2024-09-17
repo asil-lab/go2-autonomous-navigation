@@ -19,7 +19,9 @@ Go2CameraNode::Go2CameraNode() : Node("go2_camera_node")
   RCLCPP_INFO(this->get_logger(), "Go2CameraNode starting up.");
 
   initializeCamera();
-  initializeImagePublisher();
+  initializeStreamMode();
+  initializeServiceMode();
+
   RCLCPP_INFO(this->get_logger(), "Go2CameraNode started.");
 }
 
@@ -42,7 +44,6 @@ void Go2CameraNode::serviceCallback(const std::shared_ptr<ltm_shared_msgs::srv::
 
 void Go2CameraNode::publishImage(const sensor_msgs::msg::Image::SharedPtr msg) const
 {
-  RCLCPP_INFO(this->get_logger(), "Publishing image.");
   m_image_pub->publish(*msg);
 }
 
@@ -115,6 +116,8 @@ void Go2CameraNode::initializeStreamMode()
   // Initialize image publisher and timer to publish images at a fixed rate.
   initializeImagePublisher();
   initializeTimer();
+
+  RCLCPP_INFO(this->get_logger(), "Stream mode is enabled.");
 }
 
 void Go2CameraNode::initializeServiceMode()
@@ -129,6 +132,8 @@ void Go2CameraNode::initializeServiceMode()
 
   // Initialize image service.
   initializeImageService();
+
+  RCLCPP_INFO(this->get_logger(), "Service mode is enabled.");
 }
 
 void Go2CameraNode::initializeTimer()
@@ -153,7 +158,6 @@ void Go2CameraNode::initializeImagePublisher()
   declare_parameter("image_pub_topic_name", "camera/raw");
   declare_parameter("image_pub_topic_queue_size", 10);
   declare_parameter("image_pub_topic_frame_id", "camera_link");
-  declare_parameter("image_pub_topic_rate", 24.0);
 
   // Initialize image publisher.
   m_image_pub = this->create_publisher<sensor_msgs::msg::Image>(

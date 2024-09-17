@@ -19,13 +19,16 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MissionState.msg"
+  "srv/NavigateToPose.srv"
   "srv/GetImage.srv"
-  DEPENDENCIES builtin_interfaces std_msgs sensor_msgs
+  "srv/GetPointCloud.srv"
+  DEPENDENCIES builtin_interfaces std_msgs sensor_msgs geometry_msgs
 )
 
 if(BUILD_TESTING)
