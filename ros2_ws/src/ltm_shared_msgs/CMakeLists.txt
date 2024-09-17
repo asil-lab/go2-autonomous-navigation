@@ -27,6 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MissionState.msg"
   "srv/NavigateToPose.srv"
   "srv/GetImage.srv"
+  "srv/GetPointCloud.srv"
   DEPENDENCIES builtin_interfaces std_msgs sensor_msgs geometry_msgs
 )
 
