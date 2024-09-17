@@ -87,13 +87,13 @@ class DataStorage:
         # return
         return o3d_cloud
 
-    def add_point_cloud(self, point_cloud: o3d.geometry.PointCloud) -> None:
+    def add_point_cloud(self, point_cloud: PointCloud2) -> None:
         """ Adds a point cloud to the data storage.
 
         Args:
-            point_cloud (o3d.geometry.PointCloud): The point cloud to be added.
+            point_cloud (PointCloud2): The point cloud to be added.
         """
-        self.point_cloud += point_cloud
+        self.point_cloud += self.convert_point_cloud2_to_open3d(point_cloud)
 
     def reset_point_cloud(self) -> None:
         """ Clears the point cloud data. """

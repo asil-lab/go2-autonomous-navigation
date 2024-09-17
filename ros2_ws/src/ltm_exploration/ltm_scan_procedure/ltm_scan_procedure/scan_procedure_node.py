@@ -13,7 +13,7 @@ from tf2_ros import Buffer, TransformListener
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Empty, String
-from ltm_shared_msgs.srv import GetImage, NavigateToPose
+from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose
 
 import os
 from typing import Any
@@ -44,29 +44,14 @@ class ScanProcedureNode(Node):
         self.get_logger().info(f"Saving files in {self.data_storage.storage_directory}.")
 
         # Configure ROS2 entities'
-        self.configure_pointcloud_sub()
         self.configure_trigger_sub()
         self.configure_gesture_pub()
         self.configure_navigate_to_pose_client()
         self.configure_get_image_client()
+        self.configure_get_pointcloud_client()
         self.configure_tf_listener()
 
         self.get_logger().info('Scan procedure node has been initialized.')
-
-    def point_cloud_callback(self, msg: PointCloud2) -> None:
-        """Callback function for the point cloud subscriber.
-        
-        Args:
-            msg (PointCloud2): The point cloud message received.
-        """
-        # Ignore point cloud data if the node is not scanning
-        if not self.is_scanning:
-            return
-
-        # Store the current point cloud data
-        self.get_logger().info('Point cloud received.')
-        self.data_storage.add_point_cloud(
-            self.data_storage.convert_point_cloud2_to_open3d(msg))
 
     def trigger_callback(self, msg) -> None:
         self.get_logger().info('Trigger has been received.')
@@ -112,6 +97,13 @@ class ScanProcedureNode(Node):
         get_image_future = self.get_image_client.call_async(get_image_request)
         rclpy.spin_until_future_complete(self, get_image_future)
         return get_image_future.result().image
+    
+    def request_point_cloud(self) -> PointCloud2:
+        """Requests a point cloud from the /get_pointcloud service."""
+        get_pointcloud_request = GetPointCloud.Request()
+        get_pointcloud_future = self.get_pointcloud_client.call_async(get_pointcloud_request)
+        rclpy.spin_until_future_complete(self, get_pointcloud_future)
+        return get_pointcloud_future.result().point_cloud
 
     def perform_scan(self) -> None:
         """ Perform scan procedure in the following order:
@@ -207,9 +199,13 @@ class ScanProcedureNode(Node):
     def collect_point_cloud_data(self) -> None:
         """Collects 3D point cloud data from the environment. """
         self.get_logger().info("Collecting pointcloud...")
-        self.switch_scan_mode(True)
-        sleep(self.point_cloud_buffer_time)
-        self.switch_scan_mode(False)
+        start_time = self.get_clock().now()
+
+        while self.get_clock().now() - start_time < rclpy.time.Duration(seconds=self.point_cloud_buffer_time):
+            pointcloud = self.request_point_cloud()
+            self.data_storage.add_point_cloud(pointcloud)
+            sleep(0.1)  # TODO: Parameterize this
+
         self.get_logger().info("Pointcloud collected.")
 
     def save_point_cloud_data(self) -> None:
@@ -264,14 +260,6 @@ class ScanProcedureNode(Node):
             return 'x_%s_y_%s_yaw_%s_%s' % (x, y, yaw_str, current_time)
         
         return 'x_%s_y_%s_yaw_%s_gesture_%s_%s' % (x, y, yaw_str, gesture, current_time)
-
-    def switch_scan_mode(self, mode: bool) -> None:
-        """Switches the scan mode to the specified mode.
-        
-        Args:
-            mode (bool): The mode to switch to.
-        """
-        self.is_scanning = mode
     
     def configure_scan_procedure_parameters(self) -> None:
         """Configures the parameters for the scan procedure node. """
@@ -300,17 +288,6 @@ class ScanProcedureNode(Node):
         self.declare_parameter('scan_delay_between_gestures', 1.0)
         self.gesture_delay = self.get_parameter('scan_delay_between_gestures').value
         self.get_logger().info('Time delay between each gesture: %f s' % (self.gesture_delay))
-
-    def configure_pointcloud_sub(self) -> None:
-        """Configures the subscriber to the point cloud topic."""
-        self.declare_parameter('point_cloud_subscriber_topic_name', 'point_cloud/buffer')
-        self.declare_parameter('point_cloud_subscriber_queue_size', 10)
-
-        self.point_cloud_callback_group = MutuallyExclusiveCallbackGroup()
-        self.point_cloud_sub = self.create_subscription(
-            PointCloud2, self.get_parameter('point_cloud_subscriber_topic_name').value, 
-            self.point_cloud_callback, self.get_parameter('point_cloud_subscriber_queue_size').value,
-            callback_group=self.point_cloud_callback_group)
 
     def configure_trigger_sub(self) -> None:
         """Configures the subscriber to the trigger topic."""
@@ -350,6 +327,23 @@ class ScanProcedureNode(Node):
             GetImage, self.get_parameter('get_image_service_name').value, 
             callback_group=self.get_image_callback_group)
         
+        while not self.get_image_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service %s not available, waiting again...' % \
+                                   (self.get_parameter('get_image_service_name').value))
+        
+    def configure_get_pointcloud_client(self) -> None:
+        """Configures the client to the get_pointcloud service."""
+        self.declare_parameter('get_pointcloud_service_name', 'get_pointcloud')
+
+        self.get_pointcloud_callback_group = MutuallyExclusiveCallbackGroup()
+        self.get_pointcloud_client = self.create_client(
+            GetPointCloud, self.get_parameter('get_pointcloud_service_name').value, 
+            callback_group=self.get_pointcloud_callback_group)
+        
+        while not self.get_pointcloud_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Service %s not available, waiting again...' % \
+                                   (self.get_parameter('get_pointcloud_service_name').value))
+
     def configure_tf_listener(self) -> None:
         """Configures the tf listener for the node."""
         self.tf_buffer = Buffer()

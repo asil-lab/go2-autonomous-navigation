@@ -4,9 +4,6 @@ scan_procedure_node:
     # ROS2 Scanning Procedure Parameters
     # The following parameters are used to configure the ROS2 Scanning Procedure.
 
-    pointcloud_topic_name: "point_cloud/buffer"
-    pointcloud_queue_size: 100
-
     trigger_subscriber_topic_name: "perform_scan"
     trigger_subscriber_queue_size: 1
 
