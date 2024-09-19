@@ -40,8 +40,17 @@ def generate_launch_description():
         output='screen',
     )
 
+    # LTM Navigation Service Node
+    navigation_service_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_navigation_service'), 
+                         'launch', 'navigation_service.launch.py')
+        )
+    )
+
     return LaunchDescription([
         navigation_node,
         navigation_handler_node,
         navigation_planner_node,
+        navigation_service_node,
     ])

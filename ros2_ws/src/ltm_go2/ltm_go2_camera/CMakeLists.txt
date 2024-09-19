@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(ltm_go2_driver)
+project(ltm_go2_camera)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -15,50 +15,36 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Additional cmake module path
+list(APPEND CMAKE_PREFIX_PATH "/opt/unitree_robotics/lib/cmake")
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(ament_index_cpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(unitree_api REQUIRED)
-find_package(unitree_go REQUIRED)
-find_package(urdf REQUIRED)
-find_package(ltm_go2_description REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
+find_package(ltm_shared_msgs REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(unitree_sdk2 REQUIRED)
+include_directories(include)
 
 # Create executable
-add_executable(go2_driver_node 
-  src/go2_driver_node.cpp 
-  src/gesture_processing.cpp
-  src/joint_state_processing.cpp
-  src/odom_processing.cpp 
-  src/point_cloud_processing.cpp
-  src/wireless_controller_processing.cpp
-)
-target_include_directories(go2_driver_node PUBLIC
+add_executable(go2_camera_node src/go2_camera_node.cpp)
+target_include_directories(go2_camera_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-
-ament_target_dependencies(go2_driver_node
+ament_target_dependencies(
+  go2_camera_node
   rclcpp
-  ament_index_cpp
-  std_msgs
-  geometry_msgs
   sensor_msgs
-  unitree_api
-  unitree_go
-  urdf
-  tf2
-  tf2_ros
-  tf2_geometry_msgs
+  ltm_shared_msgs
+  OpenCV
+  cv_bridge
+  unitree_sdk2
 )
 
-# Install executable
-install(TARGETS go2_driver_node
+#  Install the executable
+install(TARGETS go2_camera_node
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
@@ -67,7 +53,7 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/
 )
 
-# Install config files.
+# Install the config file
 install(DIRECTORY
   config
   DESTINATION share/${PROJECT_NAME}/

@@ -41,6 +41,14 @@ def generate_launch_description():
         output='screen',
     )
 
+    # Go2 camera node
+    go2_camera_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_go2_camera'), 
+                'launch', 'camera.launch.py')
+        ),
+    )
+
     # Robot state publisher node
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
@@ -65,6 +73,7 @@ def generate_launch_description():
 
     return LaunchDescription(declared_arguments + [
         go2_driver_node,
+        go2_camera_node,
         robot_state_publisher_node,
         rviz_node,
     ])

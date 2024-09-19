@@ -17,11 +17,26 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+<<<<<<< HEAD
+=======
+find_package(builtin_interfaces REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+>>>>>>> origin/main
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MissionState.msg"
+<<<<<<< HEAD
  )
+=======
+  "srv/NavigateToPose.srv"
+  "srv/GetImage.srv"
+  "srv/GetPointCloud.srv"
+  DEPENDENCIES builtin_interfaces std_msgs sensor_msgs geometry_msgs
+)
+>>>>>>> origin/main
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
