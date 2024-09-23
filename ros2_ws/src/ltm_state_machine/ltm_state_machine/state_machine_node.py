@@ -6,34 +6,74 @@ Date: 2024-07-28
 
 import rclpy
 from rclpy.node import Node
-from ltm_state_machine.state_machine import StateMachine
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 
+import ltm_state_machine.states as states
+
+from std_msgs.msg import String
 from ltm_shared_msgs.msg import MissionState
+from ltm_shared_msgs.srv import PerformState
 
 class StateMachineNode(Node):
     """ This is the main node for the ltm_state_machine package."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__('state_machine_node')
         self.get_logger().info('Initializing state machine node...')
         
-        self.state_machine = StateMachine()
-        
-        # self.declare_parameter('mission_state', MissionState())
-        # self.mission_state = self.get_parameter('mission_state').value
-        # self.mission_state_subscriber = self.create_subscription(MissionState, 'mission_state', self.mission_state_callback, 10)
+        self.state = states.BootUp()
+        self.history = []
+        self.input = None
+
         self.mission_state_publisher = self.create_publisher(MissionState, 'ltm/mission_state', 10)
         
         self.get_logger().info('State machine node initialized.')
 
+    def run(self, state: MissionState) -> None:
+        """ Runs the state machine with the given state."""
+        self.state = state
+        self.history.append(self.state)
+        self.state.run()
+        self.publish_mission_state()
+
+    def input_callback(self, msg) -> None:
+        """ Callback function for the input subscriber."""
+        pass
+
+    def publish_mission_state(self) -> None:
+        """ Publishes the current mission state to the mission state topic."""
+        self.mission_state_publisher.publish(self.state.id)
+
+    def configure_input_subscriber(self) -> None:
+        """ Configures the input subscriber."""
+        self.input_subscriber = self.create_subscription(
+            String, 'ltm/input', self.input_callback, 10)
+
+    def configure_mission_state_publisher(self) -> None:
+        """ Configures the mission state publisher."""
+        self.mission_state_publisher = self.create_publisher(
+            MissionState, 'ltm/state', 1)
+        
+    def configure_state_service_clients(self) -> None:
+        """ Configures the state service clients."""
+        self.state_service_callback_group = {}
+        self.state_service_clients = {}
+
+        for state in states.get_all_states():
+            self.state_service_callback_group[state] = MutuallyExclusiveCallbackGroup()
+            self.state_service_clients[state] = self.create_client(
+                PerformState, state.get_service_name(), 
+                callback_group=self.state_service_callback_group[state])
+
 
 def main():
     rclpy.init()
-    state_machine_node = StateMachineNode()
-    rclpy.spin(state_machine_node)
-    state_machine_node.destroy_node()
+    executor = MultiThreadedExecutor()
+    node = StateMachineNode()
+    executor.add_node(node)
+    executor.spin()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
