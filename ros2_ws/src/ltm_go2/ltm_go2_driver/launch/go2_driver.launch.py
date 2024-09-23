@@ -49,6 +49,13 @@ def generate_launch_description():
         ),
     )
 
+    # Go2 state handler node
+    go2_state_handler_node = Node(
+        package='ltm_go2_state',
+        executable='go2_state_handler_node',
+        output='screen',
+    )
+
     # Robot state publisher node
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
@@ -74,6 +81,7 @@ def generate_launch_description():
     return LaunchDescription(declared_arguments + [
         go2_driver_node,
         go2_camera_node,
+        go2_state_handler_node,
         robot_state_publisher_node,
         rviz_node,
     ])
