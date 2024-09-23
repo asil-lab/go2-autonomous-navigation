@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'state_machine_node = ltm_state_machine.state_machine_node:main'
+            'state_machine_node = ltm_state_machine.state_machine_node:main',
+            'mock_state_service_node = ltm_state_machine.mock_state_service_node:main',
         ],
     },
 )

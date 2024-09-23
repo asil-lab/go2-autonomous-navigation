@@ -35,6 +35,9 @@ class State:
     def __ne__(self, other):
         return self.id != other.id
     
+    def __hash__(self) -> int:
+        return self.id
+    
     def set_input(self, input: str):
         self.input = input
 
@@ -90,6 +93,8 @@ class CreateMap(State):
     def transition(self):
         if self.is_button_pressed:
             return Localize()
+        else:
+            return CreateMap()
 
 
 class Localize(State):
@@ -223,3 +228,9 @@ def get_all_service_names() -> list:
 
 def get_all_states() -> list:
     return [state() for state in State.__subclasses__()]
+
+def get_state_by_id(id: int) -> State:
+    for state in State.__subclasses__():
+        if state().id == id:
+            return state()
+    return None

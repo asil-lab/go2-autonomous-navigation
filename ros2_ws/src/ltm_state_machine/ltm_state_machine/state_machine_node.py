@@ -1,7 +1,7 @@
 """ This is the main node for the ltm_state_machine package.
 Author: Alexander James Becoy
 Revision: 1.0
-Date: 2024-07-28
+Date: 2024-09-23
 """
 
 import rclpy
@@ -13,7 +13,7 @@ import ltm_state_machine.states as states
 
 from std_msgs.msg import String
 from ltm_shared_msgs.msg import MissionState
-from ltm_shared_msgs.srv import PerformState
+from ltm_shared_msgs.srv import PerformState, GetStateTransitionHistory
 
 class StateMachineNode(Node):
     """ This is the main node for the ltm_state_machine package."""
@@ -26,21 +26,22 @@ class StateMachineNode(Node):
         self.history = []
         self.input = None
 
-        self.mission_state_publisher = self.create_publisher(MissionState, 'ltm/mission_state', 10)
-        
-        self.get_logger().info('State machine node initialized.')
-
-        self.configure_timer()
+        self.configure_state_service_clients()
+        self.configure_state_transition_history_service()
         self.configure_input_subscriber()
         self.configure_mission_state_publisher()
-        self.configure_state_service_clients()
+        self.configure_timer()
+
+        self.get_logger().info('State machine node initialized.')
 
     def timer_callback(self) -> None:
         """ Callback function for the timer that triggers the state machine."""
+        self.get_logger().info('Timer triggered.')
         if self.request_action():
-            self.state = self.state.transition()
             self.history.append(self.state)
+            self.state = self.state.transition()
             self.publish_mission_state()
+            self.get_logger().info(f'Transitioned to state: {self.state.name}')
 
     def input_callback(self, msg) -> None:
         """ Callback function for the input subscriber."""
@@ -50,13 +51,14 @@ class StateMachineNode(Node):
     def state_transition_history_callback(self, request, response) -> PerformState.Response:
         """ Callback function for the state transition history service."""
         _ = request
+        self.get_logger().info('State transition history requested.')
         response.states = [state.name for state in self.history]
-        response.id = [state.id for state in self.history]
+        response.ids = [state.id for state in self.history]
         return response
 
     def publish_mission_state(self) -> None:
         """ Publishes the current mission state to the mission state topic."""
-        self.mission_state_publisher.publish(self.state.id)
+        self.mission_state_publisher.publish(MissionState(state=self.state.id))
 
     def request_action(self) -> bool:
         """ Trigger the current state to do its action."""
@@ -67,12 +69,15 @@ class StateMachineNode(Node):
 
     def configure_timer(self) -> None:
         """ Configures the timer."""
-        self.timer = self.create_timer(1, self.timer_callback)
+        self.timer_callback_group = MutuallyExclusiveCallbackGroup()
+        self.timer = self.create_timer(
+            2.0, self.timer_callback, callback_group=self.timer_callback_group)
 
     def configure_input_subscriber(self) -> None:
         """ Configures the input subscriber."""
+        self.input_subscriber_callback_group = MutuallyExclusiveCallbackGroup()
         self.input_subscriber = self.create_subscription(
-            String, 'ltm/input', self.input_callback, 10)
+            String, 'ltm/input', self.input_callback, 10, callback_group=self.input_subscriber_callback_group)
 
     def configure_mission_state_publisher(self) -> None:
         """ Configures the mission state publisher."""
@@ -84,16 +89,22 @@ class StateMachineNode(Node):
         self.state_service_callback_group = {}
         self.state_service_clients = {}
 
+        self.get_logger().info('Configuring state service clients...')
         for state in states.get_all_states():
             self.state_service_callback_group[state] = MutuallyExclusiveCallbackGroup()
             self.state_service_clients[state] = self.create_client(
                 PerformState, state.get_service_name(), 
                 callback_group=self.state_service_callback_group[state])
+            while not self.state_service_clients[state].wait_for_service():
+                self.get_logger().info(f'Waiting for service {state.get_service_name()}...', throttle_duration_sec=1.0)
+            self.get_logger().info(f'State service client for {state.name} configured.')
             
     def configure_state_transition_history_service(self) -> None:
         """ Configures the state transition history service."""
+        self.state_transition_history_callback_group = MutuallyExclusiveCallbackGroup()
         self.state_transition_history_service = self.create_service(
-            PerformState, 'state_machine/state_transition_history', self.state_transition_history_callback)
+            GetStateTransitionHistory, 'state_machine/state_transition_history', 
+            self.state_transition_history_callback, callback_group=self.state_transition_history_callback_group)
 
 
 def main():
