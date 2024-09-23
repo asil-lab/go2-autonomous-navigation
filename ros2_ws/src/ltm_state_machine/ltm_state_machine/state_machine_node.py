@@ -30,20 +30,37 @@ class StateMachineNode(Node):
         
         self.get_logger().info('State machine node initialized.')
 
-    def run(self, state: MissionState) -> None:
-        """ Runs the state machine with the given state."""
-        self.state = state
-        self.history.append(self.state)
-        self.state.run()
-        self.publish_mission_state()
+        self.configure_timer()
+        self.configure_input_subscriber()
+        self.configure_mission_state_publisher()
+        self.configure_state_service_clients()
+
+    def timer_callback(self) -> None:
+        """ Callback function for the timer that triggers the state machine."""
+        if self.request_action():
+            self.state = self.state.transition()
+            self.history.append(self.state)
+            self.publish_mission_state()
+
+    def request_action(self) -> bool:
+        """ Trigger the current state to do its action."""
+        perform_state_request = self.state.get_service_request()
+        perform_state_future = self.state_service_clients[self.state].call_async(perform_state_request)
+        rclpy.spin_until_future_complete(self, perform_state_future)
+        return perform_state_future.result().success
 
     def input_callback(self, msg) -> None:
         """ Callback function for the input subscriber."""
-        pass
+        self.get_logger().info(f'Received input: {msg.data}')
+        self.state.set_input(msg.data)
 
     def publish_mission_state(self) -> None:
         """ Publishes the current mission state to the mission state topic."""
         self.mission_state_publisher.publish(self.state.id)
+
+    def configure_timer(self) -> None:
+        """ Configures the timer."""
+        self.timer = self.create_timer(1, self.timer_callback)
 
     def configure_input_subscriber(self) -> None:
         """ Configures the input subscriber."""
@@ -65,6 +82,7 @@ class StateMachineNode(Node):
             self.state_service_clients[state] = self.create_client(
                 PerformState, state.get_service_name(), 
                 callback_group=self.state_service_callback_group[state])
+            
 
 
 def main():

@@ -5,7 +5,7 @@ Date: 2024-09-05
 """
 
 import re
-from typing import Any
+from typing import Any, AnyStr
 
 from ltm_shared_msgs.srv import PerformState
 
@@ -20,7 +20,7 @@ class State:
     def transition(self):
         pass
 
-    def run(self) -> tuple:
+    def request(self) -> tuple:
         return (self.get_service_name(), self.get_service_request())
 
     def __str__(self):
@@ -35,6 +35,9 @@ class State:
     def __ne__(self, other):
         return self.id != other.id
     
+    def set_input(self, input: str):
+        self.input = input
+
     def get_service_name(self):
         return "state_machine/" + re.sub(r"([A-Z])", r"_\1", self.name).lower()
     
