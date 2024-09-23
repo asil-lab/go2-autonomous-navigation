@@ -16,9 +16,7 @@ class MockStateServiceNode(Node):
     def __init__(self) -> None:
         super().__init__('mock_state_service_node')
         self.get_logger().info('Initializing mock state service node...')
-
         self.configure_state_service()
-
         self.get_logger().info('Mock state service node initialized.')
 
     def state_service_callback(self, request, response) -> PerformState.Response:
