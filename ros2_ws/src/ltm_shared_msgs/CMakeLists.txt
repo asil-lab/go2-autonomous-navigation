@@ -27,6 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MissionState.msg"
   "srv/GetImage.srv"
   "srv/GetPointCloud.srv"
+  "srv/GetStateTransitionHistory.srv"
   "srv/NavigateToPose.srv"
   "srv/PerformState.srv"
   "srv/RecordEnvironment.srv"

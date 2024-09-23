@@ -42,21 +42,28 @@ class StateMachineNode(Node):
             self.history.append(self.state)
             self.publish_mission_state()
 
+    def input_callback(self, msg) -> None:
+        """ Callback function for the input subscriber."""
+        self.get_logger().info(f'Received input: {msg.data}')
+        self.state.set_input(msg.data)
+
+    def state_transition_history_callback(self, request, response) -> PerformState.Response:
+        """ Callback function for the state transition history service."""
+        _ = request
+        response.states = [state.name for state in self.history]
+        response.id = [state.id for state in self.history]
+        return response
+
+    def publish_mission_state(self) -> None:
+        """ Publishes the current mission state to the mission state topic."""
+        self.mission_state_publisher.publish(self.state.id)
+
     def request_action(self) -> bool:
         """ Trigger the current state to do its action."""
         perform_state_request = self.state.get_service_request()
         perform_state_future = self.state_service_clients[self.state].call_async(perform_state_request)
         rclpy.spin_until_future_complete(self, perform_state_future)
         return perform_state_future.result().success
-
-    def input_callback(self, msg) -> None:
-        """ Callback function for the input subscriber."""
-        self.get_logger().info(f'Received input: {msg.data}')
-        self.state.set_input(msg.data)
-
-    def publish_mission_state(self) -> None:
-        """ Publishes the current mission state to the mission state topic."""
-        self.mission_state_publisher.publish(self.state.id)
 
     def configure_timer(self) -> None:
         """ Configures the timer."""
@@ -83,6 +90,10 @@ class StateMachineNode(Node):
                 PerformState, state.get_service_name(), 
                 callback_group=self.state_service_callback_group[state])
             
+    def configure_state_transition_history_service(self) -> None:
+        """ Configures the state transition history service."""
+        self.state_transition_history_service = self.create_service(
+            PerformState, 'state_machine/state_transition_history', self.state_transition_history_callback)
 
 
 def main():
