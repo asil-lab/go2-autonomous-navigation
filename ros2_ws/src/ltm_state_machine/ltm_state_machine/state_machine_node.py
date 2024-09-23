@@ -37,7 +37,12 @@ class StateMachineNode(Node):
     def timer_callback(self) -> None:
         """ Callback function for the timer that triggers the state machine."""
         self.get_logger().info('Timer triggered.')
-        if self.request_action():
+        self.request_action()
+
+    def future_callback(self, future) -> None:
+        """ Callback function for the future."""
+        self.get_logger().info('Future callback triggered.')
+        if future.result().success:
             self.history.append(self.state)
             self.state = self.state.transition()
             self.publish_mission_state()
@@ -60,18 +65,17 @@ class StateMachineNode(Node):
         """ Publishes the current mission state to the mission state topic."""
         self.mission_state_publisher.publish(MissionState(state=self.state.id))
 
-    def request_action(self) -> bool:
+    def request_action(self) -> None:
         """ Trigger the current state to do its action."""
         perform_state_request = self.state.get_service_request()
         perform_state_future = self.state_service_clients[self.state].call_async(perform_state_request)
-        rclpy.spin_until_future_complete(self, perform_state_future)
-        return perform_state_future.result().success
+        perform_state_future.add_done_callback(self.future_callback)
 
     def configure_timer(self) -> None:
         """ Configures the timer."""
         self.timer_callback_group = MutuallyExclusiveCallbackGroup()
         self.timer = self.create_timer(
-            2.0, self.timer_callback, callback_group=self.timer_callback_group)
+            1.0, self.timer_callback, callback_group=self.timer_callback_group)
 
     def configure_input_subscriber(self) -> None:
         """ Configures the input subscriber."""
