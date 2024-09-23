@@ -10,6 +10,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
 import ltm_state_machine.states as states
+import ltm_state_machine.utils as utils
 
 from std_msgs.msg import String
 from ltm_shared_msgs.msg import MissionState
@@ -40,11 +41,11 @@ class StateMachineNode(Node):
         self.request_action()
 
     def future_callback(self, future) -> None:
-        """ Callback function for the future."""
+        """ Callback function for the future after the state service has been called."""
         self.get_logger().info('Future callback triggered.')
         if future.result().success:
-            self.history.append(self.state)
-            self.state = self.state.transition()
+            self.update_history()
+            self.update_state()
             self.publish_mission_state()
             self.get_logger().info(f'Transitioned to state: {self.state.name}')
 
@@ -110,6 +111,14 @@ class StateMachineNode(Node):
             GetStateTransitionHistory, 'state_machine/state_transition_history', 
             self.state_transition_history_callback, callback_group=self.state_transition_history_callback_group)
 
+    def update_history(self) -> None:
+        """ Updates the state transition history."""
+        self.history.append(self.state)
+        self.history = utils.reduce_consecutive_duplicates(self.history)
+
+    def update_state(self) -> None:
+        """ Updates the current state."""
+        self.state = self.state.transition()
 
 def main():
     rclpy.init()
