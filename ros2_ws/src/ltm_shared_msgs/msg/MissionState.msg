@@ -1,15 +1,17 @@
-uint64 state
+uint8 state
 
 # Mission states
-uint64 STATE_BOOTUP      = 0
-uint64 STATE_LOAD_MAP    = 1
-uint64 STATE_CREATE_MAP  = 2
-uint64 STATE_LOCALIZE    = 3
-uint64 STATE_IDLE        = 4
-uint64 STATE_PLANNING    = 5
-uint64 STATE_NAVIGATE    = 6
-uint64 STATE_SCAN        = 7
-uint64 STATE_RETURN      = 8
-uint64 STATE_SHUTDOWN    = 9
-uint64 STATE_ERROR       = 10
-uint64 STATE_EMERGENCY   = 11
+uint8 STATE_UNDEFINED   = 0
+uint8 STATE_BOOTUP      = 1
+uint8 STATE_LOAD_MAP    = 2
+uint8 STATE_CREATE_MAP  = 3
+uint8 STATE_LOCALIZE    = 4
+uint8 STATE_STANDBY     = 5
+uint8 STATE_PLANNING    = 6
+uint8 STATE_NAVIGATE    = 7
+uint8 STATE_MANUAL      = 8
+uint8 STATE_SCAN        = 9
+uint8 STATE_RETURN      = 10
+uint8 STATE_SHUTDOWN    = 11
+uint8 STATE_ERROR       = 12
+uint8 STATE_EMERGENCY   = 13

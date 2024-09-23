@@ -4,6 +4,11 @@ Revision: 1.0
 Date: 2024-09-05
 """
 
+import re
+from typing import Any, AnyStr
+
+from ltm_shared_msgs.srv import PerformState
+
 class State:
     """ State class is the base class for all states.
     """
@@ -11,9 +16,13 @@ class State:
     def __init__(self, name, id):
         self.name = name
         self.id = id
+        self.input = None
 
     def transition(self):
         pass
+
+    def request(self) -> tuple:
+        return (self.get_service_name(), self.get_service_request())
 
     def __str__(self):
         return self.name
@@ -27,17 +36,45 @@ class State:
     def __ne__(self, other):
         return self.id != other.id
     
+    def __hash__(self) -> int:
+        return self.id
+    
+    def set_input(self, input: str):
+        self.input = input
+
+    def get_service_name(self):
+        return "state_machine/" + re.sub(r"([A-Z])", r"_\1", self.name).lower()
+    
+    def get_service_request(self):
+        request = PerformState.Request()
+        request.current_state = self.id
+        return request
+    
+    def emergency_stop(self):
+        return EmergencyStop()
+    
+    def error(self):
+        return Error()
+
+
+class Undefined(State):
+    """ Undefined class is the state that is used to represent
+    an undefined state.
+    """
+
+    def __init__(self):
+        super().__init__("Undefined", 0)
+
 
 class BootUp(State):
     """ BootUp class is the initial state of the state machine.
     """
 
     def __init__(self):
-        super().__init__("BootUp", 0)
-        self.is_map_loaded = False
+        super().__init__("BootUp", 1)
 
     def transition(self):
-        if self.is_map_loaded:
+        if self.input == "load_map":
             return LoadMap()
         else:
             return CreateMap()
@@ -48,7 +85,7 @@ class LoadMap(State):
     """
 
     def __init__(self):
-        super().__init__("LoadMap", 1)
+        super().__init__("LoadMap", 2)
 
     def transition(self):
         return Localize()
@@ -59,15 +96,14 @@ class CreateMap(State):
     """
 
     def __init__(self):
-        super().__init__("CreateMap", 2)
-        self.is_button_pressed = False
+        super().__init__("CreateMap", 3)
 
     def transition(self):
-        if self.is_button_pressed:
+        if self.input == "stop":
             return Localize()
         else:
             return CreateMap()
-    
+
 
 class Localize(State):
     """ Localization class is the state that localizes the robot
@@ -75,7 +111,7 @@ class Localize(State):
     """
 
     def __init__(self):
-        super().__init__("Localize", 3)
+        super().__init__("Localize", 4)
 
     def transition(self):
         return Idle()
@@ -86,11 +122,10 @@ class Idle(State):
     """
 
     def __init__(self):
-        super().__init__("Idle", 4)
-        self.is_button_pressed = False
+        super().__init__("Idle", 5)
 
     def transition(self):
-        if self.is_button_pressed:
+        if self.input == "start":
             return PlanPath()
         else:
             return Idle()
@@ -102,7 +137,7 @@ class PlanPath(State):
     """
 
     def __init__(self):
-        super().__init__("PlanPath", 5)
+        super().__init__("PlanPath", 6)
 
     def transition(self):
         return Navigate()
@@ -114,11 +149,30 @@ class Navigate(State):
     """
 
     def __init__(self):
-        super().__init__("Navigate", 6)
+        super().__init__("Navigate", 7)
 
     def transition(self):
-        return Scan()
-    
+        if self.input == "reached":
+            return Scan()
+        elif self.input == "failed":
+            return ManualControl()
+        else:
+            return Navigate()
+
+
+class ManualControl(State):
+    """ ManualControl class is the state that allows manual control
+    of the robot.
+    """
+
+    def __init__(self):
+        super().__init__("ManualControl", 8)
+
+    def transition(self):
+        if self.input == "stop":
+            return Scan()
+        else:
+            return ManualControl()
 
 class Scan(State):
     """ Scan class is the state that scans the environment at the
@@ -127,14 +181,13 @@ class Scan(State):
     """
 
     def __init__(self):
-        super().__init__("Scan", 7)
-        self.is_at_final_waypoint = False
+        super().__init__("Scan", 9)
 
     def transition(self):
-        if self.is_at_final_waypoint:
-            return Idle()
+        if self.input == "stop":
+            return Home()
         else:
-            return PlanPath()
+            return Navigate()
         
 
 class Home(State):
@@ -143,7 +196,7 @@ class Home(State):
     """
 
     def __init__(self):
-        super().__init__("Home", 8)
+        super().__init__("Home", 10)
 
     def transition(self):
         return Shutdown()
@@ -154,11 +207,10 @@ class Shutdown(State):
     """
 
     def __init__(self):
-        super().__init__("Shutdown", 9)
+        super().__init__("Shutdown", 11)
 
     def transition(self):
-        pass
-
+        return Shutdown()
 
 class EmergencyStop(State):
     """ EmergencyStop class is the state that stops the robot
@@ -166,7 +218,7 @@ class EmergencyStop(State):
     """
 
     def __init__(self):
-        super().__init__("EmergencyStop", 10)
+        super().__init__("EmergencyStop", 12)
 
     def transition(self):
         return Shutdown()
@@ -177,19 +229,20 @@ class Error(State):
     """
 
     def __init__(self):
-        super().__init__("Error", 11)
+        super().__init__("Error", 13)
 
     def transition(self):
         return Shutdown()
     
 
-class ManualControl(State):
-    """ ManualControl class is the state that allows manual control
-    of the robot.
-    """
+def get_all_service_names() -> list:
+    return [state.get_service_name() for state in State.__subclasses__()]
 
-    def __init__(self):
-        super().__init__("ManualControl", 12)
+def get_all_states() -> list:
+    return [state() for state in State.__subclasses__()]
 
-    def transition(self):
-        return Idle()
+def get_state_by_id(id: int) -> State:
+    for state in State.__subclasses__():
+        if state().id == id:
+            return state()
+    return None

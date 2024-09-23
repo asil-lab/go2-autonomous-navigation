@@ -1,0 +1,5 @@
+uint8 current_state
+bool first_time
+---
+bool success
+string message
