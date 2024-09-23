@@ -16,6 +16,7 @@ class State:
     def __init__(self, name, id):
         self.name = name
         self.id = id
+        self.input = None
 
     def transition(self):
         pass
@@ -71,10 +72,9 @@ class BootUp(State):
 
     def __init__(self):
         super().__init__("BootUp", 1)
-        self.is_map_loaded = False
 
     def transition(self):
-        if self.is_map_loaded:
+        if self.input == "load_map":
             return LoadMap()
         else:
             return CreateMap()
@@ -97,10 +97,9 @@ class CreateMap(State):
 
     def __init__(self):
         super().__init__("CreateMap", 3)
-        self.is_button_pressed = False
 
     def transition(self):
-        if self.is_button_pressed:
+        if self.input == "stop":
             return Localize()
         else:
             return CreateMap()
@@ -124,11 +123,12 @@ class Idle(State):
 
     def __init__(self):
         super().__init__("Idle", 5)
-        self.is_button_pressed = False
 
     def transition(self):
-        if self.is_button_pressed:
+        if self.input == "start":
             return PlanPath()
+        else:
+            return Idle()
             
 
 class PlanPath(State):
@@ -150,13 +150,14 @@ class Navigate(State):
 
     def __init__(self):
         super().__init__("Navigate", 7)
-        self.is_at_final_waypoint = False
 
     def transition(self):
-        if self.is_at_final_waypoint:
+        if self.input == "reached":
             return Scan()
-        else:
+        elif self.input == "failed":
             return ManualControl()
+        else:
+            return Navigate()
 
 
 class ManualControl(State):
@@ -166,11 +167,12 @@ class ManualControl(State):
 
     def __init__(self):
         super().__init__("ManualControl", 8)
-        self.is_button_pressed = False
 
     def transition(self):
-        if self.is_button_pressed:
+        if self.input == "stop":
             return Scan()
+        else:
+            return ManualControl()
 
 class Scan(State):
     """ Scan class is the state that scans the environment at the
@@ -180,13 +182,12 @@ class Scan(State):
 
     def __init__(self):
         super().__init__("Scan", 9)
-        self.is_at_final_waypoint = False
 
     def transition(self):
-        if self.is_at_final_waypoint:
-            return Idle()
+        if self.input == "stop":
+            return Home()
         else:
-            return PlanPath()
+            return Navigate()
         
 
 class Home(State):
@@ -208,6 +209,8 @@ class Shutdown(State):
     def __init__(self):
         super().__init__("Shutdown", 11)
 
+    def transition(self):
+        return Shutdown()
 
 class EmergencyStop(State):
     """ EmergencyStop class is the state that stops the robot
