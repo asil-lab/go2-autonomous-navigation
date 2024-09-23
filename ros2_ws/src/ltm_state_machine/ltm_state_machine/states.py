@@ -54,7 +54,16 @@ class State:
     
     def error(self):
         return Error()
-    
+
+
+class Undefined(State):
+    """ Undefined class is the state that is used to represent
+    an undefined state.
+    """
+
+    def __init__(self):
+        super().__init__("Undefined", 0)
+
 
 class BootUp(State):
     """ BootUp class is the initial state of the state machine.

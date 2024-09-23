@@ -24,6 +24,7 @@ class MockStateServiceNode(Node):
     def state_service_callback(self, request, response) -> PerformState.Response:
         """ Callback function for the state services."""
         self.get_logger().info(f'State service {get_state_by_id(request.current_state)} called.')
+        self.get_logger().info(f'First time: {request.first_time}')
         response.success = True
         return response
 

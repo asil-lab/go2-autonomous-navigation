@@ -24,7 +24,7 @@ class StateMachineNode(Node):
         self.get_logger().info('Initializing state machine node...')
         
         self.state = states.BootUp()
-        self.history = []
+        self.history = [states.Undefined()]
         self.input = None
 
         self.configure_state_service_clients()
@@ -69,6 +69,7 @@ class StateMachineNode(Node):
     def request_action(self) -> None:
         """ Trigger the current state to do its action."""
         perform_state_request = self.state.get_service_request()
+        perform_state_request.first_time = self.state.id != self.history[-1].id
         perform_state_future = self.state_service_clients[self.state].call_async(perform_state_request)
         perform_state_future.add_done_callback(self.future_callback)
 
