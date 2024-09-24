@@ -7,7 +7,7 @@ Date: 2024-09-23
 import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-# from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor
 
 from time import sleep
 import ltm_state_machine.states as states
@@ -32,10 +32,9 @@ class StateMachineNode(Node):
         self.configure_state_transition_history_service()
         self.configure_input_subscriber()
         self.configure_mission_state_publisher()
-        # self.configure_timer()
-        self.configure_rate()
 
         self.get_logger().info('State machine node initialized.')
+        self.request_action()
 
     def run(self) -> None:
         """ Callback function for the timer that triggers the state machine."""
@@ -46,19 +45,17 @@ class StateMachineNode(Node):
             self.publish_mission_state()
             self.get_logger().info(f'Transitioned to state: {self.state.name}')
 
-    # def timer_callback(self) -> None:
-    #     """ Callback function for the timer that triggers the state machine."""
-    #     self.get_logger().info('Timer triggered.')
-    #     self.request_action()
-
-    # def future_callback(self, future) -> None:
-    #     """ Callback function for the future after the state service has been called."""
-    #     self.get_logger().info('Future callback triggered.')
-    #     if future.result().success:
-    #         self.update_history()
-    #         self.update_state()
-    #         self.publish_mission_state()
-    #         self.get_logger().info(f'Transitioned to state: {self.state.name}')
+    def future_callback(self, future) -> None:
+        """ Callback function for the future after the state service has been called."""
+        self.get_logger().info('Future callback triggered.')
+        if future.result().success:
+            self.update_history()
+            self.update_state()
+            self.publish_mission_state()
+            self.get_logger().info(f'Transitioned to state: {self.state.name}')
+        else:
+            self.get_logger().info('State service failed.')
+        self.request_action()
 
     def input_callback(self, msg) -> None:
         """ Callback function for the input subscriber."""
@@ -77,31 +74,12 @@ class StateMachineNode(Node):
         """ Publishes the current mission state to the mission state topic."""
         self.mission_state_publisher.publish(MissionState(state=self.state.id))
 
-    # def request_action(self) -> None:
-    #     """ Trigger the current state to do its action."""
-    #     perform_state_request = self.state.get_service_request()
-    #     perform_state_request.first_time = self.state.id != self.history[-1].id
-    #     perform_state_future = self.state_service_clients[self.state].call_async(perform_state_request)
-    #     perform_state_future.add_done_callback(self.future_callback)
-
-    def request_action(self) -> bool:
+    def request_action(self) -> None:
         """ Trigger the current state to do its action."""
         perform_state_request = self.state.get_service_request()
         perform_state_request.first_time = self.state.id != self.history[-1].id
         perform_state_future = self.state_service_clients[self.state].call_async(perform_state_request)
-        rclpy.spin_until_future_complete(self, perform_state_future)
-        return perform_state_future.result().success
-
-    # def configure_timer(self) -> None:
-    #     """ Configures the timer."""
-    #     self.timer_callback_group = MutuallyExclusiveCallbackGroup()
-    #     self.timer = self.create_timer(
-    #         1.0, self.timer_callback, callback_group=self.timer_callback_group)
-
-    def configure_rate(self) -> None:
-        """ Configures the rate."""
-        self.declare_parameter('state_machine_update_period', 5.0) # in seconds
-        self.update_period = self.get_parameter('state_machine_update_period').value
+        perform_state_future.add_done_callback(self.future_callback)
 
     def configure_input_subscriber(self) -> None:
         """ Configures the input subscriber."""
@@ -121,6 +99,11 @@ class StateMachineNode(Node):
 
         self.get_logger().info('Configuring state service clients...')
         for state in states.get_all_states():
+            # Skip states that are not of interest
+            if type(state) == states.Undefined:
+                continue
+            self.get_logger().info(f'Configuring state {state.name} with service name {state.get_service_name()}')
+
             self.state_service_callback_group[state] = MutuallyExclusiveCallbackGroup()
             self.state_service_clients[state] = self.create_client(
                 PerformState, state.get_service_name(), 
@@ -145,16 +128,15 @@ class StateMachineNode(Node):
         """ Updates the current state."""
         self.state = self.state.transition()
 
-def main():
+def main():#
     rclpy.init()
     node = StateMachineNode()
-    try:
-        while rclpy.ok():
-            node.run()
-            sleep(node.update_period)
-    except KeyboardInterrupt:
-        pass
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+    executor.spin()
     rclpy.shutdown()
+    node.destroy_node()
+
 
 if __name__ == '__main__':
     main()
