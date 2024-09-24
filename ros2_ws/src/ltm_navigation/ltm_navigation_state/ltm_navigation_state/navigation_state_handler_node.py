@@ -38,6 +38,7 @@ class NavigationStateHandlerNode(Node):
         while self.input is None or self.input != 'stop':
             self.get_logger().info('Waiting to complete map creation...', throttle_duration_sec=5)
         response.success = True
+        self.input = None
         return response
 
     def configure_input_subscriber(self) -> None:
