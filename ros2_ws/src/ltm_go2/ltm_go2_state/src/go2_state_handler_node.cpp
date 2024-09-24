@@ -53,6 +53,7 @@ void Go2StateHandlerNode::shutdownCallback(
     return;
   }
 
+  publishGesture(GESTURE_STAND_UP);
   publishGesture(GESTURE_STAND_DOWN);
   response->success = true;
 }
@@ -62,7 +63,9 @@ void Go2StateHandlerNode::publishGesture(const std::string & gesture)
   std_msgs::msg::String::SharedPtr msg = std::make_shared<std_msgs::msg::String>();
   msg->data = gesture;
   m_gesture_publisher->publish(*msg);
+  RCLCPP_WARN(get_logger(), "Published gesture: %s", gesture.c_str());
   sleepFor(GESTURE_DELAY);
+  RCLCPP_INFO(get_logger(), "Gesture %s completed", gesture.c_str());
 }
 
 void Go2StateHandlerNode::sleepFor(const int & seconds)
