@@ -21,8 +21,8 @@
 #define GESTURE_RECOVER     "recover"
 #define GESTURE_DELAY       10 // seconds
 
-#define BOOTUP_SERVICE_NAME   "ltm/boot_up"
-#define SHUTDOWN_SERVICE_NAME "ltm/shutdown"
+#define BOOTUP_SERVICE_NAME   "state_machine/boot_up"
+#define SHUTDOWN_SERVICE_NAME "state_machine/shutdown"
 
 namespace LTM
 {

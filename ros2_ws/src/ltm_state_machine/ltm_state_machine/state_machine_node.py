@@ -99,6 +99,11 @@ class StateMachineNode(Node):
 
         self.get_logger().info('Configuring state service clients...')
         for state in states.get_all_states():
+            # Skip states that are not of interest
+            if type(state) == states.Undefined:
+                continue
+            self.get_logger().info(f'Configuring state {state.name} with service name {state.get_service_name()}')
+
             self.state_service_callback_group[state] = MutuallyExclusiveCallbackGroup()
             self.state_service_clients[state] = self.create_client(
                 PerformState, state.get_service_name(), 
@@ -123,7 +128,7 @@ class StateMachineNode(Node):
         """ Updates the current state."""
         self.state = self.state.transition()
 
-def main():
+def main():#
     rclpy.init()
     node = StateMachineNode()
     executor = MultiThreadedExecutor()
@@ -131,7 +136,7 @@ def main():
     executor.spin()
     rclpy.shutdown()
     node.destroy_node()
-    
+
 
 if __name__ == '__main__':
     main()
