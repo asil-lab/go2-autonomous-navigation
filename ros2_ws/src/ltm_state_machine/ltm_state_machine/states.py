@@ -78,7 +78,7 @@ class BootUp(State):
         #     return LoadMap()
         # else:
         #     return CreateMap()
-        return Shutdown()
+        return CreateMap()
         
 
 # class LoadMap(State):
@@ -92,18 +92,15 @@ class BootUp(State):
 #         return Localize()
     
 
-# class CreateMap(State):
-#     """ CreateMap class is the state that creates a map.
-#     """
+class CreateMap(State):
+    """ CreateMap class is the state that creates a map.
+    """
 
-#     def __init__(self):
-#         super().__init__("CreateMap", 3)
+    def __init__(self):
+        super().__init__("CreateMap", 3)
 
-#     def transition(self):
-#         if self.input == "stop":
-#             return Localize()
-#         else:
-#             return CreateMap()
+    def transition(self):
+        return Shutdown()
 
 
 # class Localize(State):

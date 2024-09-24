@@ -37,6 +37,8 @@ void Go2StateHandlerNode::bootupCallback(
     return;
   }
   
+  RCLCPP_INFO(get_logger(), "Performing bootup...");
+  sleepFor(GESTURE_DELAY);
   publishGesture(GESTURE_STAND_UP);
   publishGesture(GESTURE_RECOVER);
   response->success = true;
@@ -53,6 +55,8 @@ void Go2StateHandlerNode::shutdownCallback(
     return;
   }
 
+  RCLCPP_INFO(get_logger(), "Performing shutdown...");
+  sleepFor(GESTURE_DELAY);
   publishGesture(GESTURE_STAND_UP);
   publishGesture(GESTURE_STAND_DOWN);
   response->success = true;

@@ -34,6 +34,7 @@ class StateMachineNode(Node):
         self.configure_mission_state_publisher()
 
         self.get_logger().info('State machine node initialized.')
+        self.get_logger().info(f'Current state: {self.state.name}')
         self.request_action()
 
     def run(self) -> None:
