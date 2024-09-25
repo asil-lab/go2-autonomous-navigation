@@ -48,9 +48,18 @@ def generate_launch_description():
         )
     )
 
+    # LTM Navigation State Node
+    navigation_state_handler_node = Node(
+        package='ltm_navigation_state',
+        executable='navigation_state_handler_node',
+        name='navigation_state_handler_node',
+        output='screen',
+    )
+
     return LaunchDescription([
         navigation_node,
         navigation_handler_node,
         navigation_planner_node,
         navigation_service_node,
+        navigation_state_handler_node,
     ])

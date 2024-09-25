@@ -13,9 +13,10 @@ class State:
     """ State class is the base class for all states.
     """
 
-    def __init__(self, name, id):
+    def __init__(self, name, id, is_terminal=False):
         self.name = name
         self.id = id
+        self.is_terminal = is_terminal
         self.input = None
 
     def transition(self):
@@ -78,7 +79,7 @@ class BootUp(State):
         #     return LoadMap()
         # else:
         #     return CreateMap()
-        return Shutdown()
+        return CreateMap()
         
 
 # class LoadMap(State):
@@ -92,18 +93,15 @@ class BootUp(State):
 #         return Localize()
     
 
-# class CreateMap(State):
-#     """ CreateMap class is the state that creates a map.
-#     """
+class CreateMap(State):
+    """ CreateMap class is the state that creates a map.
+    """
 
-#     def __init__(self):
-#         super().__init__("CreateMap", 3)
+    def __init__(self):
+        super().__init__("CreateMap", 3)
 
-#     def transition(self):
-#         if self.input == "stop":
-#             return Localize()
-#         else:
-#             return CreateMap()
+    def transition(self):
+        return Shutdown()
 
 
 # class Localize(State):
@@ -208,7 +206,7 @@ class Shutdown(State):
     """
 
     def __init__(self):
-        super().__init__("Shutdown", 11)
+        super().__init__("Shutdown", 11, is_terminal=True)
 
     def transition(self):
         return Shutdown()

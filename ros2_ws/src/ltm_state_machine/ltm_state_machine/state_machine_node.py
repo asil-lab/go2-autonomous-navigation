@@ -34,6 +34,7 @@ class StateMachineNode(Node):
         self.configure_mission_state_publisher()
 
         self.get_logger().info('State machine node initialized.')
+        self.get_logger().info(f'Current state: {self.state.name}')
         self.request_action()
 
     def run(self) -> None:
@@ -48,13 +49,25 @@ class StateMachineNode(Node):
     def future_callback(self, future) -> None:
         """ Callback function for the future after the state service has been called."""
         self.get_logger().info('Future callback triggered.')
-        if future.result().success:
-            self.update_history()
-            self.update_state()
-            self.publish_mission_state()
-            self.get_logger().info(f'Transitioned to state: {self.state.name}')
-        else:
+        success = future.result().success
+
+        # If the state service failed, transition to the error state
+        if not success:
             self.get_logger().info('State service failed.')
+            # TODO: Implement error state transition
+            return
+        
+        # If the state machine has reached a terminal state, do not transition
+        if self.state.is_terminal:
+            self.get_logger().warn('State machine has reached a terminal state.')
+            return
+
+        # If the state service was successful, transition to the next state
+        # Update the state transition history, update the current state, and request the next action
+        self.update_history()
+        self.update_state()
+        self.publish_mission_state()
+        self.get_logger().info(f'Transitioned to state: {self.state.name}')
         self.request_action()
 
     def input_callback(self, msg) -> None:
