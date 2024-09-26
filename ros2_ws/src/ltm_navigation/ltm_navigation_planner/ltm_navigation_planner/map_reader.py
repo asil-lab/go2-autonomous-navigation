@@ -56,16 +56,28 @@ class MapReader:
         self.width = width
         self.height = height
 
-    def read(self) -> np.ndarray:
+    def read(self, plot=False) -> np.ndarray:
+        self.plot_map(self.original_map, 'Original Map', plot)
+
         # Transform the map into XY coordinates
         self.transformed_map = self.transform_map(self.map)
+        self.plot_map(self.transformed_map, 'Transformed Map', plot)
 
         # Preprocess the map
         self.padded_map = self.pad_map(self.map)
+        self.plot_map(self.padded_map, 'Padded Map', plot)
+
         self.smoothed_map = self.smooth_map(self.padded_map)
+        self.plot_map(self.smoothed_map, 'Smoothed Map', plot)
+
         self.sampled_map = self.monte_carlo(self.smoothed_map)
+        self.plot_map(self.sampled_map, 'Sampled Map', plot)
+
         self.truncated_map = self.truncate_map(self.sampled_map)
+        self.plot_map(self.truncated_map, 'Truncated Map', plot)
+
         self.map = self.smooth_map(self.truncated_map)
+        self.plot_map(self.map, 'Final Map', plot)
 
         # Extract the contours from the map
         contours = self.extract_contours(self.map)
@@ -199,10 +211,12 @@ class MapReader:
             'truncated_map': self.truncated_map
         }
     
-    def plot_map(self, map: np.ndarray) -> None:
-        plt.figure(figsize=(10, 10))
-        plt.imshow(map, cmap='gray')
-        plt.show()
+    def plot_map(self, map: np.ndarray, title: str, plot=False) -> None:
+        if plot:
+            plt.figure(figsize=(10, 10))
+            plt.imshow(map, cmap='gray')
+            plt.title(title)
+            plt.show()
 
     def plot_current_map(self) -> None:
         self.plot_map(self.map)

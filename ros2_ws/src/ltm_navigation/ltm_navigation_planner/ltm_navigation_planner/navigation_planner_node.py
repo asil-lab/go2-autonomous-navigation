@@ -96,7 +96,7 @@ class NavigationPlannerNode(Node):
         map = future.result().map
         self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
         self.map_reader.read_map_list(map.data)
-        self.map_reader.plot_map(self.map_reader.original_map)
+        self.map_reader.read()
         self.get_logger().info('Load map completed')
 
     def publish_waypoint(self, waypoint: dict) -> None:
