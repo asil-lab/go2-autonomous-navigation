@@ -22,15 +22,15 @@ def generate_launch_description():
         launch_arguments=[('mapping', 'true')]
     )
 
-    # Map creator node
-    map_creator_node = Node(
-        package='ltm_map_creation',
-        executable='map_creator_node',
-        name='map_creator_node',
-        output='screen'
-    )
+    # # Map creator node
+    # map_creator_node = Node(
+    #     package='ltm_map_creation',
+    #     executable='map_creator_node',
+    #     name='map_creator_node',
+    #     output='screen'
+    # )
 
     return LaunchDescription([
         ltm_stack_node,
-        map_creator_node,
+        # map_creator_node,
     ])
