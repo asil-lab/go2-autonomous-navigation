@@ -42,14 +42,6 @@ def generate_launch_description():
         # parameters=[pointcloud_to_laserscan_config],
     )
 
-    # # Map-to-odom static transform node
-    # map_to_dom_static_tf_node = Node(
-    #     package='tf2_ros',
-    #     executable='static_transform_publisher',
-    #     name='static_transform_publisher',
-    #     arguments=['0', '0', '0', '0', '0', '0', '1', 'map', 'odom']
-    # )
-
     # Online asynchronous SLAM node
     online_async_slam_config_filename = 'mapper_params_online_async.yaml'
     online_async_slam_config_filepath = os.path.join(
@@ -70,6 +62,5 @@ def generate_launch_description():
         pointcloud_buffer_node,
         pointcloud_filter_node,
         pointcloud_to_laserscan_node,
-        # map_to_dom_static_tf_node,
         online_async_slam_node,
     ])
