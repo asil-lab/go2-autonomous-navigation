@@ -29,7 +29,6 @@ class LMapCreatorNode(Node):
     def __del__(self) -> None:
         self.get_logger().warn('Stopping map creator...')
         self.save_map_client.destroy()
-        self.destroy_node()
         rclpy.shutdown()
 
     def input_callback(self, msg) -> None:
@@ -65,7 +64,7 @@ class LMapCreatorNode(Node):
 
         self.get_logger().info(f'Moving map {self.map_name} to {directory}')
         self.get_logger().warn('Stopping map creator...')
-        rclpy.shutdown()
+        raise SystemExit
 
         # Get the original filepaths of the newly saved map
         pgm_filepath = os.path.join(os.environ.get('LTM_ROS2_WS'), f'{self.map_name}.pgm')
@@ -98,7 +97,15 @@ def main():
     node = LMapCreatorNode()
     executor = MultiThreadedExecutor()
     executor.add_node(node)
-    executor.spin()
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        node.get_logger().warn('Keyboard interrupt detected.')
+    except SystemExit:
+        node.get_logger().warn('System exit detected.')
+    finally:
+        node.get_logger().warn('Shutting down...')
+        node.destroy_node()
     rclpy.shutdown()
 
 
