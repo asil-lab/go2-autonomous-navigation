@@ -4,9 +4,10 @@ Revision: 1.0
 Date: 19-08-2024
 """
 
-import re
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use('agg')
 
 import cv2 as cv
 from scipy.ndimage import gaussian_filter
@@ -82,7 +83,7 @@ class MapReader:
         self.original_map = np.array(map).reshape(self.height, self.width).astype(np.uint8)
 
         # Invert the map such that black is occupied space and white is free space
-        self.map = np.invert(self.original_map)
+        # self.map = np.invert(self.original_map)
 
     def read_map_pgm(self, filename: str, byteorder='>') -> None:
         self.map = plt.imread(filename)
@@ -199,3 +200,10 @@ class MapReader:
             'sampled_map': self.sampled_map,
             'truncated_map': self.truncated_map
         }
+    
+    def plot_map(self, map: np.ndarray) -> None:
+        plt.imshow(map, cmap='gray')
+        plt.show()
+
+    def plot_current_map(self) -> None:
+        self.plot_map(self.map)

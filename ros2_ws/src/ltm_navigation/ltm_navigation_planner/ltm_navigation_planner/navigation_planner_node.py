@@ -18,6 +18,7 @@ from std_msgs.msg import Empty
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Pose, PoseStamped, PoseArray
 from ltm_shared_msgs.srv import LoadMap
+from nav_msgs.srv import GetMap
 
 from ltm_navigation_planner.map_reader import MapReader
 from ltm_navigation_planner.path_planner import PathPlanner
@@ -38,6 +39,7 @@ class NavigationPlannerNode(Node):
         self.map_reader = MapReader()
         self.path_planner = PathPlanner()
 
+        self.configure_dynamic_map_client()
         self.configure_load_map_service()
 
         self.tf_buffer = Buffer()
@@ -77,8 +79,22 @@ class NavigationPlannerNode(Node):
         self.get_logger().info('Path has been planned.')
 
     def load_map_callback(self, request, response) -> LoadMap.Response:
-        _ = request
         self.get_logger().info('Map has been requested.')
+        _ = request
+
+        # Request the map from the SLAM Toolbox map server
+        request = GetMap.Request()
+        future = self.dynamic_map_client.call_async(request)
+        self.get_logger().info('Requesting map from server...')
+        rclpy.spin_until_future_complete(self, future)
+
+        # Get the map from the future and read it
+        self.get_logger().info('Map received from server.')
+        map = future.result().map
+        self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
+        self.map_reader.read_map_list(map.data)
+        self.get_logger().info('Load map completed.')
+
         return response
 
     def publish_waypoint(self, waypoint: dict) -> None:
@@ -137,12 +153,19 @@ class NavigationPlannerNode(Node):
         plt.imsave(save_directory + filename + '.png', map, cmap='gray')
         self.get_logger().info('Map has been saved to %s' % filename)
 
+    def configure_dynamic_map_client(self) -> None:
+        self.dynamic_map_client = self.create_client(GetMap, 'slam_toolbox/dynamic_map')
+        while not self.dynamic_map_client.wait_for_service():
+            self.get_logger().warn('Service slam_toolbox/dynamic_map is not available.', throttle_duration_sec=5.0)
+        self.get_logger().info('Dynamic Map client has been configured.')
+
     def configure_load_map_service(self) -> None:
         self.load_map_service_callback_group = MutuallyExclusiveCallbackGroup()
         self.load_map_service = self.create_service(
             LoadMap, 'state_machine/load_map', 
             self.load_map_callback, callback_group=self.load_map_service_callback_group)
         self.get_logger().info('Load Map service has been configured.')
+    
 
 
 def main():
