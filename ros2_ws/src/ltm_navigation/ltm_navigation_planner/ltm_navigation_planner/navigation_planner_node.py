@@ -6,15 +6,20 @@ Date: 19-08-2024
 
 import rclpy
 from rclpy.node import Node
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+from tf2_ros import Buffer, TransformListener
 
 import os
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
-from tf2_ros import Buffer, TransformListener
 
 from std_msgs.msg import Empty
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Pose, PoseStamped, PoseArray
+from ltm_shared_msgs.srv import LoadMap
+from nav_msgs.srv import GetMap
 
 from ltm_navigation_planner.map_reader import MapReader
 from ltm_navigation_planner.path_planner import PathPlanner
@@ -31,10 +36,12 @@ class NavigationPlannerNode(Node):
 
     def __init__(self) -> None:
         super().__init__('navigation_planner_node')
-        self.get_logger().info('Navigation Planner Node has been initialized.')
 
         self.map_reader = MapReader()
         self.path_planner = PathPlanner()
+
+        self.configure_dynamic_map_client()
+        self.configure_load_map_service()
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -44,6 +51,8 @@ class NavigationPlannerNode(Node):
         self.map_sub = self.create_subscription(OccupancyGrid, 'buffered_map', self.map_callback, 10)
         self.waypoint_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
         self.waypoints_pub = self.create_publisher(PoseArray, 'all_waypoints', 10)
+
+        self.get_logger().info('Navigation Planner Node has been initialized.')
 
     def trigger_callback(self, msg) -> None:
         assert self.path_planner.path is not None, 'The path does not exist'
@@ -69,6 +78,26 @@ class NavigationPlannerNode(Node):
         self.path_planner.set_start(robot_x, robot_y)
         _ = self.path_planner.plan()
         self.get_logger().info('Path has been planned.')
+
+    def load_map_callback(self, request, response) -> LoadMap.Response:
+        self.get_logger().info('Map has been requested.')
+
+        # Request the map from the SLAM Toolbox map server
+        request = GetMap.Request()
+        future = self.dynamic_map_client.call_async(request)
+        self.get_logger().info('Requesting map from server...')
+        future.add_done_callback(self.load_map_future_callback)
+
+        return response
+
+    def load_map_future_callback(self, future) -> None:
+        # Get the map from the future and read it
+        self.get_logger().info('Map received from server.')
+        map = future.result().map
+        self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
+        self.map_reader.read_map_list(map.data)
+        self.map_reader.read()
+        self.get_logger().info('Load map completed')
 
     def publish_waypoint(self, waypoint: dict) -> None:
         if len(waypoint) == 0:
@@ -126,13 +155,27 @@ class NavigationPlannerNode(Node):
         plt.imsave(save_directory + filename + '.png', map, cmap='gray')
         self.get_logger().info('Map has been saved to %s' % filename)
 
+    def configure_dynamic_map_client(self) -> None:
+        self.dynamic_map_callback_group = MutuallyExclusiveCallbackGroup()
+        self.dynamic_map_client = self.create_client(GetMap, 'slam_toolbox/dynamic_map', callback_group=self.dynamic_map_callback_group)
+        while not self.dynamic_map_client.wait_for_service():
+            self.get_logger().warn('Service slam_toolbox/dynamic_map is not available.', throttle_duration_sec=5.0)
+        self.get_logger().info('Dynamic Map client has been configured.')
+
+    def configure_load_map_service(self) -> None:
+        self.load_map_service_callback_group = MutuallyExclusiveCallbackGroup()
+        self.load_map_service = self.create_service(
+            LoadMap, 'state_machine/load_map', 
+            self.load_map_callback, callback_group=self.load_map_service_callback_group)
+        self.get_logger().info('Load Map service has been configured.')
+    
+
 
 def main():
     rclpy.init()
     node = NavigationPlannerNode()
     rclpy.spin(node)
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()

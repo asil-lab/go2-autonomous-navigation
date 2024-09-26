@@ -4,61 +4,85 @@ Revision: 1.0
 Date: 2024-09-05
 """
 
-import re
-from typing import Any, AnyStr
+import rclpy
+from rclpy.node import Node
 
-from ltm_shared_msgs.srv import PerformState
+from std_msgs.msg import String
+from ltm_shared_msgs.srv import LoadMap
 
-class State:
-    """ State class is the base class for all states.
-    """
+from ltm_state_machine.utils import get_snake_case
 
-    def __init__(self, name, id, is_terminal=False):
+class State(Node):
+
+    def __init__(self, name, id, is_terminal=False) -> None:
+        super().__init__('state_' + get_snake_case(name) + '_node')
         self.name = name
         self.id = id
-        self.is_terminal = is_terminal
-        self.input = None
+        self.terminal_flag = is_terminal
+        self.error_flag = None
+
+        # Initialize the state
+        self.get_logger().info(f'Current state: {self.name}')
+        if self.configure():
+            self.run()
+
+    def __del__(self) -> None:
+        self.destroy_node()
+
+    def configure(self) -> bool:
+        self.state_pub = self.create_publisher(String, 'state', 1)
+        return True
+
+    def run(self) -> None:
+        self.publish()
 
     def transition(self):
         pass
 
-    def request(self) -> tuple:
-        return (self.get_service_name(), self.get_service_request())
+    def publish(self) -> None:
+        msg = String()
+        msg.data = self.name
+        self.state_pub.publish(msg)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.name + " " + str(self.id)
     
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.id == other.id
     
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         return self.id != other.id
     
     def __hash__(self) -> int:
         return self.id
-    
-    def set_input(self, input: str):
-        self.input = input
 
-    def get_service_name(self):
-        return "state_machine/" + re.sub(r'(?<!^)(?=[A-Z])', '_', self.name).lower()
+    def is_client_ready(self, client) -> bool:
+        self.wait_for_service(client)
+        return self.is_service_ready(client)
+
+    def wait_for_service(self, client, timeout_sec=5) -> bool:
+        return client.wait_for_service(timeout_sec)
     
-    def get_service_request(self):
-        request = PerformState.Request()
-        request.current_state = self.id
-        return request
+    def is_service_ready(self, client) -> bool:
+        return client.service_is_ready()
     
-    # def emergency_stop(self):
-    #     return EmergencyStop()
+    def is_terminal(self) -> bool:
+        return self.terminal_flag
     
-    def error(self):
-        return Error()
+    def is_error(self) -> bool:
+        return self.error_flag is not None
+    
+    def flag_error(self, message) -> None:
+        self.error_flag = message
+
+    def print_error(self) -> None:
+        self.get_logger().error(self.error_flag)
 
 
-class Undefined(State):
+class UndefinedState(State):
     """ Undefined class is the state that is used to represent
     an undefined state.
     """
@@ -67,68 +91,42 @@ class Undefined(State):
         super().__init__("Undefined", 0)
 
 
-class BootUp(State):
-    """ BootUp class is the initial state of the state machine.
+class LoadMapState(State):
+    """ LoadMap class is the state that loads the map.
     """
+    UNDEFINED_MAP_NAME = 'undefined'
 
-    def __init__(self):
-        super().__init__("BootUp", 1)
+    def __init__(self) -> None:
+        super().__init__("LoadMap", 1)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        # Create the client for the service
+        self.load_map_client = self.create_client(LoadMap, 'state_machine/load_map')
+
+        # Throw an error if the client cannot find the service
+        if not self.is_client_ready(self.load_map_client):
+            self.flag_error('Service state_machine/load_map is not available.')
+            return False
+
+        self.get_logger().info('Service state_machine/load_map found.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+        self.get_logger().info('Loading map...')
+        request = LoadMap.Request()
+        future = self.load_map_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        if future.result() is not None:
+            self.get_logger().info('Map loaded.')
+        else:
+            self.flag_error('Failed to load map.')
 
     def transition(self):
-        # if self.input == "load_map":
-        #     return LoadMap()
-        # else:
-        #     return CreateMap()
-        return CreateMap()
-        
+        return ShutdownState()
 
-# class LoadMap(State):
-#     """ LoadMap class is the state that loads the map.
-#     """
-
-#     def __init__(self):
-#         super().__init__("LoadMap", 2)
-
-#     def transition(self):
-#         return Localize()
-    
-
-class CreateMap(State):
-    """ CreateMap class is the state that creates a map.
-    """
-
-    def __init__(self):
-        super().__init__("CreateMap", 3)
-
-    def transition(self):
-        return Shutdown()
-
-
-# class Localize(State):
-#     """ Localization class is the state that localizes the robot
-#     with respect to the map.
-#     """
-
-#     def __init__(self):
-#         super().__init__("Localize", 4)
-
-#     def transition(self):
-#         return Idle()
-    
-
-# class Idle(State):
-#     """ Idle class is the state that waits for a command.
-#     """
-
-#     def __init__(self):
-#         super().__init__("Idle", 5)
-
-#     def transition(self):
-#         if self.input == "start":
-#             return PlanPath()
-#         else:
-#             return Idle()
-            
 
 # class PlanPath(State):
 #     """ PlanPath class is the state that creates a list of waypoints
@@ -189,7 +187,7 @@ class CreateMap(State):
 #             return Navigate()
         
 
-# class Home(State):
+# class HomeState(State):
 #     """ Home class is the state that returns the robot to the
 #     starting position.
 #     """
@@ -198,10 +196,10 @@ class CreateMap(State):
 #         super().__init__("Home", 10)
 
 #     def transition(self):
-#         return Shutdown()
+#         return ShutdownState()
     
 
-class Shutdown(State):
+class ShutdownState(State):
     """ Shutdown class is the state that shuts down the robot.
     """
 
@@ -209,9 +207,9 @@ class Shutdown(State):
         super().__init__("Shutdown", 11, is_terminal=True)
 
     def transition(self):
-        return Shutdown()
+        return ShutdownState()
 
-# class EmergencyStop(State):
+# class EmergencyStopState(State):
 #     """ EmergencyStop class is the state that stops the robot
 #     immediately.
 #     """
@@ -223,15 +221,15 @@ class Shutdown(State):
 #         return Shutdown()
     
 
-# class Error(State):
-#     """ Error class is the state that handles errors.
-#     """
+class ErrorState(State):
+    """ Error class is the state that handles errors.
+    """
 
-#     def __init__(self):
-#         super().__init__("Error", 13)
+    def __init__(self):
+        super().__init__("Error", 13)
 
-#     def transition(self):
-#         return Shutdown()
+    def transition(self):
+        return ShutdownState()
     
 
 def get_all_service_names() -> list:

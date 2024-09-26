@@ -24,13 +24,18 @@ find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/MissionState.msg"
+  # Common messages and services
   "srv/GetImage.srv"
   "srv/GetPointCloud.srv"
-  "srv/GetStateTransitionHistory.srv"
   "srv/NavigateToPose.srv"
-  "srv/PerformState.srv"
   "srv/RecordEnvironment.srv"
+
+  # State-specific messages and services
+  "msg/MissionState.msg"
+  "srv/LoadMap.srv"
+  "srv/GetStateTransitionHistory.srv"
+  "srv/PerformState.srv"
+
   DEPENDENCIES builtin_interfaces std_msgs sensor_msgs geometry_msgs
 )
 
