@@ -20,8 +20,9 @@ class State(Node):
         self.id = id
         self.terminal_flag = is_terminal
         self.error_flag = None
-        self.get_logger().info(f'State {name} is initialized.')
 
+        # Initialize the state
+        self.get_logger().info(f'Current state: {self.name}')
         if self.configure():
             self.run()
 
@@ -93,17 +94,30 @@ class UndefinedState(State):
 class LoadMapState(State):
     """ LoadMap class is the state that loads the map.
     """
+    UNDEFINED_MAP_NAME = 'undefined'
 
     def __init__(self) -> None:
         super().__init__("LoadMap", 1)
 
     def configure(self) -> bool:
         super().configure()
+
+        # Load the name of the service
+        self.declare_parameter('map_name')
+        self.map_name = self.get_parameter('map_name').get_parameter_value().string_value
+
+        # Throw an error if the map name is empty or invalid
+        if len(self.map_name) == 0:
+            self.flag_error('Map name is undefined.')
+            return False
+        self.get_logger().info(f'Using map: {self.map_name}')
+
+        # Create the client for the service
         self.load_map_client = self.create_client(LoadMap, 'state_machine/load_map')
 
-        # Wait for the service to be available
+        # Throw an error if the client cannot find the service
         if not self.is_client_ready(self.load_map_client):
-            self.get_logger().error('Service state_machine/load_map not available.')
+            self.flag_error('Service state_machine/load_map is not available.')
             return False
 
         self.get_logger().info('Service state_machine/load_map found.')
@@ -111,14 +125,14 @@ class LoadMapState(State):
 
     def run(self) -> None:
         super().run()
-        self.get_logger().info('Loading map...')
+        self.get_logger().info(f'Loading map: {self.map_name}...')
         request = LoadMap.Request()
+        request.map_name = self.map_name
         future = self.load_map_client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
         if future.result() is not None:
             self.get_logger().info('Map loaded.')
         else:
-            self.get_logger().error('Failed to load map.')
             self.flag_error('Failed to load map.')
 
     def transition(self):
