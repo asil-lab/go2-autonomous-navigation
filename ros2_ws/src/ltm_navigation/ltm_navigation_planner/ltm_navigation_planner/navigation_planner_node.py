@@ -8,11 +8,12 @@ import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
+from tf2_ros import Buffer, TransformListener
 
 import os
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
-from tf2_ros import Buffer, TransformListener
 
 from std_msgs.msg import Empty
 from nav_msgs.msg import OccupancyGrid
@@ -95,6 +96,7 @@ class NavigationPlannerNode(Node):
         map = future.result().map
         self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
         self.map_reader.read_map_list(map.data)
+        self.map_reader.plot_map(self.map_reader.original_map)
         self.get_logger().info('Load map completed')
 
     def publish_waypoint(self, waypoint: dict) -> None:
@@ -171,13 +173,9 @@ class NavigationPlannerNode(Node):
 
 def main():
     rclpy.init()
-    executor = MultiThreadedExecutor()
-    navigation_planner_node = NavigationPlannerNode()
-    executor.add_node(navigation_planner_node)
-    executor.spin()
+    node = NavigationPlannerNode()
+    rclpy.spin(node)
     rclpy.shutdown()
-    navigation_planner_node.destroy_node()
-
 
 if __name__ == '__main__':
     main()

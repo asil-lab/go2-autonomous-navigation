@@ -5,9 +5,7 @@ Date: 19-08-2024
 """
 
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.use('agg')
 
 import cv2 as cv
 from scipy.ndimage import gaussian_filter
@@ -83,7 +81,7 @@ class MapReader:
         self.original_map = np.array(map).reshape(self.height, self.width).astype(np.uint8)
 
         # Invert the map such that black is occupied space and white is free space
-        # self.map = np.invert(self.original_map)
+        self.map = np.invert(self.original_map)
 
     def read_map_pgm(self, filename: str, byteorder='>') -> None:
         self.map = plt.imread(filename)
