@@ -7,40 +7,52 @@ Date: 2024-09-05
 import rclpy
 from rclpy.node import Node
 
+from std_msgs.msg import String
 from ltm_shared_msgs.srv import LoadMap
 
 from ltm_state_machine.utils import get_snake_case
 
 class State(Node):
 
-    def __init__(self, name, id, is_terminal=False):
+    def __init__(self, name, id, is_terminal=False) -> None:
         super().__init__('state_' + get_snake_case(name) + '_node')
         self.name = name
         self.id = id
-        self.is_terminal = is_terminal
+        self.terminal_flag = is_terminal
+        self.error_flag = None
+        self.get_logger().info(f'State {name} is initialized.')
 
-    def __del__(self):
+        if self.configure():
+            self.run()
+
+    def __del__(self) -> None:
         self.destroy_node()
 
-    def configure(self):
-        pass
+    def configure(self) -> bool:
+        self.state_pub = self.create_publisher(String, 'state', 1)
+        return True
 
-    def run(self):
-        pass
+    def run(self) -> None:
+        self.publish()
 
     def transition(self):
         pass
 
-    def __str__(self):
+    def publish(self) -> None:
+        msg = String()
+        msg.data = self.name
+        self.state_pub.publish(msg)
+
+    def __str__(self) -> str:
         return self.name
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.name + " " + str(self.id)
     
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.id == other.id
     
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         return self.id != other.id
     
     def __hash__(self) -> int:
@@ -55,12 +67,18 @@ class State(Node):
     
     def is_service_ready(self, client) -> bool:
         return client.service_is_ready()
-
-    # def emergency_stop(self):
-    #     return EmergencyStop()
     
-    def error(self):
-        return ErrorState()
+    def is_terminal(self) -> bool:
+        return self.terminal_flag
+    
+    def is_error(self) -> bool:
+        return self.error_flag is not None
+    
+    def flag_error(self, message) -> None:
+        self.error_flag = message
+
+    def print_error(self) -> None:
+        self.get_logger().error(self.error_flag)
 
 
 class UndefinedState(State):
@@ -76,20 +94,23 @@ class LoadMapState(State):
     """ LoadMap class is the state that loads the map.
     """
 
-    def __init__(self):
-        super().__init__("LoadMap", 2)
+    def __init__(self) -> None:
+        super().__init__("LoadMap", 1)
 
-    def configure(self):
+    def configure(self) -> bool:
+        super().configure()
         self.load_map_client = self.create_client(LoadMap, 'state_machine/load_map')
 
+        # Wait for the service to be available
         if not self.is_client_ready(self.load_map_client):
-            self.get_logger().info('Service state_machine/load_map not available.')
+            self.get_logger().error('Service state_machine/load_map not available.')
             return False
 
         self.get_logger().info('Service state_machine/load_map found.')
         return True
 
-    def run(self):
+    def run(self) -> None:
+        super().run()
         self.get_logger().info('Loading map...')
         request = LoadMap.Request()
         future = self.load_map_client.call_async(request)
@@ -97,7 +118,8 @@ class LoadMapState(State):
         if future.result() is not None:
             self.get_logger().info('Map loaded.')
         else:
-            self.get_logger().info('Failed to load map.')
+            self.get_logger().error('Failed to load map.')
+            self.flag_error('Failed to load map.')
 
     def transition(self):
         return ShutdownState()
