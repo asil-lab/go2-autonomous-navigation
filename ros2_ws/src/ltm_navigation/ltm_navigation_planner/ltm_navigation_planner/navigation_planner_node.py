@@ -80,22 +80,22 @@ class NavigationPlannerNode(Node):
 
     def load_map_callback(self, request, response) -> LoadMap.Response:
         self.get_logger().info('Map has been requested.')
-        _ = request
 
         # Request the map from the SLAM Toolbox map server
         request = GetMap.Request()
         future = self.dynamic_map_client.call_async(request)
         self.get_logger().info('Requesting map from server...')
-        rclpy.spin_until_future_complete(self, future)
+        future.add_done_callback(self.load_map_future_callback)
 
+        return response
+
+    def load_map_future_callback(self, future) -> None:
         # Get the map from the future and read it
         self.get_logger().info('Map received from server.')
         map = future.result().map
         self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
         self.map_reader.read_map_list(map.data)
-        self.get_logger().info('Load map completed.')
-
-        return response
+        self.get_logger().info('Load map completed')
 
     def publish_waypoint(self, waypoint: dict) -> None:
         if len(waypoint) == 0:
@@ -154,7 +154,8 @@ class NavigationPlannerNode(Node):
         self.get_logger().info('Map has been saved to %s' % filename)
 
     def configure_dynamic_map_client(self) -> None:
-        self.dynamic_map_client = self.create_client(GetMap, 'slam_toolbox/dynamic_map')
+        self.dynamic_map_callback_group = MutuallyExclusiveCallbackGroup()
+        self.dynamic_map_client = self.create_client(GetMap, 'slam_toolbox/dynamic_map', callback_group=self.dynamic_map_callback_group)
         while not self.dynamic_map_client.wait_for_service():
             self.get_logger().warn('Service slam_toolbox/dynamic_map is not available.', throttle_duration_sec=5.0)
         self.get_logger().info('Dynamic Map client has been configured.')

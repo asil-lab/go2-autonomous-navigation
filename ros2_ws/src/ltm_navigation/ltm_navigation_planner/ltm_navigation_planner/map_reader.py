@@ -202,6 +202,7 @@ class MapReader:
         }
     
     def plot_map(self, map: np.ndarray) -> None:
+        plt.figure(figsize=(10, 10))
         plt.imshow(map, cmap='gray')
         plt.show()
 
