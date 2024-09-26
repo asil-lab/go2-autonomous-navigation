@@ -16,7 +16,7 @@ def generate_launch_description():
     # Go2 driver launch file
     go2_driver_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('go2_driver'), 
+            os.path.join(get_package_share_directory('ltm_go2_driver'), 
                 'launch', 'go2_driver.launch.py')
         )
     )
