@@ -3,9 +3,13 @@
 <package format="3">
   <name>ltm_map_creation</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="gungnir@todo.todo">gungnir</maintainer>
+  <description>This package contains the map creation node for the LTM project.</description>
+  <maintainer email="alexanderjames.becoy@outlook.com">Alexander James Becoy</maintainer>
   <license>TODO: License declaration</license>
+
+  <depend>slam_toolbox</depend>
+
+  <exec_depend>ltm_stack</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

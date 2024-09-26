@@ -9,10 +9,20 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.actions import Node
 
 def generate_launch_description():
     
+    # Declare launch arguments
+    declared_arguments = [
+        DeclareLaunchArgument(
+            'mapping',
+            default_value='true',
+            description='Enable mapping. If false, only localization is performed.'
+        ),
+    ]
+
     # Pointcloud buffer node
     pointcloud_buffer_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -42,25 +52,47 @@ def generate_launch_description():
         # parameters=[pointcloud_to_laserscan_config],
     )
 
-    # Online asynchronous SLAM node
-    online_async_slam_config_filename = 'mapper_params_online_async.yaml'
-    online_async_slam_config_filepath = os.path.join(
-        get_package_share_directory('ltm_exploration_core'), 'config', online_async_slam_config_filename)
-    online_async_slam_node = IncludeLaunchDescription(
+    # Online synchronous SLAM node
+    # Launch only if mapping is enabled
+    online_sync_slam_config_filename = 'mapper_params_online_sync.yaml'
+    online_sync_slam_config_filepath = os.path.join(
+        get_package_share_directory('ltm_exploration_core'), 'config', online_sync_slam_config_filename)
+    
+    online_sync_slam_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('slam_toolbox'),
-                            'launch', 'online_async_launch.py')
+                            'launch', 'online_sync_launch.py')
         ),
         launch_arguments=[
             ('use_sim_time', 'false'),
-            ('params_file', online_async_slam_config_filepath),
-        ]
+            ('params_file', online_sync_slam_config_filepath),
+        ],
+        condition=IfCondition(LaunchConfiguration('mapping')),
+    )
+
+    # Localization SLAM node
+    # Launch only if mapping is disabled
+    localization_slam_config_filename = 'mapper_params_localization.yaml'
+    localization_slam_config_filepath = os.path.join(
+        get_package_share_directory('ltm_exploration_core'), 'config', localization_slam_config_filename)
+
+    localization_slam_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('slam_toolbox'),
+                            'launch', 'localization_launch.py')
+        ),
+        launch_arguments=[
+            ('use_sim_time', 'false'),
+            ('params_file', localization_slam_config_filepath),
+        ],
+        condition=UnlessCondition(LaunchConfiguration('mapping')),
     )
     
     # Return launch description
-    return LaunchDescription([
+    return LaunchDescription(declared_arguments + [
         pointcloud_buffer_node,
         pointcloud_filter_node,
         pointcloud_to_laserscan_node,
-        online_async_slam_node,
+        online_sync_slam_node,
+        localization_slam_node,
     ])
