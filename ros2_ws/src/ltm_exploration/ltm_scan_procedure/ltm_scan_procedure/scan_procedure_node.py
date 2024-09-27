@@ -10,10 +10,10 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from tf2_ros import Buffer, TransformListener
 
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import Point, Quaternion
 from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Empty, String
-from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose
+from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose, RecordEnvironment
 
 import os
 from typing import Any
@@ -44,8 +44,8 @@ class ScanProcedureNode(Node):
         self.get_logger().info(f"Saving files in {self.data_storage.storage_directory}.")
 
         # Configure ROS2 entities'
-        self.configure_trigger_sub()
         self.configure_gesture_pub()
+        self.configure_record_environment_service()
         self.configure_navigate_to_pose_client()
         self.configure_get_image_client()
         self.configure_get_pointcloud_client()
@@ -53,9 +53,11 @@ class ScanProcedureNode(Node):
 
         self.get_logger().info('Scan procedure node has been initialized.')
 
-    def trigger_callback(self, msg) -> None:
-        self.get_logger().info('Trigger has been received.')
+    def record_environment_callback(self, request, response) -> RecordEnvironment.Response:
+        self.get_logger().info('Record environment service has been called.')
         self.perform_scan()
+        response.success = True
+        return response
 
     def publish_gesture(self, gesture: str) -> None:
         """Publishes the gesture to the gesture topic.
@@ -289,17 +291,6 @@ class ScanProcedureNode(Node):
         self.gesture_delay = self.get_parameter('scan_delay_between_gestures').value
         self.get_logger().info('Time delay between each gesture: %f s' % (self.gesture_delay))
 
-    def configure_trigger_sub(self) -> None:
-        """Configures the subscriber to the trigger topic."""
-        self.declare_parameter('trigger_subscriber_topic_name', 'perform_scan')
-        self.declare_parameter('trigger_subscriber_queue_size', 10)
-
-        self.trigger_callback_group = MutuallyExclusiveCallbackGroup()
-        self.trigger_sub = self.create_subscription(
-            Empty, self.get_parameter('trigger_subscriber_topic_name').value, 
-            self.trigger_callback, self.get_parameter('trigger_subscriber_queue_size').value,
-            callback_group=self.trigger_callback_group)
-
     def configure_gesture_pub(self) -> None:
         """Configures the publisher to the gesture topic."""
         self.declare_parameter('gesture_publisher_topic_name', 'gesture')
@@ -343,6 +334,15 @@ class ScanProcedureNode(Node):
         while not self.get_pointcloud_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service %s not available, waiting again...' % \
                                    (self.get_parameter('get_pointcloud_service_name').value))
+
+    def configure_record_environment_service(self) -> None:
+        """Configures the client to the record_environment service."""
+        self.declare_parameter('record_environment_service_name', 'record_environment')
+
+        self.record_environment_callback_group = MutuallyExclusiveCallbackGroup()
+        self.record_environment_service = self.create_service(
+            RecordEnvironment, self.get_parameter('record_environment_service_name').value, 
+            self.record_environment_callback, callback_group=self.record_environment_callback_group)
 
     def configure_tf_listener(self) -> None:
         """Configures the tf listener for the node."""

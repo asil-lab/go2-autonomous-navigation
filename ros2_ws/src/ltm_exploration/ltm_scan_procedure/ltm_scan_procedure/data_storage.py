@@ -14,6 +14,8 @@ from sensor_msgs.msg import PointCloud2, PointField
 from sensor_msgs_py import point_cloud2 as pc2
 import open3d as o3d
 
+LTM_RECORDINGS_DIRECTORY = os.environ.get('LTM_RECORDINGS_DIRECTORY')
+
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
     PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
@@ -145,7 +147,7 @@ class DataStorage:
 
     def configure_storage_directory(self) -> None:
         """ Configures the storage directory for the data. """
-        self.storage_directory = os.path.join(os.path.expanduser('~'), 'ltm_data')
+        self.storage_directory = LTM_RECORDINGS_DIRECTORY
 
         # Create the storage directory if it does not exist
         if not os.path.exists(self.storage_directory):
@@ -153,6 +155,7 @@ class DataStorage:
             print(f'Storage directory has been created at {self.storage_directory}.')
 
         # Create a directory for the current session based on the current date and time
-        session_directory_name = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        current_datetime = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        session_directory_name = 'session_' + current_datetime
         self.create_storage_subdirectory(session_directory_name)
         self.storage_directory = os.path.join(self.storage_directory, session_directory_name)
