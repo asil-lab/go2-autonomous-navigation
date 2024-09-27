@@ -57,14 +57,13 @@ class LMapCreatorNode(Node):
             self.get_logger().info(f'Directory {maps_directory} created.')
 
         # Create the directory if it does not exist
-        directory = os.path.join(maps_directory, current_datetime)
+        directory_name = f'{self.map_name}_{current_datetime}'
+        directory = os.path.join(maps_directory, directory_name)
         if not os.path.exists(directory):
             os.makedirs(directory)
             self.get_logger().info(f'Directory {directory} created.')
 
         self.get_logger().info(f'Moving map {self.map_name} to {directory}')
-        self.get_logger().warn('Stopping map creator...')
-        raise SystemExit
 
         # Get the original filepaths of the newly saved map
         pgm_filepath = os.path.join(os.environ.get('LTM_ROS2_WS'), f'{self.map_name}.pgm')
@@ -75,6 +74,8 @@ class LMapCreatorNode(Node):
         shutil.move(yaml_filepath, os.path.join(directory, f'{self.map_name}.yaml'))
 
         self.get_logger().info(f'Map {self.map_name} moved to {directory}.')
+        self.get_logger().warn('Stopping map creator...')
+        raise SystemExit
 
     def configure_input_subscriber(self) -> None:
         """ Configures the input subscriber."""
