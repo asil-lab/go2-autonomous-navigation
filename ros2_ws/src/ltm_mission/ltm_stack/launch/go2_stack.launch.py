@@ -13,10 +13,17 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
+    # Declare launch arguments
+    mapping = DeclareLaunchArgument(
+        'mapping',
+        default_value='true',
+        description='Enable mapping. If false, only localization is performed.'
+    )
+
     # Go2 driver launch file
     go2_driver_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('go2_driver'), 
+            os.path.join(get_package_share_directory('ltm_go2_driver'), 
                 'launch', 'go2_driver.launch.py')
         )
     )
@@ -26,7 +33,8 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_exploration_core'), 
                 'launch', 'exploration.launch.py')
-        )
+        ),
+        launch_arguments=[('mapping', LaunchConfiguration('mapping'))],
     )
 
     # Navigation core launch file
@@ -38,6 +46,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        # Launch arguments
+        mapping,
+        # Launch files
         go2_driver_node,
         exploration_core_node,
         navigation_core_node,
