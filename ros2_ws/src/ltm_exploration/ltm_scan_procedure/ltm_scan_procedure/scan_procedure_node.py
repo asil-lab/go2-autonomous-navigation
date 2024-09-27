@@ -44,19 +44,14 @@ class ScanProcedureNode(Node):
         self.get_logger().info(f"Saving files in {self.data_storage.storage_directory}.")
 
         # Configure ROS2 entities'
-        self.configure_trigger_sub()
         self.configure_gesture_pub()
+        self.configure_record_environment_service()
         self.configure_navigate_to_pose_client()
         self.configure_get_image_client()
         self.configure_get_pointcloud_client()
-        self.configure_record_environment_service()
         self.configure_tf_listener()
 
         self.get_logger().info('Scan procedure node has been initialized.')
-
-    def trigger_callback(self, msg) -> None:
-        self.get_logger().info('Trigger has been received.')
-        self.perform_scan()
 
     def record_environment_callback(self, request, response) -> RecordEnvironment.Response:
         self.get_logger().info('Record environment service has been called.')
@@ -295,17 +290,6 @@ class ScanProcedureNode(Node):
         self.declare_parameter('scan_delay_between_gestures', 1.0)
         self.gesture_delay = self.get_parameter('scan_delay_between_gestures').value
         self.get_logger().info('Time delay between each gesture: %f s' % (self.gesture_delay))
-
-    def configure_trigger_sub(self) -> None:
-        """Configures the subscriber to the trigger topic."""
-        self.declare_parameter('trigger_subscriber_topic_name', 'perform_scan')
-        self.declare_parameter('trigger_subscriber_queue_size', 10)
-
-        self.trigger_callback_group = MutuallyExclusiveCallbackGroup()
-        self.trigger_sub = self.create_subscription(
-            Empty, self.get_parameter('trigger_subscriber_topic_name').value, 
-            self.trigger_callback, self.get_parameter('trigger_subscriber_queue_size').value,
-            callback_group=self.trigger_callback_group)
 
     def configure_gesture_pub(self) -> None:
         """Configures the publisher to the gesture topic."""

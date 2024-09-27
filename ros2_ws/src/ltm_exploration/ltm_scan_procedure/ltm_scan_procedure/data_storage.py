@@ -155,6 +155,7 @@ class DataStorage:
             print(f'Storage directory has been created at {self.storage_directory}.')
 
         # Create a directory for the current session based on the current date and time
-        session_directory_name = f'session_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}'
+        current_datetime = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        session_directory_name = 'session_' + current_datetime
         self.create_storage_subdirectory(session_directory_name)
         self.storage_directory = os.path.join(self.storage_directory, session_directory_name)
