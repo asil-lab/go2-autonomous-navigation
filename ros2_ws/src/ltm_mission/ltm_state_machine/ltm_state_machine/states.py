@@ -37,7 +37,8 @@ class State(Node):
         self.publish()
 
     def transition(self):
-        pass
+        if self.error_flag is not None:
+            return ErrorState()
 
     def publish(self) -> None:
         msg = String()
@@ -150,79 +151,164 @@ class LoadMapState(State):
         #     return
 
     def transition(self):
-        return ShutdownState()
+        super().transition()
+        return CheckWaypointsState()
 
 
-# class PlanPath(State):
-#     """ PlanPath class is the state that creates a list of waypoints
-#     to follow, and creates a path to follow.
-#     """
+class CheckWaypointsState(State):
+    """ CheckWaypoints class is the state that checks if there are
+    waypoints remaining.
+    """
 
-#     def __init__(self):
-#         super().__init__("PlanPath", 6)
+    def __init__(self):
+        super().__init__("CheckWaypoints", 2)
+        self.waypoints_remaining = False
 
-#     def transition(self):
-#         return Navigate()
-    
+    def configure(self) -> bool:
+        super().configure()
 
-# class Navigate(State):
-#     """ Navigate class is the state that moves the robot to the
-#     next waypoint.
-#     """
+        self.get_logger().info('State CheckWaypoints configured.')
+        return True
 
-#     def __init__(self):
-#         super().__init__("Navigate", 7)
+    def run(self) -> None:
+        super().run()
 
-#     def transition(self):
-#         if self.input == "reached":
-#             return Scan()
-#         elif self.input == "failed":
-#             return ManualControl()
-#         else:
-#             return Navigate()
+        self.get_logger().info('Checking waypoints...')
 
-
-# class ManualControl(State):
-#     """ ManualControl class is the state that allows manual control
-#     of the robot.
-#     """
-
-#     def __init__(self):
-#         super().__init__("ManualControl", 8)
-
-#     def transition(self):
-#         if self.input == "stop":
-#             return Scan()
-#         else:
-#             return ManualControl()
-
-# class Scan(State):
-#     """ Scan class is the state that scans the environment at the
-#     current waypoint in 360 degrees.
-#     TODO: Implement smaller scanning state machine.
-#     """
-
-#     def __init__(self):
-#         super().__init__("Scan", 9)
-
-#     def transition(self):
-#         if self.input == "stop":
-#             return Home()
-#         else:
-#             return Navigate()
+    def transition(self):
+        super().transition()
+        if self.waypoints_remaining:
+            return CheckDestinationState()
+        else:
+            return HomeState()
         
 
-# class HomeState(State):
-#     """ Home class is the state that returns the robot to the
-#     starting position.
-#     """
+class CheckDestinationState(State):
+    """ CheckDestination class is the state that checks if the robot
+    has reached the destination.
+    """
 
-#     def __init__(self):
-#         super().__init__("Home", 10)
+    def __init__(self):
+        super().__init__("CheckDestination", 3)
+        self.destination_reached = False
 
-#     def transition(self):
-#         return ShutdownState()
-    
+    def configure(self) -> bool:
+        super().configure()
+
+        self.get_logger().info('State CheckDestination configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Checking destination...')
+
+    def transition(self):
+        super().transition()
+        if self.destination_reached:
+            return ScanEnvironmentState()
+        else:
+            return MoveToDestinationState()
+        
+
+class MoveToDestinationState(State):
+    """ MoveToDestination class is the state that moves the robot to
+    the destination.
+    """
+
+    def __init__(self):
+        super().__init__("MoveToDestination", 4)
+        self.is_interrupted = False
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.get_logger().info('State MoveToDestination configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Moving to destination...')
+
+    def transition(self):
+        super().transition()
+        if self.is_interrupted:
+            return ManualControlState()
+        else:
+            return CheckDestinationState()
+
+
+class ScanEnvironmentState(State):
+    """ ScanEnvironment class is the state that scans the environment.
+    """
+
+    def __init__(self):
+        super().__init__("ScanEnvironment", 5)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.get_logger().info('State ScanEnvironment configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Scanning environment...')
+
+    def transition(self):
+        super().transition()
+        return CheckWaypointsState()
+
+
+class ManualControlState(State):
+    """ ManualControl class is the state that allows manual control
+    of the robot.
+    """
+
+    def __init__(self):
+        super().__init__("ManualControl", 6)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.get_logger().info('State ManualControl configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Manual control...')
+
+    def transition(self):
+        super().transition()
+        return ScanEnvironmentState()
+
+
+class HomeState(State):
+    """ Home class is the state that sends the robot back to the
+    home location.
+    """
+
+    def __init__(self):
+        super().__init__("Home", 7)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.get_logger().info('State Home configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Returning home...')
+
+    def transition(self):
+        super().transition()
+        return ShutdownState()
+
 
 class ShutdownState(State):
     """ Shutdown class is the state that shuts down the robot.
