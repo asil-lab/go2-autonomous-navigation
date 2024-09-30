@@ -21,6 +21,11 @@ def generate_launch_description():
             default_value='true',
             description='Enable mapping. If false, only localization is performed.'
         ),
+        DeclareLaunchArgument(
+            'use_map_saver',
+            default_value='false',
+            description='Enable map saver node.'
+        )
     ]
 
     # Pointcloud buffer node
@@ -66,6 +71,7 @@ def generate_launch_description():
         launch_arguments=[
             ('use_sim_time', 'false'),
             ('params_file', online_sync_slam_config_filepath),
+            ('use_map_saver', LaunchConfiguration('use_map_saver')),
         ],
         condition=IfCondition(LaunchConfiguration('mapping')),
     )
@@ -84,6 +90,7 @@ def generate_launch_description():
         launch_arguments=[
             ('use_sim_time', 'false'),
             ('params_file', localization_slam_config_filepath),
+            ('use_map_saver', LaunchConfiguration('use_map_saver')),
         ],
         condition=UnlessCondition(LaunchConfiguration('mapping')),
     )

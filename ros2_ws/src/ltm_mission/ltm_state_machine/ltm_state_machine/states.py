@@ -8,7 +8,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-from ltm_shared_msgs.srv import LoadMap
+from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints
 
 from ltm_state_machine.utils import get_snake_case
 
@@ -104,25 +104,50 @@ class LoadMapState(State):
 
         # Create the client for the service
         self.load_map_client = self.create_client(LoadMap, 'state_machine/load_map')
+        self.generate_waypoints_client = self.create_client(GenerateWaypoints, 'state_machine/generate_waypoints')
 
-        # Throw an error if the client cannot find the service
+        # Throw an error if the client cannot find the service /state_machine/load_map
         if not self.is_client_ready(self.load_map_client):
             self.flag_error('Service state_machine/load_map is not available.')
             return False
-
         self.get_logger().info('Service state_machine/load_map found.')
+
+        # Throw an error if the client cannot find the service /state_machine/generate_waypoints
+        if not self.is_client_ready(self.generate_waypoints_client):
+            self.flag_error('Service state_machine/generate_waypoints is not available.')
+            return False
+        self.get_logger().info('Service state_machine/generate_waypoints found.')
+
+        self.get_logger().info('State LoadMap configured.')
         return True
 
     def run(self) -> None:
         super().run()
+
+        # Load the map from the map server to the map reader
         self.get_logger().info('Loading map...')
         request = LoadMap.Request()
+        request.filename = 'lab'
         future = self.load_map_client.call_async(request)
         rclpy.spin_until_future_complete(self, future)
+
         if future.result() is not None:
             self.get_logger().info('Map loaded.')
         else:
             self.flag_error('Failed to load map.')
+            return
+        
+        # # Generate waypoints from the map, and plan a route
+        # self.get_logger().info('Generating waypoints...')
+        # request = GenerateWaypoints.Request()
+        # future = self.generate_waypoints_client.call_async(request)
+        # rclpy.spin_until_future_complete(self, future)
+
+        # if future.result() is not None:
+        #     self.get_logger().info('Waypoints generated.')
+        # else:
+        #     self.flag_error('Failed to generate waypoints.')
+        #     return
 
     def transition(self):
         return ShutdownState()
