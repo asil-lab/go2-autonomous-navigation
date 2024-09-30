@@ -48,26 +48,6 @@ class NavigationPlannerNode(Node):
 
         self.get_logger().info('Navigation Planner Node has been initialized.')
 
-    # def map_callback(self, msg) -> None:
-    #     self.map_reader.configure_metadata(msg.info.resolution, msg.info.origin.position, msg.info.width, msg.info.height)
-    #     self.map_reader.read_map_list(msg.data)
-    #     waypoints = self.map_reader.read()
-    #     self.get_logger().info('Map has been read. There are %d waypoints' % len(waypoints))
-    #     for i, waypoint in enumerate(waypoints):
-    #         self.get_logger().info('Waypoint %d: (%f, %f, %f)' % (i, waypoint[0], waypoint[1], waypoint[2]))
-    #     self.publish_waypoints(waypoints)
-
-    #     maps = self.map_reader.get_maps()
-    #     for key, value in maps.items():
-    #         self.save_map(value, key)
-
-    #     self.path_planner.set_waypoints(waypoints)
-    #     robot_x, robot_y = self.get_robot_position()
-    #     self.get_logger().info('Robot position is (%f, %f)' % (robot_x, robot_y))
-    #     self.path_planner.set_start(robot_x, robot_y)
-    #     _ = self.path_planner.plan()
-    #     self.get_logger().info('Path has been planned.')
-
     def load_map_callback(self, request, response) -> LoadMap.Response:
         self.get_logger().info('Map has been requested.')
 
