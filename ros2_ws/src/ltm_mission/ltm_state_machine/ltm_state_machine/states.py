@@ -38,7 +38,7 @@ class State(Node):
 
     def transition(self):
         if self.error_flag is not None:
-            return ErrorState()
+            return ErrorState(self.error_flag)
 
     def publish(self) -> None:
         msg = String()
@@ -320,24 +320,14 @@ class ShutdownState(State):
     def transition(self):
         return ShutdownState()
 
-# class EmergencyStopState(State):
-#     """ EmergencyStop class is the state that stops the robot
-#     immediately.
-#     """
-
-#     def __init__(self):
-#         super().__init__("EmergencyStop", 12)
-
-#     def transition(self):
-#         return Shutdown()
-    
 
 class ErrorState(State):
     """ Error class is the state that handles errors.
     """
 
-    def __init__(self):
-        super().__init__("Error", 13)
+    def __init__(self, error_message) -> None:
+        super().__init__("Error", 12, is_terminal=True)
+        self.error_message = error_message
 
     def transition(self):
         return ShutdownState()
