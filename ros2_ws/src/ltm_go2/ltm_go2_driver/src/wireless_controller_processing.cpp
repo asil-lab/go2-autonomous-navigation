@@ -36,7 +36,7 @@ void WirelessControllerProcessing::cmdVelCallback(const geometry_msgs::msg::Twis
 void WirelessControllerProcessing::toggleSearchlightCallback(const std_msgs::msg::Empty::SharedPtr msg)
 {
   (void) msg;
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Received toggle searchlight message.");
+  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Received toggle searchlight message.");
   setSearchlightKeys();
   publishWirelessController();
   resetKeys();

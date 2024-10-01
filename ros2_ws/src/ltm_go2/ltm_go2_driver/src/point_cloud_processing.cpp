@@ -23,7 +23,7 @@ PointCloudProcessing::~PointCloudProcessing()
 
 void PointCloudProcessing::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Point Cloud Message.");
+  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Point Cloud Message.");
   publishPointCloud(msg);
 }
 

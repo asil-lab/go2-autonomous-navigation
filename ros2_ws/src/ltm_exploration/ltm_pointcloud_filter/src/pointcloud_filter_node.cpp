@@ -164,7 +164,7 @@ PointCloudFilterNode::~PointCloudFilterNode()
 
 void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received pointcloud message with %d points", msg->width * msg->height);
+  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received pointcloud message with %d points", msg->width * msg->height);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input = convertPointCloud2ToPCL(msg);
 
   // Determine if the pointcloud is empty

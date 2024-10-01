@@ -28,7 +28,7 @@ JointStateProcessing::~JointStateProcessing()
 
 void JointStateProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
+  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
   updateJointStateMsg(msg->motor_state);
   publishJointStateMsg();
 }
