@@ -86,7 +86,7 @@ class NavigationPlannerNode(Node):
         map = future.result().map
         self.map_reader.configure_metadata(
             map.info.resolution, 
-            np.array([map.info.origin.position.x, map.info.origin.position.y]), 
+            np.array([map.info.origin.position.y, map.info.origin.position.x]), 
             map.info.width, map.info.height)
         self.map_reader.read_map_list(map.data)
         waypoints = self.map_reader.read(plot=True)
@@ -147,8 +147,8 @@ class NavigationPlannerNode(Node):
 
         for waypoint in waypoints:
             pose = Pose()
-            pose.position.x = waypoint[0]
-            pose.position.y = waypoint[1]
+            pose.position.x = waypoint[1]
+            pose.position.y = waypoint[0]
             pose.position.z = 0.0
             # pose.orientation.x = 0.0
             # pose.orientation.y = 0.0
