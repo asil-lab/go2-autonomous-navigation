@@ -54,7 +54,7 @@ class NavigationPlannerNode(Node):
         # Request to deserialize the map into the map server
         deserialize_map_request = DeserializePoseGraph.Request()
         deserialize_map_request.filename = os.path.join(LTM_MAPS_DIRECTORY, request.filename, request.filename)
-        deserialize_map_request.match_type = DeserializePoseGraph.Request.LOCALIZE_AT_POSE # START_AT_GIVEN_POSE
+        deserialize_map_request.match_type = DeserializePoseGraph.Request.START_AT_GIVEN_POSE
         deserialize_map_request.initial_pose = self.get_robot_pose()
         deserialize_map_future = self.deserialize_map_client.call_async(deserialize_map_request)
         self.get_logger().info(f'Loading map from file {deserialize_map_request.filename}...')
