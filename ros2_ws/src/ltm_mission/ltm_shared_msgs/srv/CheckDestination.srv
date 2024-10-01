@@ -1,0 +1,3 @@
+---
+bool destination_reached
+geometry_msgs/Point destination

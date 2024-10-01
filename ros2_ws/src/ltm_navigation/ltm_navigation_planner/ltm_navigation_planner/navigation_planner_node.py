@@ -18,7 +18,7 @@ from std_msgs.msg import Empty
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Pose, PoseStamped, PoseArray, Pose2D
 
-from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints
+from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination
 from nav_msgs.srv import GetMap
 from slam_toolbox.srv import DeserializePoseGraph
 
@@ -38,9 +38,16 @@ class NavigationPlannerNode(Node):
 
         self.configure_load_map_service()
         self.configure_generate_waypoints_service()
+        self.configure_check_waypoints_service()
+        self.configure_check_destination_service()
+
         self.configure_dynamic_map_client()
         self.configure_deserialize_map_client()
+
         self.configure_tf_listener()
+
+        self.is_waiting = False
+        self.current_waypoint = None
 
         # Create the subscribers
         self.waypoint_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
@@ -52,69 +59,106 @@ class NavigationPlannerNode(Node):
         self.get_logger().info('Map has been requested.')
 
         # # Request to deserialize the map into the map server
+        # self.is_waiting = True
         # deserialize_map_request = DeserializePoseGraph.Request()
         # deserialize_map_request.filename = os.path.join(LTM_MAPS_DIRECTORY, request.filename, request.filename)
         # deserialize_map_request.match_type = DeserializePoseGraph.Request.START_AT_GIVEN_POSE
         # deserialize_map_request.initial_pose = self.get_robot_pose()
         # deserialize_map_future = self.deserialize_map_client.call_async(deserialize_map_request)
         # self.get_logger().info(f'Loading map from file {deserialize_map_request.filename}...')
-        # rclpy.spin_until_future_complete(self, deserialize_map_future)
+        # deserialize_map_future.add_done_callback(self.future_callback)
+        # while self.is_waiting:
+        #     self.get_logger().info('Waiting on response...', throttle_duration_sec=1)
         # self.get_logger().info('Map has been loaded from file.')
 
         # Request the map from the SLAM Toolbox map server
+        self.is_waiting = True
         dynamic_map_request = GetMap.Request()
         dynamic_map_future = self.dynamic_map_client.call_async(dynamic_map_request)
         self.get_logger().info('Requesting map from server...')
-        rclpy.spin_until_future_complete(self, dynamic_map_future)
-        dynamic_map_future.add_done_callback(self.load_map_future_callback)
-
-        # # Load the map from the future
-        # map = dynamic_map_future.result().map
-        # self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
-        # self.map_reader.read_map_list(map.data)
-        # waypoints = self.map_reader.read(plot=True)
-        # self.publish_waypoints(waypoints)
-        # self.get_logger().info(f'Number of waypoints: {len(waypoints)}')
-        # self.get_logger().info('Map has been read.')
-
-        return response
-
-    def load_map_future_callback(self, future) -> None:
-        self.get_logger().info('Map has been received from server.')
+        dynamic_map_future.add_done_callback(self.future_callback)
+        while self.is_waiting:
+            self.get_logger().info('Waiting on response...', throttle_duration_sec=1)
+        self.get_logger().info('Map requested from map server.')
 
         # Load the map from the future
-        map = future.result().map
+        self.get_logger().info('Reading map...')
+        map = dynamic_map_future.result().map
         self.map_reader.configure_metadata(
             map.info.resolution, 
             np.array([map.info.origin.position.y, map.info.origin.position.x]), 
             map.info.width, map.info.height)
         self.map_reader.read_map_list(map.data)
-        waypoints = self.map_reader.read(plot=True)
-        self.publish_waypoints(waypoints)
-        self.get_logger().info(f'Number of waypoints: {len(waypoints)}')
         self.get_logger().info('Map has been read.')
+
+        return response
 
     def generate_waypoints_callback(self, request, response) -> GenerateWaypoints.Response:
         self.get_logger().info('Generate waypoints has been requested.')
+        _ = request
 
         # Generate waypoints from the map
         self.get_logger().info('Generating waypoints...')
         waypoints = self.map_reader.read()
         self.publish_waypoints(waypoints)
-        self.get_logger().info('Waypoints have been generated.')
+        self.get_logger().info(f'Waypoints have been generated. Number of waypoints: {len(waypoints)}')
 
         # # Plan the path
-        # self.path_planner.set_waypoints(waypoints)
-        # robot_x, robot_y = self.get_robot_position()
-        # self.path_planner.set_start(robot_x, robot_y)
-        # _ = self.path_planner.plan()
-        # self.get_logger().info('Path has been planned.')
+        self.get_logger().info('Configuring path planner...')
+        self.path_planner.set_waypoints(waypoints)
+        robot_x, robot_y = self.get_robot_position()
+        self.path_planner.set_start(robot_x, robot_y)
+        self.get_logger().info('Path planner is configured.')
+        self.get_logger().info('Planning a path...')
+        _ = self.path_planner.plan()
+        self.get_logger().info('Path has been planned.')
 
         # Return the response
         response.success = True
         response.num_waypoints = len(waypoints)
 
         return response
+    
+    def check_waypoints_callback(self, request, response) -> CheckWaypoints.Response:
+        self.get_logger().info('Check waypoints has been requested.')
+        _ = request
+
+        # Check if the path has been completed
+        response.num_waypoints = len(self.path_planner.path)
+        self.current_waypoint = self.path_planner.get_next_waypoint()
+
+        if self.current_waypoint is None:
+            response.is_completed = True
+            self.get_logger().info('The path has been completed.')
+        else:
+            response.is_completed = False
+            self.get_logger().info('The path has not been completed.')
+
+        return response
+    
+    def check_destination_callback(self, request, response) -> CheckDestination.Response:
+        self.get_logger().info('Check destination has been requested.')
+        _ = request
+
+        # Store the destination's position
+        response.destination.x = self.current_waypoint['x']
+        response.destination.y = self.current_waypoint['y']
+
+        # Check if the robot has reached the destination
+        robot_x, robot_y = self.get_robot_position()
+        distance = np.linalg.norm(np.array([robot_x, robot_y]) - np.array([self.current_waypoint['x'], self.current_waypoint['y']]))
+        if distance < 0.1:
+            response.destination_reached = True
+            self.get_logger().info('The destination has been reached.')
+        else:
+            response.destination_reached = False
+            self.get_logger().info('The destination has not been reached.')
+
+        return response
+
+    def future_callback(self, future) -> None:
+        _ = future
+        self.is_waiting = False
 
     def publish_waypoint(self, waypoint: dict) -> None:
         if len(waypoint) == 0:
@@ -213,6 +257,18 @@ class NavigationPlannerNode(Node):
             self.generate_waypoints_callback, callback_group=self.generate_waypoints_service_callback_group)
         self.get_logger().info('Generate Waypoints service has been configured.')
 
+    def configure_check_waypoints_service(self) -> None:
+        self.check_waypoints_service_callback_group = MutuallyExclusiveCallbackGroup()
+        self.check_waypoints_service = self.create_service(
+            CheckWaypoints, 'state_machine/check_waypoints', self.check_waypoints_callback, callback_group=self.check_waypoints_service_callback_group)
+        self.get_logger().info('Check Waypoints service has been configured.')
+
+    def configure_check_destination_service(self) -> None:
+        self.check_destination_service_callback_group = MutuallyExclusiveCallbackGroup()
+        self.check_destination_service = self.create_service(
+            CheckDestination, 'state_machine/check_destination', self.check_destination_callback, callback_group=self.check_destination_service_callback_group)
+        self.get_logger().info('Check Destination service has been configured.')
+
     def configure_tf_listener(self) -> None:
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -221,7 +277,10 @@ class NavigationPlannerNode(Node):
 def main():
     rclpy.init()
     node = NavigationPlannerNode()
-    rclpy.spin(node)
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+    executor.spin()
+    # rclpy.spin(node)
     rclpy.shutdown()
 
 

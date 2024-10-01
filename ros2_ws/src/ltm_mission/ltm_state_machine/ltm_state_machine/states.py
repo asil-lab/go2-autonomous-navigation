@@ -8,7 +8,8 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints
+from geometry_msgs.msg import Point
+from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination, NavigateToPose
 
 from ltm_state_machine.utils import get_snake_case
 
@@ -105,19 +106,12 @@ class LoadMapState(State):
 
         # Create the client for the service
         self.load_map_client = self.create_client(LoadMap, 'state_machine/load_map')
-        self.generate_waypoints_client = self.create_client(GenerateWaypoints, 'state_machine/generate_waypoints')
 
         # Throw an error if the client cannot find the service /state_machine/load_map
         if not self.is_client_ready(self.load_map_client):
             self.flag_error('Service state_machine/load_map is not available.')
             return False
         self.get_logger().info('Service state_machine/load_map found.')
-
-        # Throw an error if the client cannot find the service /state_machine/generate_waypoints
-        if not self.is_client_ready(self.generate_waypoints_client):
-            self.flag_error('Service state_machine/generate_waypoints is not available.')
-            return False
-        self.get_logger().info('Service state_machine/generate_waypoints found.')
 
         self.get_logger().info('State LoadMap configured.')
         return True
@@ -127,29 +121,60 @@ class LoadMapState(State):
 
         # Load the map from the map server to the map reader
         self.get_logger().info('Loading map...')
-        request = LoadMap.Request()
-        request.filename = 'lab'
-        future = self.load_map_client.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
+        load_map_request = LoadMap.Request()
+        load_map_request.filename = 'lab'
+        load_map_future = self.load_map_client.call_async(load_map_request)
+        rclpy.spin_until_future_complete(self, load_map_future)
 
-        if future.result() is not None:
+        if load_map_future.result() is not None:
             self.get_logger().info('Map loaded.')
         else:
             self.flag_error('Failed to load map.')
             return
+
+    def transition(self):
+        super().transition()
+        return GenerateWaypointsState()
+
+
+class GenerateWaypointsState(State):
+    """ GenerateWaypoints class is the state that generates waypoints
+    from the map.
+    """
+
+    def __init__(self):
+        super().__init__("GenerateWaypoints", 2)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.generate_waypoints_client = self.create_client(
+            GenerateWaypoints, 'state_machine/generate_waypoints')
+
+        # Throw an error if the client cannot find the service /state_machine/generate_waypoints
+        if not self.is_client_ready(self.generate_waypoints_client):
+            self.flag_error('Service state_machine/generate_waypoints is not available.')
+            return False
+        self.get_logger().info('Service state_machine/generate_waypoints found.')
+
+        self.get_logger().info('State GenerateWaypoints configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        # Generate waypoints from the map, and plan a route
+        self.get_logger().info('Generating waypoints...')
+        generate_waypoints_request = GenerateWaypoints.Request()
+        generate_waypoints_future = self.generate_waypoints_client.call_async(generate_waypoints_request)
+        rclpy.spin_until_future_complete(self, generate_waypoints_future)
+
+        if generate_waypoints_future.result() is not None:
+            self.get_logger().info('Waypoints generated.')
+        else:
+            self.flag_error('Failed to generate waypoints.')
+            return
         
-        # # Generate waypoints from the map, and plan a route
-        # self.get_logger().info('Generating waypoints...')
-        # request = GenerateWaypoints.Request()
-        # future = self.generate_waypoints_client.call_async(request)
-        # rclpy.spin_until_future_complete(self, future)
-
-        # if future.result() is not None:
-        #     self.get_logger().info('Waypoints generated.')
-        # else:
-        #     self.flag_error('Failed to generate waypoints.')
-        #     return
-
     def transition(self):
         super().transition()
         return CheckWaypointsState()
@@ -161,26 +186,48 @@ class CheckWaypointsState(State):
     """
 
     def __init__(self):
-        super().__init__("CheckWaypoints", 2)
-        self.waypoints_remaining = False
+        self.is_completed = False
+        super().__init__("CheckWaypoints", 3)
 
     def configure(self) -> bool:
         super().configure()
+
+        self.check_waypoints_client = self.create_client(CheckWaypoints, 'state_machine/check_waypoints')
+
+        # Throw an error if the client cannot find the service /state_machine/check_waypoints
+        if not self.is_client_ready(self.check_waypoints_client):
+            self.flag_error('Service state_machine/check_waypoints is not available.')
+            return False
+        self.get_logger().info('Service state_machine/check_waypoints found.')
 
         self.get_logger().info('State CheckWaypoints configured.')
         return True
 
     def run(self) -> None:
         super().run()
-
         self.get_logger().info('Checking waypoints...')
+
+        # Check if there are waypoints remaining
+        check_waypoints_request = CheckWaypoints.Request()
+        check_waypoints_future = self.check_waypoints_client.call_async(check_waypoints_request)
+        rclpy.spin_until_future_complete(self, check_waypoints_future)
+
+        if check_waypoints_future.result() is None:
+            self.flag_error('Failed to check waypoints.')
+            return
+        
+        self.is_completed = check_waypoints_future.result().is_completed
+        if self.is_completed:
+            self.get_logger().info('Path completed. Returning home...')
+        else:
+            self.get_logger().info('Remaining: %s' % check_waypoints_future.result().num_waypoints)
 
     def transition(self):
         super().transition()
-        if self.waypoints_remaining:
-            return CheckDestinationState()
-        else:
+        if self.is_completed:
             return HomeState()
+        else:
+            return CheckDestinationState()
         
 
 class CheckDestinationState(State):
@@ -189,26 +236,47 @@ class CheckDestinationState(State):
     """
 
     def __init__(self):
-        super().__init__("CheckDestination", 3)
         self.destination_reached = False
+        self.destination = None
+        super().__init__("CheckDestination", 4)
 
     def configure(self) -> bool:
         super().configure()
+
+        self.check_destination_client = self.create_client(CheckDestination, 'state_machine/check_destination')
+
+        # Throw an error if the client cannot find the service /state_machine/check_destination
+        if not self.is_client_ready(self.check_destination_client):
+            self.flag_error('Service state_machine/check_destination is not available.')
+            return False
+        self.get_logger().info('Service state_machine/check_destination found.')
 
         self.get_logger().info('State CheckDestination configured.')
         return True
 
     def run(self) -> None:
         super().run()
-
         self.get_logger().info('Checking destination...')
+
+        # Check if the robot has reached the destination
+        check_destination_request = CheckDestination.Request()
+        check_destination_future = self.check_destination_client.call_async(check_destination_request)
+        rclpy.spin_until_future_complete(self, check_destination_future)
+
+        if check_destination_future.result() is None:
+            self.flag_error('Failed to check destination.')
+            return
+        
+        self.destination_reached = check_destination_future.result().destination_reached
+        self.destination = check_destination_future.result().destination
 
     def transition(self):
         super().transition()
         if self.destination_reached:
-            return ScanEnvironmentState()
+            # return ScanEnvironmentState()
+            return CheckWaypointsState()
         else:
-            return MoveToDestinationState()
+            return MoveToDestinationState(self.destination)
         
 
 class MoveToDestinationState(State):
@@ -216,12 +284,21 @@ class MoveToDestinationState(State):
     the destination.
     """
 
-    def __init__(self):
-        super().__init__("MoveToDestination", 4)
+    def __init__(self, destination: Point):
+        self.destination = destination
         self.is_interrupted = False
+        super().__init__("MoveToDestination", 5)
 
     def configure(self) -> bool:
         super().configure()
+
+        self.navigate_to_pose_client = self.create_client(NavigateToPose, 'send_robot')
+        
+        # Throw an error if the client cannot find the service /send_robot
+        if not self.is_client_ready(self.navigate_to_pose_client):
+            self.flag_error('Service send_robot is not available.')
+            return False
+        self.get_logger().info('Service send_robot found.')
 
         self.get_logger().info('State MoveToDestination configured.')
         return True
@@ -230,6 +307,18 @@ class MoveToDestinationState(State):
         super().run()
 
         self.get_logger().info('Moving to destination...')
+        navigate_to_pose_request = NavigateToPose.Request()
+        navigate_to_pose_request.goal.header.frame_id = 'map'
+        navigate_to_pose_request.goal.header.stamp = self.get_clock().now().to_msg()
+        navigate_to_pose_request.goal.pose.position = self.destination
+        navigate_to_pose_request.goal.pose.orientation.w = 1.0
+
+        navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
+        rclpy.spin_until_future_complete(self, navigate_to_pose_future)
+
+        if navigate_to_pose_future.result() is None:
+            self.flag_error('Failed to move to destination.')
+            return
 
     def transition(self):
         super().transition()

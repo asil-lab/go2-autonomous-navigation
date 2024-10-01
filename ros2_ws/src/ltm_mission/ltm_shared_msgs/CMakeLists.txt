@@ -32,6 +32,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 
   # State-specific messages and services
   "msg/MissionState.msg"
+  "srv/CheckWaypoints.srv"
+  "srv/CheckDestination.srv"
   "srv/LoadMap.srv"
   "srv/GenerateWaypoints.srv"
   "srv/GetStateTransitionHistory.srv"

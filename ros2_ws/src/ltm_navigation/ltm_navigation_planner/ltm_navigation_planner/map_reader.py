@@ -19,8 +19,8 @@ MAP_CELL_PGM_UNKNOWN    = 205
 MAP_CELL_PGM_FREE       = 254
 MAP_CELL_PGM_OCCUPIED   = 0
 
-MAP_SMOOTHING_SIGMA = 3
-MAP_CRISP_THRESHOLD = 240
+MAP_SMOOTHING_SIGMA = 4
+MAP_CRISP_THRESHOLD = 250
 MAP_CONTOUR_SKIP = 20
 MAP_GRID_SIZE = 10
 MAP_MERGE_DISTANCE = 10
@@ -67,17 +67,17 @@ class MapReader:
         for contour in contours:
             waypoints.extend(contour[::MAP_CONTOUR_SKIP])
 
-        # Create a 2D grid of points
-        x = np.arange(0, self.map.shape[1], MAP_GRID_SIZE)
-        y = np.arange(0, self.map.shape[0], MAP_GRID_SIZE)
-        xx, yy = np.meshgrid(x, y)
-        grid = np.vstack((yy.ravel(), xx.ravel())).T
+        # # Create a 2D grid of points
+        # x = np.arange(0, self.map.shape[1], MAP_GRID_SIZE)
+        # y = np.arange(0, self.map.shape[0], MAP_GRID_SIZE)
+        # xx, yy = np.meshgrid(x, y)
+        # grid = np.vstack((yy.ravel(), xx.ravel())).T
 
-        # Fit the grid into the crisp map
-        grid = grid[crisp_map[grid[:, 0].astype(int), grid[:, 1].astype(int)] == 1]
+        # # Fit the grid into the crisp map
+        # grid = grid[crisp_map[grid[:, 0].astype(int), grid[:, 1].astype(int)] == 1]
 
-        # Merge the waypoints and the grid
-        waypoints.extend(grid)
+        # # Merge the waypoints and the grid
+        # waypoints.extend(grid)
 
         # Combine points that are close to each other
         merged_waypoints = []

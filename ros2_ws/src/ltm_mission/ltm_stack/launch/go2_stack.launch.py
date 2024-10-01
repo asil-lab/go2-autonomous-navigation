@@ -9,15 +9,22 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.actions import Node
 
 def generate_launch_description():
 
     # Declare launch arguments
-    mapping = DeclareLaunchArgument(
+    mapping_argument = DeclareLaunchArgument(
         'mapping',
         default_value='true',
         description='Enable mapping. If false, only localization is performed.'
+    )
+
+    navigation_argument = DeclareLaunchArgument(
+        'navigation',
+        default_value='true',
+        description='Enable navigation. Default to true.'
     )
 
     # Go2 driver launch file
@@ -42,12 +49,14 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_navigation_core'), 
                 'launch', 'navigation.launch.py')
-        )
+        ),
+        condition=IfCondition(LaunchConfiguration('navigation')),
     )
 
     return LaunchDescription([
         # Launch arguments
-        mapping,
+        mapping_argument,
+        navigation_argument,
         # Launch files
         go2_driver_node,
         exploration_core_node,
