@@ -13,14 +13,14 @@ from skimage.measure import find_contours
 
 MAP_CELL_LIST_UNKNOWN   = -1
 MAP_CELL_LIST_FREE      = 0
-MAP_CELL_LIST_OCCUPIED  = 1
+MAP_CELL_LIST_OCCUPIED  = 100
 
 MAP_CELL_PGM_UNKNOWN    = 205
 MAP_CELL_PGM_FREE       = 254
 MAP_CELL_PGM_OCCUPIED   = 0
 
 MAP_SMOOTHING_SIGMA = 3
-MAP_CRISP_THRESHOLD = 250
+MAP_CRISP_THRESHOLD = 240
 MAP_CONTOUR_SKIP = 20
 MAP_GRID_SIZE = 10
 MAP_MERGE_DISTANCE = 10
@@ -41,7 +41,7 @@ class MapReader:
         self.map = None
         self.waypoints = None
 
-    def configure_metadata(self, resolution: float, origin: list, width: int, height: int) -> None:
+    def configure_metadata(self, resolution: float, origin: np.ndarray, width: int, height: int) -> None:
         self.resolution = resolution
         self.origin = origin
         self.width = width
@@ -87,16 +87,17 @@ class MapReader:
             else:
                 if np.linalg.norm(merged_waypoints[-1] - point) > MAP_MERGE_DISTANCE:
                     merged_waypoints.append(point)
-        
         waypoints = merged_waypoints
+        waypoints = np.array(waypoints)
 
-        return np.array(waypoints)
+        # Transform the waypoints to XY coordinates
+        waypoints = (waypoints * self.resolution) + self.origin
+
+        return waypoints
 
     def read_map_list(self, map: list) -> None:
-        self.map = np.array(map).reshape(self.height, self.width)
-        self.map[self.map == MAP_CELL_LIST_UNKNOWN] = MAP_CELL_PGM_UNKNOWN
-        self.map[self.map == MAP_CELL_LIST_FREE] = MAP_CELL_PGM_FREE
-        self.map[self.map == MAP_CELL_LIST_OCCUPIED] = MAP_CELL_PGM_OCCUPIED
+        self.map = np.array(map).reshape(self.height, self.width).astype(np.uint8)
+        self.map = np.invert(self.map)
 
     def read_map_pgm(self, filename: str) -> None:
         self.map = plt.imread(filename, format='pgm')

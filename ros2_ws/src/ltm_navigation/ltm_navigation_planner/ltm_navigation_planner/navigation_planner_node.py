@@ -51,38 +51,48 @@ class NavigationPlannerNode(Node):
     def load_map_callback(self, request, response) -> LoadMap.Response:
         self.get_logger().info('Map has been requested.')
 
-        # Request to deserialize the map into the map server
-        deserialize_map_request = DeserializePoseGraph.Request()
-        deserialize_map_request.filename = os.path.join(LTM_MAPS_DIRECTORY, request.filename, request.filename)
-        deserialize_map_request.match_type = DeserializePoseGraph.Request.START_AT_GIVEN_POSE
-        deserialize_map_request.initial_pose = self.get_robot_pose()
-        deserialize_map_future = self.deserialize_map_client.call_async(deserialize_map_request)
-        self.get_logger().info(f'Loading map from file {deserialize_map_request.filename}...')
-        rclpy.spin_until_future_complete(self, deserialize_map_future)
-        self.get_logger().info('Map has been loaded from file.')
+        # # Request to deserialize the map into the map server
+        # deserialize_map_request = DeserializePoseGraph.Request()
+        # deserialize_map_request.filename = os.path.join(LTM_MAPS_DIRECTORY, request.filename, request.filename)
+        # deserialize_map_request.match_type = DeserializePoseGraph.Request.START_AT_GIVEN_POSE
+        # deserialize_map_request.initial_pose = self.get_robot_pose()
+        # deserialize_map_future = self.deserialize_map_client.call_async(deserialize_map_request)
+        # self.get_logger().info(f'Loading map from file {deserialize_map_request.filename}...')
+        # rclpy.spin_until_future_complete(self, deserialize_map_future)
+        # self.get_logger().info('Map has been loaded from file.')
 
         # Request the map from the SLAM Toolbox map server
         dynamic_map_request = GetMap.Request()
         dynamic_map_future = self.dynamic_map_client.call_async(dynamic_map_request)
         self.get_logger().info('Requesting map from server...')
         rclpy.spin_until_future_complete(self, dynamic_map_future)
-        self.get_logger().info('Map has been received from server.')
+        dynamic_map_future.add_done_callback(self.load_map_future_callback)
 
-        # Load the map from the future
-        map = dynamic_map_future.result().map
-        self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
-        self.map_reader.read_map_list(map.data)
-        self.get_logger().info('Map has been read.')
+        # # Load the map from the future
+        # map = dynamic_map_future.result().map
+        # self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
+        # self.map_reader.read_map_list(map.data)
+        # waypoints = self.map_reader.read(plot=True)
+        # self.publish_waypoints(waypoints)
+        # self.get_logger().info(f'Number of waypoints: {len(waypoints)}')
+        # self.get_logger().info('Map has been read.')
 
         return response
 
     def load_map_future_callback(self, future) -> None:
-        # Get the map from the future and read it
-        self.get_logger().info('Map received from server.')
+        self.get_logger().info('Map has been received from server.')
+
+        # Load the map from the future
         map = future.result().map
-        self.map_reader.configure_metadata(map.info.resolution, map.info.origin.position, map.info.width, map.info.height)
+        self.map_reader.configure_metadata(
+            map.info.resolution, 
+            np.array([map.info.origin.position.x, map.info.origin.position.y]), 
+            map.info.width, map.info.height)
         self.map_reader.read_map_list(map.data)
-        self.get_logger().info('Load map completed')
+        waypoints = self.map_reader.read(plot=True)
+        self.publish_waypoints(waypoints)
+        self.get_logger().info(f'Number of waypoints: {len(waypoints)}')
+        self.get_logger().info('Map has been read.')
 
     def generate_waypoints_callback(self, request, response) -> GenerateWaypoints.Response:
         self.get_logger().info('Generate waypoints has been requested.')
@@ -93,12 +103,12 @@ class NavigationPlannerNode(Node):
         self.publish_waypoints(waypoints)
         self.get_logger().info('Waypoints have been generated.')
 
-        # Plan the path
-        self.path_planner.set_waypoints(waypoints)
-        robot_x, robot_y = self.get_robot_position()
-        self.path_planner.set_start(robot_x, robot_y)
-        _ = self.path_planner.plan()
-        self.get_logger().info('Path has been planned.')
+        # # Plan the path
+        # self.path_planner.set_waypoints(waypoints)
+        # robot_x, robot_y = self.get_robot_position()
+        # self.path_planner.set_start(robot_x, robot_y)
+        # _ = self.path_planner.plan()
+        # self.get_logger().info('Path has been planned.')
 
         # Return the response
         response.success = True
@@ -140,10 +150,10 @@ class NavigationPlannerNode(Node):
             pose.position.x = waypoint[0]
             pose.position.y = waypoint[1]
             pose.position.z = 0.0
-            pose.orientation.x = 0.0
-            pose.orientation.y = 0.0
-            pose.orientation.z = np.sin(waypoint[2] / 2)
-            pose.orientation.w = np.cos(waypoint[2] / 2)
+            # pose.orientation.x = 0.0
+            # pose.orientation.y = 0.0
+            # pose.orientation.z = np.sin(waypoint[2] / 2)
+            # pose.orientation.w = np.cos(waypoint[2] / 2)
             poses_msg.poses.append(pose)
         
         self.waypoints_pub.publish(poses_msg)
