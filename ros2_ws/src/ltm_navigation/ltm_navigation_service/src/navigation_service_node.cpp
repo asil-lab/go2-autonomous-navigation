@@ -36,8 +36,13 @@ void NavigationServiceNode::navigateToPoseCallback(
   publishGoalPose(request->goal);
   Eigen::VectorXd goal_pose_vector = convertPoseToEigen(request->goal.pose);
 
-  rclcpp::Time start_time = rclcpp::Time(request->goal.header.stamp);
+  rclcpp::Time start_time = this->get_clock()->now();
   rclcpp::Time update_time = this->get_clock()->now();
+
+  // Initialize the response
+  response->success = false;
+  response->time_elapsed.sec = 0;
+  response->time_elapsed.nanosec = 0;
 
   while (this->get_clock()->now() - start_time < rclcpp::Duration::from_seconds(m_navigate_to_pose_timeout))
   {
@@ -45,11 +50,10 @@ void NavigationServiceNode::navigateToPoseCallback(
     if (!rclcpp::ok())
     {
       RCLCPP_WARN(this->get_logger(), "Navigation service interrupted");
-      response->success = false;
       return;
     }
 
-    // Skip the update if the update period has not been reached
+    // Check every update period if the goal pose has been reached or not
     if (this->get_clock()->now() - update_time < rclcpp::Duration::from_seconds(m_navigate_to_pose_update_period))
       continue;
 
@@ -62,23 +66,26 @@ void NavigationServiceNode::navigateToPoseCallback(
     double orientation_error = (goal_pose_vector.block<POSE_EIGEN_VECTOR_ORIENTATION_SIZE, 1>(
       POSE_EIGEN_VECTOR_ORIENTATION_OFFSET, 0) - current_pose_vector.block<POSE_EIGEN_VECTOR_ORIENTATION_SIZE, 1>(
         POSE_EIGEN_VECTOR_ORIENTATION_OFFSET, 0)).norm();
+    
+    RCLCPP_WARN(this->get_logger(), "Current position error: %f, orientation error: %f", position_error, orientation_error);
 
     // Interrupt the service if the timeout has been reached
-    if (position_error < m_navigate_to_pose_position_tolerance && orientation_error < m_navigate_to_pose_orientation_tolerance)
+    // if (position_error < m_navigate_to_pose_position_tolerance && orientation_error < m_navigate_to_pose_orientation_tolerance)
+    if (position_error < m_navigate_to_pose_position_tolerance)
     {
       RCLCPP_INFO(this->get_logger(), "Reached goal pose");
       response->success = true;
-      response->time_elapsed.sec = (this->get_clock()->now() - start_time).seconds();
-      response->time_elapsed.nanosec = (this->get_clock()->now() - start_time).nanoseconds();
       return;
     }
 
+    // Update
+    response->time_elapsed.sec = (this->get_clock()->now() - start_time).seconds();
+    response->time_elapsed.nanosec = (this->get_clock()->now() - start_time).nanoseconds();
     update_time = this->get_clock()->now();
   }
 
   // If the goal pose has not been reached, return a failure
   RCLCPP_WARN(this->get_logger(), "Failed to reach goal pose");
-  response->success = false;
 }
 
 void NavigationServiceNode::publishGoalPose(const geometry_msgs::msg::PoseStamped& goal_pose) const
@@ -91,6 +98,15 @@ geometry_msgs::msg::PoseStamped NavigationServiceNode::getCurrentRobotPose()
   geometry_msgs::msg::PoseStamped current_pose;
   try
   {
+    // // Wait for the transform to be available
+    // while (!m_tf_buffer->canTransform(m_robot_target_frame_name, m_robot_source_frame_name, tf2::TimePointZero))
+    // {
+    //   RCLCPP_WARN(this->get_logger(), "Waiting for transform from %s to %s", 
+    //     m_robot_target_frame_name.c_str(), m_robot_source_frame_name.c_str());
+    //   rclcpp::sleep_for(std::chrono::milliseconds(100)); // TODO: Parameterize this
+    // }
+
+    // Get the transform from the source to the target frame
     geometry_msgs::msg::TransformStamped transform = m_tf_buffer->lookupTransform(
       m_robot_target_frame_name, m_robot_source_frame_name, tf2::TimePointZero);
     current_pose.header.frame_id = m_robot_target_frame_name;
@@ -128,8 +144,7 @@ void NavigationServiceNode::initializeService()
 
   m_navigation_to_pose_service = this->create_service<ltm_shared_msgs::srv::NavigateToPose>(
     this->get_parameter("navigate_to_pose_service_name").as_string(),
-    std::bind(&NavigationServiceNode::navigateToPoseCallback, 
-      this, std::placeholders::_1, std::placeholders::_2));
+    std::bind(&NavigationServiceNode::navigateToPoseCallback, this, std::placeholders::_1, std::placeholders::_2));
   m_navigate_to_pose_timeout = this->get_parameter("navigate_to_pose_timeout").as_double();
   m_navigate_to_pose_update_period = 1.0 / this->get_parameter("navigate_to_pose_update_rate").as_double();
   m_navigate_to_pose_position_tolerance = this->get_parameter("navigate_to_pose_position_tolerance").as_double();
@@ -156,7 +171,7 @@ void NavigationServiceNode::initializeTfListener()
   m_robot_target_frame_name = this->get_parameter("robot_target_frame_name").as_string();
 
   m_tf_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-  m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer, this, false);
+  m_tf_listener = std::make_shared<tf2_ros::TransformListener>(*m_tf_buffer);
   RCLCPP_INFO(this->get_logger(), "Initialized TF2 listener");
 }
 

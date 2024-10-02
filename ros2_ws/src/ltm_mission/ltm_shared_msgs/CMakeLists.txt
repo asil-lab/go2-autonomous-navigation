@@ -28,7 +28,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetImage.srv"
   "srv/GetPointCloud.srv"
   "srv/NavigateToPose.srv"
-  "srv/RecordEnvironment.srv"
 
   # State-specific messages and services
   "msg/MissionState.msg"
@@ -38,6 +37,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GenerateWaypoints.srv"
   "srv/GetStateTransitionHistory.srv"
   "srv/PerformState.srv"
+  "srv/ScanEnvironment.srv"
 
   DEPENDENCIES builtin_interfaces std_msgs sensor_msgs geometry_msgs
 )

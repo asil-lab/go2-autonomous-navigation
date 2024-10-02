@@ -23,7 +23,7 @@ from nav_msgs.srv import GetMap
 from slam_toolbox.srv import DeserializePoseGraph
 
 from ltm_navigation_planner.map_reader import MapReader
-from ltm_navigation_planner.path_planner import PathPlanner
+from ltm_navigation_planner.path_planner import PathPlanner, Vertex
 from ltm_navigation_planner.utils import quaternion_to_yaw
 
 LTM_MAPS_DIRECTORY = os.environ.get('LTM_MAPS_DIRECTORY')
@@ -138,16 +138,18 @@ class NavigationPlannerNode(Node):
     
     def check_destination_callback(self, request, response) -> CheckDestination.Response:
         self.get_logger().info('Check destination has been requested.')
-        _ = request
 
         # Store the destination's position
         response.destination.x = self.current_waypoint['x']
         response.destination.y = self.current_waypoint['y']
+        response.destination.theta = self.path_planner.get_orientation_to_waypoint(
+            Vertex(self.current_waypoint['x'], self.current_waypoint['y']))
 
         # Check if the robot has reached the destination
         robot_x, robot_y = self.get_robot_position()
         distance = np.linalg.norm(np.array([robot_x, robot_y]) - np.array([self.current_waypoint['x'], self.current_waypoint['y']]))
-        if distance < 0.1:
+        
+        if distance < request.distance_tolerance:
             response.destination_reached = True
             self.get_logger().info('The destination has been reached.')
         else:

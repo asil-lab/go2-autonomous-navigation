@@ -251,7 +251,7 @@ class PathPlanner:
         # Solve the TSP problem for the graph
         tsp_solver = TSPSolver(self.graph)
         tsp_solver.solve()
-        self.path = deque(tsp_solver.get_path(self.start))
+        self.path = deque(tsp_solver.get_path(self.start)[1:]) # Skip the first waypoint which is the starting position
         return self.path
 
     def get_next_waypoint(self) -> Vertex:
@@ -263,3 +263,15 @@ class PathPlanner:
             'x': waypoint.x,
             'y': waypoint.y,
         }
+    
+    def get_start(self) -> Vertex:
+        return self.start
+    
+    def get_distance_between_waypoints(self, a: Vertex, b: Vertex) -> float:
+        return np.sqrt((b.x - a.x)**2 + (b.y - a.y)**2)
+
+    def get_orientation_between_waypoints(self, a: Vertex, b: Vertex) -> float:
+        return np.arctan2(b.y - a.y, b.x - a.x)
+    
+    def get_orientation_to_waypoint(self, waypoint: Vertex) -> float:
+        return self.get_orientation_between_waypoints(self.start, waypoint)
