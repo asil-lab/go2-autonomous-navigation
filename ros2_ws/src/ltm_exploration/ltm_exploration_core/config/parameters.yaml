@@ -1,7 +1,7 @@
 pointcloud_to_laserscan_node:
   ros__parameters:
-    target_frame: world
-    transform_tolerance: 0.01
+    target_frame: map
+    transform_tolerance: 0.001
     min_height: 0.0
     max_height: 1.0
     angle_min: -1.5708 # -M_PI/2
