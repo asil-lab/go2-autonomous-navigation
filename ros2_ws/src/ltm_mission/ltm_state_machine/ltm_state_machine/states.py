@@ -8,10 +8,10 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-from geometry_msgs.msg import Point
-from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination, NavigateToPose
+from geometry_msgs.msg import Pose2D
+from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination, NavigateToPose, ScanEnvironment
 
-from ltm_state_machine.utils import get_snake_case
+from ltm_state_machine.utils import get_snake_case, yaw_to_quaternion
 
 class State(Node):
 
@@ -260,6 +260,7 @@ class CheckDestinationState(State):
 
         # Check if the robot has reached the destination
         check_destination_request = CheckDestination.Request()
+        check_destination_request.distance_tolerance = 0.1
         check_destination_future = self.check_destination_client.call_async(check_destination_request)
         rclpy.spin_until_future_complete(self, check_destination_future)
 
@@ -273,8 +274,7 @@ class CheckDestinationState(State):
     def transition(self):
         super().transition()
         if self.destination_reached:
-            # return ScanEnvironmentState()
-            return CheckWaypointsState()
+            return ScanEnvironmentState()
         else:
             return MoveToDestinationState(self.destination)
         
@@ -284,7 +284,7 @@ class MoveToDestinationState(State):
     the destination.
     """
 
-    def __init__(self, destination: Point):
+    def __init__(self, destination: Pose2D):
         self.destination = destination
         self.is_interrupted = False
         super().__init__("MoveToDestination", 5)
@@ -310,8 +310,10 @@ class MoveToDestinationState(State):
         navigate_to_pose_request = NavigateToPose.Request()
         navigate_to_pose_request.goal.header.frame_id = 'map'
         navigate_to_pose_request.goal.header.stamp = self.get_clock().now().to_msg()
-        navigate_to_pose_request.goal.pose.position = self.destination
-        navigate_to_pose_request.goal.pose.orientation.w = 1.0
+        navigate_to_pose_request.goal.pose.position.x = self.destination.x
+        navigate_to_pose_request.goal.pose.position.y = self.destination.y
+        navigate_to_pose_request.goal.pose.position.z = 0.0
+        navigate_to_pose_request.goal.pose.orientation = yaw_to_quaternion(self.destination.theta)
 
         navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
         rclpy.spin_until_future_complete(self, navigate_to_pose_future)
@@ -338,6 +340,14 @@ class ScanEnvironmentState(State):
     def configure(self) -> bool:
         super().configure()
 
+        self.scan_environment_client = self.create_client(ScanEnvironment, 'state_machine/scan_environment')
+
+        # Throw an error if the client cannot find the service /state_machine/scan_environment
+        if not self.is_client_ready(self.scan_environment_client):
+            self.flag_error('Service state_machine/scan_environment is not available.')
+            return False
+        self.get_logger().info('Service state_machine/scan_environment found.')
+
         self.get_logger().info('State ScanEnvironment configured.')
         return True
 
@@ -345,6 +355,15 @@ class ScanEnvironmentState(State):
         super().run()
 
         self.get_logger().info('Scanning environment...')
+        scan_environment_request = ScanEnvironment.Request()
+        scan_environment_request.num_orientations = 4
+        scan_environment_request.scan_time = 5.0
+        scan_environment_future = self.scan_environment_client.call_async(scan_environment_request)
+        rclpy.spin_until_future_complete(self, scan_environment_future)
+
+        if scan_environment_future.result() is None:
+            self.flag_error('Failed to scan environment.')
+            return
 
     def transition(self):
         super().transition()

@@ -9,7 +9,7 @@ scan_procedure_node:
 
     navigate_to_pose_service_name: "send_robot"
     get_image_service_name: "get_image"
-    record_environment_service_name: "state_machine/scan"
+    record_environment_service_name: "state_machine/scan_environment"
 
     scan_number_of_orientations: 8            # Number of orientations to scan at each waypoint
     scan_delay_between_orientations: 1.0      # Delay between each orientation in seconds
