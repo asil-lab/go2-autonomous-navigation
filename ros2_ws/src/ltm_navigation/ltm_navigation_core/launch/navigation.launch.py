@@ -24,14 +24,6 @@ def generate_launch_description():
         launch_arguments=[('params_file', nav2_params_filepath)]
     )
 
-    # LTM Navigation Planner Node
-    navigation_planner_node = Node(
-        package='ltm_navigation_planner',
-        executable='navigation_planner_node',
-        name='navigation_planner_node',
-        output='screen',
-    )
-
     # LTM Navigation Service Node
     navigation_service_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -42,6 +34,5 @@ def generate_launch_description():
 
     return LaunchDescription([
         navigation_node,
-        navigation_planner_node,
         navigation_service_node,
     ])
