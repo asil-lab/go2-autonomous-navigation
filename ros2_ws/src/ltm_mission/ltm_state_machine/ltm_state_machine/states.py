@@ -260,7 +260,7 @@ class CheckDestinationState(State):
 
         # Check if the robot has reached the destination
         check_destination_request = CheckDestination.Request()
-        check_destination_request.distance_tolerance = 0.1
+        check_destination_request.distance_tolerance = 0.25
         check_destination_future = self.check_destination_client.call_async(check_destination_request)
         rclpy.spin_until_future_complete(self, check_destination_future)
 

@@ -1,15 +1,16 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ltm_navigation_state</name>
+  <name>ltm_navigation_visualizer</name>
   <version>0.0.0</version>
-  <description>This package is responsible for handling the navigation state of the robot.</description>
+  <description>This package contains the visualizer for the LTM navigation system.</description>
   <maintainer email="alexanderjames.becoy@outlook.com">Alexander James Becoy</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
-  <depend>ltm_shared_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

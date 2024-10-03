@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'ltm_navigation_state'
+package_name = 'ltm_navigation_visualizer'
 
 setup(
     name=package_name,
@@ -15,12 +15,12 @@ setup(
     zip_safe=True,
     maintainer='Alexander James Becoy',
     maintainer_email='alexanderjames.becoy@outlook.com',
-    description='This package is responsible for handling the navigation state of the robot.',
+    description='This package provides a visualization tool of the LTM navigation system in RViz.',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'navigation_state_handler_node = ltm_navigation_state.navigation_state_handler_node:main'
+            'navigation_visualizer_node = ltm_navigation_visualizer.navigation_visualizer_node:main'
         ],
     },
 )

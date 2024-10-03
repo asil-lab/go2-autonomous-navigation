@@ -50,12 +50,13 @@ void PointCloudTransformerNode::transformPointCloud(const sensor_msgs::msg::Poin
   sensor_msgs::msg::PointCloud2::SharedPtr cloud_output)
 {
   // Set the frame ID
+  cloud_output->header.stamp = this->get_clock()->now();
   cloud_output->header.frame_id = m_target_frame;
 
   // Transform the point cloud from the source frame to the target frame
   try {
     geometry_msgs::msg::TransformStamped transform_stamped = m_tf_buffer->lookupTransform(
-      m_target_frame, m_source_frame, cloud_input->header.stamp);
+      m_target_frame, m_source_frame, rclcpp::Time(0));
     pcl_ros::transformPointCloud(m_target_frame, transform_stamped, *cloud_input, *cloud_output);
   } catch (tf2::TransformException &ex) {
     RCLCPP_ERROR(this->get_logger(), "Could not transform pointcloud: %s", ex.what());

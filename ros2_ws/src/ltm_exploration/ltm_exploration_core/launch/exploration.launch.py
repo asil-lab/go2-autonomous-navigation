@@ -66,8 +66,8 @@ def generate_launch_description():
         remappings=[('cloud_in', 'point_cloud/transformed')],
         # parameters=[pointcloud_to_laserscan_config],
         parameters=[{
-            'transform_tolerance': 0.01,
-            'angle_increment': 0.001,
+            'transform_tolerance': 0.25,
+            'angle_increment': np.pi / 360.0, #  0.001,
             'scan_time': 0.1,
             'use_inf': True,
             'inf_epsilon': 1.0,
