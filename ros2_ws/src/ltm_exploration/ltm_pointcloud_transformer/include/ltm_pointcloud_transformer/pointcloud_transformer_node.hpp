@@ -28,13 +28,14 @@ namespace LTM
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
     void transformPointCloud(const sensor_msgs::msg::PointCloud2::SharedPtr cloud_input,
-      sensor_msgs::msg::PointCloud2::SharedPtr cloud_output, const std::string &target_frame);
+      sensor_msgs::msg::PointCloud2::SharedPtr cloud_output);
 
     void initializeTransformListener();
     void initializeInputPointCloudSubscriber();
     void initializeOutputPointCloudPublisher();
     void initializeParameters();
 
+    std::string m_source_frame;
     std::string m_target_frame;
 
     std::shared_ptr<tf2_ros::Buffer> m_tf_buffer;

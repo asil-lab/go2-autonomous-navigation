@@ -6,4 +6,5 @@ pointcloud_transformer_node:
     output_pointcloud_topic_name: "/point_cloud/transformed"
 
     # Parameters
-    target_frame: "base_footprint"
+    source_frame_id: "odom"
+    target_frame_id: "base_footprint"
