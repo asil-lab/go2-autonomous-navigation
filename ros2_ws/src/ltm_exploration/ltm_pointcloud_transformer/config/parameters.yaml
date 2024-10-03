@@ -1,0 +1,9 @@
+pointcloud_transformer_node:
+  ros__parameters:
+
+    # Topics
+    input_pointcloud_topic_name: "/point_cloud/filtered"
+    output_pointcloud_topic_name: "/point_cloud/transformed"
+
+    # Parameters
+    target_frame: "base_footprint"
