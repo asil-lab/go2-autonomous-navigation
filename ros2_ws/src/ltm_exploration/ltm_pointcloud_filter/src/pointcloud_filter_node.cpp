@@ -190,7 +190,7 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_outliers_removed(new pcl::PointCloud<pcl::PointXYZ>);
   m_statistical_outlier_removal->filter(cloud_robot_removed, cloud_outliers_removed);
 
-  publishFilteredPointCloud(cloud_outliers_removed, "base_footprint", msg->header.stamp);
+  publishFilteredPointCloud(cloud_outliers_removed, "odom", msg->header.stamp);
 }
 
 void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,

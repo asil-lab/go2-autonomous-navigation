@@ -64,10 +64,8 @@ namespace LTM {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
     cropPointCloud(cloud_transformed, cloud_filtered);
 
-    // Transform the point cloud back to the world frame
-    // As of now, keep the cloud in base frame
-    // transformPointCloud(cloud_filtered, cloud_output, cloud_input->header.frame_id, "base");
-    *cloud_output = *cloud_filtered;
+    // Transform the point cloud back to the odom frame
+    transformPointCloud(cloud_filtered, cloud_output, cloud_input->header.frame_id, "base");
   }
 
   bool RobotClusterRemoval::setRobotModel(const std::string &robot_description)
@@ -105,7 +103,7 @@ namespace LTM {
       *cloud = *m_robot_meshes.at(link_name);
       cloud->header.frame_id = link_name;
 
-      // Transform the point cloud to the world frame
+      // Transform the point cloud to the odom frame
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
       transformPointCloud(cloud, cloud_transformed, "odom", link_name); // @TODO: Parameterize the target frame
 
@@ -157,7 +155,7 @@ namespace LTM {
   //   // Obtain the cluster indices from the input cloud
   //   euclidean_cluster_extraction.extract(cluster_indices);
 
-  //   // Get the translation of base w.r.t. world using tf2 transform
+  //   // Get the translation of base w.r.t. odom using tf2 transform
 
   //   // Get the cluster index surrounding this translation
 

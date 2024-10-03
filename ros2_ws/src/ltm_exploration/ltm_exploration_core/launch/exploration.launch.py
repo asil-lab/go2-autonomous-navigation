@@ -46,6 +46,14 @@ def generate_launch_description():
         ),
         launch_arguments=[('in_simulation', 'false')]
     )
+
+    # Pointcloud filter node
+    pointcloud_transformer_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_pointcloud_transformer'), 
+                'launch', 'pointcloud_transformer.launch.py')
+        ),
+    )
     
     # Pointcloud-to-laserscan node
     # pointcloud_to_laserscan_config = os.path.join(
@@ -55,7 +63,7 @@ def generate_launch_description():
         executable='pointcloud_to_laserscan_node',
         name='pointcloud_to_laserscan_node',
         output='screen',
-        remappings=[('cloud_in', 'point_cloud/filtered')],
+        remappings=[('cloud_in', 'point_cloud/transformed')],
         # parameters=[pointcloud_to_laserscan_config],
         parameters=[{
             'transform_tolerance': 0.01,
@@ -103,12 +111,31 @@ def generate_launch_description():
         ],
         condition=UnlessCondition(LaunchConfiguration('mapping')),
     )
+
+    # Octomap server node
+    octomap_server_node = Node(
+        package='octomap_server',
+        executable='octomap_server_node',
+        name='octomap_server_node',
+        output='screen',
+        parameters=[{
+            'use_sim_time': 'false',
+            'resolution': 0.01,
+            'frame_id': 'odom',
+        }],
+        remappings=[
+            ('cloud_in', 'utlidar/cloud_deskewed'),                     # Input pointcloud
+            ('octomap_point_cloud_centers', 'point_cloud/buffered')     # Output pointcloud
+        ],
+    )
     
     # Return launch description
     return LaunchDescription(declared_arguments + [
         pointcloud_buffer_node,
         pointcloud_filter_node,
+        pointcloud_transformer_node,
         pointcloud_to_laserscan_node,
         online_sync_slam_node,
         # localization_slam_node,
+        octomap_server_node,
     ])

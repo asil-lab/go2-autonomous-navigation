@@ -6,14 +6,14 @@ pointcloud_filter_node:
         raw_pointcloud_topic: "/go2_gazebo/point_cloud/raw"
         filtered_pointcloud_topic: "/go2_gazebo/point_cloud/filtered"
       real:
-        raw_pointcloud_topic: "/point_cloud/buffer"
+        raw_pointcloud_topic: "/point_cloud/buffered"
         filtered_pointcloud_topic: "/point_cloud/filtered"
 
     voxel_grid_filter:
       leaf_size: # meters
-        x: 0.001
-        y: 0.001
-        z: 0.001
+        x: 0.05
+        y: 0.05
+        z: 0.05
 
     statistical_outlier_removal:
       mean_k: 50
@@ -32,7 +32,7 @@ pointcloud_filter_node:
       cluster_tolerance: 0.1 # meters
       min_cluster_size: 100
       mesh_resolution: 0.1
-      robot_frame: "base"
+      robot_frame: "base_footprint"
       target_frame: "odom"
       crop_box: # meters, in robot frame
         min:
