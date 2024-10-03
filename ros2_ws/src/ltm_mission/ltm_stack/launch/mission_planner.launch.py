@@ -24,12 +24,12 @@ def generate_launch_description():
         )
     )
 
-    # Scan procedure node
-    scan_procedure_node = Node(
-        package='ltm_scan_procedure',
-        executable='scan_procedure_node',
-        name='scan_procedure_node',
-        output='screen',
+    # Scan procedure launch file
+    scan_procedure_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_scan_procedure'), 
+                'launch', 'scan.launch.py')
+        )
     )
 
     return LaunchDescription([

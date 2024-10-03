@@ -31,8 +31,8 @@ class NavigationVisualizerNode(Node):
             marker.type = Marker.CYLINDER
             marker.action = Marker.ADD
             marker.pose = pose
-            marker.scale.x = 0.25
-            marker.scale.y = 0.25
+            marker.scale.x = 0.15
+            marker.scale.y = 0.15
             marker.scale.z = 0.5
             marker.color.a = 1.0
             marker.color.r = 0.0

@@ -256,8 +256,13 @@ class PathPlanner:
 
     def get_next_waypoint(self) -> Vertex:
         if self.path is None:
-            print('The path has not been planned')
+            print('The path has not been planned.')
             return None
+        
+        if len(self.path) == 0:
+            print('The path is completed.')
+            return None
+
         waypoint = self.path.popleft()
         return {
             'x': waypoint.x,
