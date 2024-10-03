@@ -13,7 +13,7 @@ from tf2_ros import Buffer, TransformListener
 from geometry_msgs.msg import Point, Quaternion
 from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Empty, String
-from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose, RecordEnvironment
+from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose, ScanEnvironment
 
 import os
 from typing import Any
@@ -53,8 +53,11 @@ class ScanProcedureNode(Node):
 
         self.get_logger().info('Scan procedure node has been initialized.')
 
-    def record_environment_callback(self, request, response) -> RecordEnvironment.Response:
+    def record_environment_callback(self, request, response) -> ScanEnvironment.Response:
         self.get_logger().info('Record environment service has been called.')
+        self.number_of_orientations = request.num_orientations
+        self.point_cloud_buffer_time = request.scan_time
+
         self.perform_scan()
         response.success = True
         return response
@@ -154,7 +157,7 @@ class ScanProcedureNode(Node):
         """
         try:
             # Get the current robot pose
-            current_robot_pose = self.tf_buffer.lookup_transform('map', 'base', rclpy.time.Time()).transform
+            current_robot_pose = self.tf_buffer.lookup_transform('map', 'base_footprint', rclpy.time.Time()).transform
 
             # Store the current robot position and yaw
             self.current_robot_position.x = current_robot_pose.translation.x
@@ -177,14 +180,14 @@ class ScanProcedureNode(Node):
             return
         
         self.current_robot_yaw = normalize_yaw(self.current_robot_yaw + angle)
-        # is_goal_reached = False
-        # while not is_goal_reached:
-            # self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
-            # is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-            #                                          yaw_to_quaternion(self.current_robot_yaw))
-            # self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
-        is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-            yaw_to_quaternion(self.current_robot_yaw))
+        is_goal_reached = False
+        while not is_goal_reached:
+            self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
+            is_goal_reached = self.request_goal_pose(self.current_robot_position, 
+                                                     yaw_to_quaternion(self.current_robot_yaw))
+            self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
+        # is_goal_reached = self.request_goal_pose(self.current_robot_position, 
+        #     yaw_to_quaternion(self.current_robot_yaw))
         self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
     def perform_gesture(self, gesture: str) -> None:
@@ -341,7 +344,7 @@ class ScanProcedureNode(Node):
 
         self.record_environment_callback_group = MutuallyExclusiveCallbackGroup()
         self.record_environment_service = self.create_service(
-            RecordEnvironment, self.get_parameter('record_environment_service_name').value, 
+            ScanEnvironment, self.get_parameter('record_environment_service_name').value, 
             self.record_environment_callback, callback_group=self.record_environment_callback_group)
 
     def configure_tf_listener(self) -> None:

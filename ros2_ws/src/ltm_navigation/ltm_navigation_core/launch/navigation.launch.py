@@ -24,14 +24,6 @@ def generate_launch_description():
         launch_arguments=[('params_file', nav2_params_filepath)]
     )
 
-    # LTM Navigation Handler Node
-    navigation_handler_node = Node(
-        package='ltm_navigation_handler',
-        executable='navigation_handler_node',
-        name='navigation_handler_node',
-        output='screen',
-    )
-
     # LTM Navigation Planner Node
     navigation_planner_node = Node(
         package='ltm_navigation_planner',
@@ -48,18 +40,8 @@ def generate_launch_description():
         )
     )
 
-    # LTM Navigation State Node
-    navigation_state_handler_node = Node(
-        package='ltm_navigation_state',
-        executable='navigation_state_handler_node',
-        name='navigation_state_handler_node',
-        output='screen',
-    )
-
     return LaunchDescription([
         navigation_node,
-        navigation_handler_node,
         navigation_planner_node,
         navigation_service_node,
-        navigation_state_handler_node,
     ])

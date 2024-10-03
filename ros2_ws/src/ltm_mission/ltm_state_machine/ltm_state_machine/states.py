@@ -8,9 +8,10 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-from ltm_shared_msgs.srv import LoadMap
+from geometry_msgs.msg import Pose2D
+from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination, NavigateToPose, ScanEnvironment
 
-from ltm_state_machine.utils import get_snake_case
+from ltm_state_machine.utils import get_snake_case, yaw_to_quaternion
 
 class State(Node):
 
@@ -37,7 +38,8 @@ class State(Node):
         self.publish()
 
     def transition(self):
-        pass
+        if self.error_flag is not None:
+            return ErrorState(self.error_flag)
 
     def publish(self) -> None:
         msg = String()
@@ -105,99 +107,316 @@ class LoadMapState(State):
         # Create the client for the service
         self.load_map_client = self.create_client(LoadMap, 'state_machine/load_map')
 
-        # Throw an error if the client cannot find the service
+        # Throw an error if the client cannot find the service /state_machine/load_map
         if not self.is_client_ready(self.load_map_client):
             self.flag_error('Service state_machine/load_map is not available.')
             return False
-
         self.get_logger().info('Service state_machine/load_map found.')
+
+        self.get_logger().info('State LoadMap configured.')
         return True
 
     def run(self) -> None:
         super().run()
+
+        # Load the map from the map server to the map reader
         self.get_logger().info('Loading map...')
-        request = LoadMap.Request()
-        future = self.load_map_client.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
-        if future.result() is not None:
+        load_map_request = LoadMap.Request()
+        load_map_request.filename = 'lab'
+        load_map_future = self.load_map_client.call_async(load_map_request)
+        rclpy.spin_until_future_complete(self, load_map_future)
+
+        if load_map_future.result() is not None:
             self.get_logger().info('Map loaded.')
         else:
             self.flag_error('Failed to load map.')
+            return
 
     def transition(self):
-        return ShutdownState()
+        super().transition()
+        return GenerateWaypointsState()
 
 
-# class PlanPath(State):
-#     """ PlanPath class is the state that creates a list of waypoints
-#     to follow, and creates a path to follow.
-#     """
+class GenerateWaypointsState(State):
+    """ GenerateWaypoints class is the state that generates waypoints
+    from the map.
+    """
 
-#     def __init__(self):
-#         super().__init__("PlanPath", 6)
+    def __init__(self):
+        super().__init__("GenerateWaypoints", 2)
 
-#     def transition(self):
-#         return Navigate()
-    
+    def configure(self) -> bool:
+        super().configure()
 
-# class Navigate(State):
-#     """ Navigate class is the state that moves the robot to the
-#     next waypoint.
-#     """
+        self.generate_waypoints_client = self.create_client(
+            GenerateWaypoints, 'state_machine/generate_waypoints')
 
-#     def __init__(self):
-#         super().__init__("Navigate", 7)
+        # Throw an error if the client cannot find the service /state_machine/generate_waypoints
+        if not self.is_client_ready(self.generate_waypoints_client):
+            self.flag_error('Service state_machine/generate_waypoints is not available.')
+            return False
+        self.get_logger().info('Service state_machine/generate_waypoints found.')
 
-#     def transition(self):
-#         if self.input == "reached":
-#             return Scan()
-#         elif self.input == "failed":
-#             return ManualControl()
-#         else:
-#             return Navigate()
+        self.get_logger().info('State GenerateWaypoints configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        # Generate waypoints from the map, and plan a route
+        self.get_logger().info('Generating waypoints...')
+        generate_waypoints_request = GenerateWaypoints.Request()
+        generate_waypoints_future = self.generate_waypoints_client.call_async(generate_waypoints_request)
+        rclpy.spin_until_future_complete(self, generate_waypoints_future)
+
+        if generate_waypoints_future.result() is not None:
+            self.get_logger().info('Waypoints generated.')
+        else:
+            self.flag_error('Failed to generate waypoints.')
+            return
+        
+    def transition(self):
+        super().transition()
+        return CheckWaypointsState()
 
 
-# class ManualControl(State):
-#     """ ManualControl class is the state that allows manual control
-#     of the robot.
-#     """
+class CheckWaypointsState(State):
+    """ CheckWaypoints class is the state that checks if there are
+    waypoints remaining.
+    """
 
-#     def __init__(self):
-#         super().__init__("ManualControl", 8)
+    def __init__(self):
+        self.is_completed = False
+        super().__init__("CheckWaypoints", 3)
 
-#     def transition(self):
-#         if self.input == "stop":
-#             return Scan()
-#         else:
-#             return ManualControl()
+    def configure(self) -> bool:
+        super().configure()
 
-# class Scan(State):
-#     """ Scan class is the state that scans the environment at the
-#     current waypoint in 360 degrees.
-#     TODO: Implement smaller scanning state machine.
-#     """
+        self.check_waypoints_client = self.create_client(CheckWaypoints, 'state_machine/check_waypoints')
 
-#     def __init__(self):
-#         super().__init__("Scan", 9)
+        # Throw an error if the client cannot find the service /state_machine/check_waypoints
+        if not self.is_client_ready(self.check_waypoints_client):
+            self.flag_error('Service state_machine/check_waypoints is not available.')
+            return False
+        self.get_logger().info('Service state_machine/check_waypoints found.')
 
-#     def transition(self):
-#         if self.input == "stop":
-#             return Home()
-#         else:
-#             return Navigate()
+        self.get_logger().info('State CheckWaypoints configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+        self.get_logger().info('Checking waypoints...')
+
+        # Check if there are waypoints remaining
+        check_waypoints_request = CheckWaypoints.Request()
+        check_waypoints_future = self.check_waypoints_client.call_async(check_waypoints_request)
+        rclpy.spin_until_future_complete(self, check_waypoints_future)
+
+        if check_waypoints_future.result() is None:
+            self.flag_error('Failed to check waypoints.')
+            return
+        
+        self.is_completed = check_waypoints_future.result().is_completed
+        if self.is_completed:
+            self.get_logger().info('Path completed. Returning home...')
+        else:
+            self.get_logger().info('Remaining: %s' % check_waypoints_future.result().num_waypoints)
+
+    def transition(self):
+        super().transition()
+        if self.is_completed:
+            return HomeState()
+        else:
+            return CheckDestinationState()
         
 
-# class HomeState(State):
-#     """ Home class is the state that returns the robot to the
-#     starting position.
-#     """
+class CheckDestinationState(State):
+    """ CheckDestination class is the state that checks if the robot
+    has reached the destination.
+    """
 
-#     def __init__(self):
-#         super().__init__("Home", 10)
+    def __init__(self):
+        self.destination_reached = False
+        self.destination = None
+        super().__init__("CheckDestination", 4)
 
-#     def transition(self):
-#         return ShutdownState()
-    
+    def configure(self) -> bool:
+        super().configure()
+
+        self.check_destination_client = self.create_client(CheckDestination, 'state_machine/check_destination')
+
+        # Throw an error if the client cannot find the service /state_machine/check_destination
+        if not self.is_client_ready(self.check_destination_client):
+            self.flag_error('Service state_machine/check_destination is not available.')
+            return False
+        self.get_logger().info('Service state_machine/check_destination found.')
+
+        self.get_logger().info('State CheckDestination configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+        self.get_logger().info('Checking destination...')
+
+        # Check if the robot has reached the destination
+        check_destination_request = CheckDestination.Request()
+        check_destination_request.distance_tolerance = 0.1
+        check_destination_future = self.check_destination_client.call_async(check_destination_request)
+        rclpy.spin_until_future_complete(self, check_destination_future)
+
+        if check_destination_future.result() is None:
+            self.flag_error('Failed to check destination.')
+            return
+        
+        self.destination_reached = check_destination_future.result().destination_reached
+        self.destination = check_destination_future.result().destination
+
+    def transition(self):
+        super().transition()
+        if self.destination_reached:
+            return ScanEnvironmentState()
+        else:
+            return MoveToDestinationState(self.destination)
+        
+
+class MoveToDestinationState(State):
+    """ MoveToDestination class is the state that moves the robot to
+    the destination.
+    """
+
+    def __init__(self, destination: Pose2D):
+        self.destination = destination
+        self.is_interrupted = False
+        super().__init__("MoveToDestination", 5)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.navigate_to_pose_client = self.create_client(NavigateToPose, 'send_robot')
+        
+        # Throw an error if the client cannot find the service /send_robot
+        if not self.is_client_ready(self.navigate_to_pose_client):
+            self.flag_error('Service send_robot is not available.')
+            return False
+        self.get_logger().info('Service send_robot found.')
+
+        self.get_logger().info('State MoveToDestination configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Moving to destination...')
+        navigate_to_pose_request = NavigateToPose.Request()
+        navigate_to_pose_request.goal.header.frame_id = 'map'
+        navigate_to_pose_request.goal.header.stamp = self.get_clock().now().to_msg()
+        navigate_to_pose_request.goal.pose.position.x = self.destination.x
+        navigate_to_pose_request.goal.pose.position.y = self.destination.y
+        navigate_to_pose_request.goal.pose.position.z = 0.0
+        navigate_to_pose_request.goal.pose.orientation = yaw_to_quaternion(self.destination.theta)
+
+        navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
+        rclpy.spin_until_future_complete(self, navigate_to_pose_future)
+
+        if navigate_to_pose_future.result() is None:
+            self.flag_error('Failed to move to destination.')
+            return
+
+    def transition(self):
+        super().transition()
+        if self.is_interrupted:
+            return ManualControlState()
+        else:
+            return CheckDestinationState()
+
+
+class ScanEnvironmentState(State):
+    """ ScanEnvironment class is the state that scans the environment.
+    """
+
+    def __init__(self):
+        super().__init__("ScanEnvironment", 5)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.scan_environment_client = self.create_client(ScanEnvironment, 'state_machine/scan_environment')
+
+        # Throw an error if the client cannot find the service /state_machine/scan_environment
+        if not self.is_client_ready(self.scan_environment_client):
+            self.flag_error('Service state_machine/scan_environment is not available.')
+            return False
+        self.get_logger().info('Service state_machine/scan_environment found.')
+
+        self.get_logger().info('State ScanEnvironment configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Scanning environment...')
+        scan_environment_request = ScanEnvironment.Request()
+        scan_environment_request.num_orientations = 4
+        scan_environment_request.scan_time = 5.0
+        scan_environment_future = self.scan_environment_client.call_async(scan_environment_request)
+        rclpy.spin_until_future_complete(self, scan_environment_future)
+
+        if scan_environment_future.result() is None:
+            self.flag_error('Failed to scan environment.')
+            return
+
+    def transition(self):
+        super().transition()
+        return CheckWaypointsState()
+
+
+class ManualControlState(State):
+    """ ManualControl class is the state that allows manual control
+    of the robot.
+    """
+
+    def __init__(self):
+        super().__init__("ManualControl", 6)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.get_logger().info('State ManualControl configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Manual control...')
+
+    def transition(self):
+        super().transition()
+        return ScanEnvironmentState()
+
+
+class HomeState(State):
+    """ Home class is the state that sends the robot back to the
+    home location.
+    """
+
+    def __init__(self):
+        super().__init__("Home", 7)
+
+    def configure(self) -> bool:
+        super().configure()
+
+        self.get_logger().info('State Home configured.')
+        return True
+
+    def run(self) -> None:
+        super().run()
+
+        self.get_logger().info('Returning home...')
+
+    def transition(self):
+        super().transition()
+        return ShutdownState()
+
 
 class ShutdownState(State):
     """ Shutdown class is the state that shuts down the robot.
@@ -209,24 +428,14 @@ class ShutdownState(State):
     def transition(self):
         return ShutdownState()
 
-# class EmergencyStopState(State):
-#     """ EmergencyStop class is the state that stops the robot
-#     immediately.
-#     """
-
-#     def __init__(self):
-#         super().__init__("EmergencyStop", 12)
-
-#     def transition(self):
-#         return Shutdown()
-    
 
 class ErrorState(State):
     """ Error class is the state that handles errors.
     """
 
-    def __init__(self):
-        super().__init__("Error", 13)
+    def __init__(self, error_message) -> None:
+        super().__init__("Error", 12, is_terminal=True)
+        self.error_message = error_message
 
     def transition(self):
         return ShutdownState()

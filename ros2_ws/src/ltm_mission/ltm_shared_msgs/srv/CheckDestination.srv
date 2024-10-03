@@ -1,0 +1,4 @@
+float64 distance_tolerance
+---
+bool destination_reached
+geometry_msgs/Pose2D destination

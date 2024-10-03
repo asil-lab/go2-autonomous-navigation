@@ -12,6 +12,8 @@ from launch.substitutions import LaunchConfiguration
 from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.actions import Node
 
+import numpy as np
+
 def generate_launch_description():
     
     # Declare launch arguments
@@ -21,6 +23,11 @@ def generate_launch_description():
             default_value='true',
             description='Enable mapping. If false, only localization is performed.'
         ),
+        DeclareLaunchArgument(
+            'use_map_saver',
+            default_value='false',
+            description='Enable map saver node.'
+        )
     ]
 
     # Pointcloud buffer node
@@ -50,6 +57,13 @@ def generate_launch_description():
         output='screen',
         remappings=[('cloud_in', 'point_cloud/filtered')],
         # parameters=[pointcloud_to_laserscan_config],
+        parameters=[{
+            'transform_tolerance': 0.01,
+            'angle_increment': 0.001,
+            'scan_time': 0.1,
+            'use_inf': True,
+            'inf_epsilon': 1.0,
+        }],
     )
 
     # Online synchronous SLAM node
@@ -66,6 +80,7 @@ def generate_launch_description():
         launch_arguments=[
             ('use_sim_time', 'false'),
             ('params_file', online_sync_slam_config_filepath),
+            ('use_map_saver', LaunchConfiguration('use_map_saver')),
         ],
         condition=IfCondition(LaunchConfiguration('mapping')),
     )
@@ -84,6 +99,7 @@ def generate_launch_description():
         launch_arguments=[
             ('use_sim_time', 'false'),
             ('params_file', localization_slam_config_filepath),
+            ('use_map_saver', LaunchConfiguration('use_map_saver')),
         ],
         condition=UnlessCondition(LaunchConfiguration('mapping')),
     )
@@ -94,5 +110,5 @@ def generate_launch_description():
         pointcloud_filter_node,
         pointcloud_to_laserscan_node,
         online_sync_slam_node,
-        localization_slam_node,
+        # localization_slam_node,
     ])

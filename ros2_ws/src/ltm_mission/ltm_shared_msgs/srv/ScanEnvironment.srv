@@ -1,0 +1,4 @@
+uint64 num_orientations     # number of orientations to scan for each waypoint
+float64 scan_time           # time to scan the environment in seconds for each orientation
+---
+bool success

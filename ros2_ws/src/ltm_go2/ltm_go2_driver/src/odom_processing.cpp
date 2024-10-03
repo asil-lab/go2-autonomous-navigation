@@ -27,7 +27,7 @@ OdomProcessing::~OdomProcessing()
 
 void OdomProcessing::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
 {
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Robot Pose Message.");
+  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Robot Pose Message.");
   updateOdom(msg);
   broadcastTransform(m_odom_msg);
   broadcastTransform(m_base_footprint_msg);
@@ -35,7 +35,7 @@ void OdomProcessing::robotPoseCallback(const geometry_msgs::msg::PoseStamped::Sh
 
 void OdomProcessing::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
 {
-  RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Sport Mode State Message.");
+  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Sport Mode State Message.");
   updateOdom(msg->position, msg->imu_state.quaternion);
   broadcastTransform(m_odom_msg);
   broadcastTransform(m_base_footprint_msg);
