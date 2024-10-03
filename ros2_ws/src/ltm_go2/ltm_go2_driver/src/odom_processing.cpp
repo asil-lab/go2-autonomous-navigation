@@ -25,6 +25,12 @@ OdomProcessing::~OdomProcessing()
   RCLCPP_WARN(this->get_logger(), "Odom Processing Node destroyed.");
 }
 
+void OdomProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
+{
+  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
+  publishImu(msg->imu_state);
+}
+
 void OdomProcessing::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
 {
   RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Robot Pose Message.");
@@ -39,6 +45,28 @@ void OdomProcessing::sportModeStateCallback(const unitree_go::msg::SportModeStat
   updateOdom(msg->position, msg->imu_state.quaternion);
   broadcastTransform(m_odom_msg);
   broadcastTransform(m_base_footprint_msg);
+}
+
+void OdomProcessing::publishImu(const unitree_go::msg::IMUState& imu_state)
+{
+  sensor_msgs::msg::Imu imu_msg;
+  imu_msg.header.stamp = rclcpp::Clock().now();
+  imu_msg.header.frame_id = IMU_FRAME_ID;
+
+  imu_msg.orientation.x = imu_state.quaternion[static_cast<int>(OrientationIdx::X)];
+  imu_msg.orientation.y = imu_state.quaternion[static_cast<int>(OrientationIdx::Y)];
+  imu_msg.orientation.z = imu_state.quaternion[static_cast<int>(OrientationIdx::Z)];
+  imu_msg.orientation.w = imu_state.quaternion[static_cast<int>(OrientationIdx::W)];
+
+  imu_msg.angular_velocity.x = imu_state.gyroscope[static_cast<int>(TranslationIdx::X)];
+  imu_msg.angular_velocity.y = imu_state.gyroscope[static_cast<int>(TranslationIdx::Y)];
+  imu_msg.angular_velocity.z = imu_state.gyroscope[static_cast<int>(TranslationIdx::Z)];
+
+  imu_msg.linear_acceleration.x = imu_state.accelerometer[static_cast<int>(TranslationIdx::X)];
+  imu_msg.linear_acceleration.y = imu_state.accelerometer[static_cast<int>(TranslationIdx::Y)];
+  imu_msg.linear_acceleration.z = imu_state.accelerometer[static_cast<int>(TranslationIdx::Z)];
+
+  m_imu_pub->publish(imu_msg);
 }
 
 void OdomProcessing::broadcastTransform(const geometry_msgs::msg::TransformStamped::SharedPtr msg) const
@@ -215,13 +243,20 @@ double OdomProcessing::getQuaternionNorm(const geometry_msgs::msg::Quaternion& q
 
 void OdomProcessing::initializeROS()
 {
-  // m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-  //   ODOM_PROCESSING_SUB_ROBOT_POSE_TOPIC, ODOM_PROCESSING_SUB_ROBOT_POSE_QUEUE_SIZE, 
-  //   std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
+  m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+    ODOM_PROCESSING_SUB_ROBOT_POSE_TOPIC, ODOM_PROCESSING_SUB_ROBOT_POSE_QUEUE_SIZE, 
+    std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
   
   m_sport_mode_state_sub = this->create_subscription<unitree_go::msg::SportModeState>(
     ODOM_PROCESSING_SUB_SPORT_MODE_STATE_TOPIC, ODOM_PROCESSING_SUB_SPORT_MODE_STATE_QUEUE_SIZE, 
     std::bind(&OdomProcessing::sportModeStateCallback, this, std::placeholders::_1));
+
+  m_low_state_sub = this->create_subscription<unitree_go::msg::LowState>(
+    ODOM_PROCESSING_SUB_LOW_STATE_TOPIC, ODOM_PROCESSING_SUB_LOW_STATE_QUEUE_SIZE, 
+    std::bind(&OdomProcessing::lowStateCallback, this, std::placeholders::_1));
+
+  m_imu_pub = this->create_publisher<sensor_msgs::msg::Imu>(
+    ODOM_PROCESSING_PUB_IMU_TOPIC, ODOM_PROCESSING_PUB_IMU_QUEUE_SIZE);
 
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this); 
 }
