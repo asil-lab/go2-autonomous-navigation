@@ -33,9 +33,10 @@ void NavigationServiceNode::navigateToPoseCallback(
     request->goal.pose.orientation.x, request->goal.pose.orientation.y,
     request->goal.pose.orientation.z, request->goal.pose.orientation.w);
 
+  // Move the robot to the goal pose
   publishGoalPose(request->goal);
-  Eigen::VectorXd goal_pose_vector = convertPoseToEigen(request->goal.pose);
 
+  // Initialize the timer
   rclcpp::Time start_time = this->get_clock()->now();
   rclcpp::Time update_time = this->get_clock()->now();
 
@@ -57,21 +58,13 @@ void NavigationServiceNode::navigateToPoseCallback(
     if (this->get_clock()->now() - update_time < rclcpp::Duration::from_seconds(m_navigate_to_pose_update_period))
       continue;
 
-    // Get the current robot pose and calculate the error
-    Eigen::VectorXd current_pose_vector = convertPoseToEigen(getCurrentRobotPose().pose);
-    double position_error = (goal_pose_vector.block<POSE_EIGEN_VECTOR_POSITION_SIZE, 1>(
-      POSE_EIGEN_VECTOR_POSITION_OFFSET, 0) - current_pose_vector.block<POSE_EIGEN_VECTOR_POSITION_SIZE, 1>(
-        POSE_EIGEN_VECTOR_POSITION_OFFSET, 0)).norm();
-    
-    double orientation_error = (goal_pose_vector.block<POSE_EIGEN_VECTOR_ORIENTATION_SIZE, 1>(
-      POSE_EIGEN_VECTOR_ORIENTATION_OFFSET, 0) - current_pose_vector.block<POSE_EIGEN_VECTOR_ORIENTATION_SIZE, 1>(
-        POSE_EIGEN_VECTOR_ORIENTATION_OFFSET, 0)).norm();
-    
+    // Get the current robot pose and calculate the translation and orientation errors
+    double position_error = computeTranslationError(request->goal.pose.position, getCurrentRobotPose().pose.position);
+    double orientation_error = computeOrientationError(request->goal.pose.orientation, getCurrentRobotPose().pose.orientation);
     RCLCPP_WARN(this->get_logger(), "Current position error: %f, orientation error: %f", position_error, orientation_error);
 
     // Interrupt the service if the timeout has been reached
-    // if (position_error < m_navigate_to_pose_position_tolerance && orientation_error < m_navigate_to_pose_orientation_tolerance)
-    if (position_error < m_navigate_to_pose_position_tolerance)
+    if (position_error < m_navigate_to_pose_position_tolerance && orientation_error < m_navigate_to_pose_orientation_tolerance)
     {
       RCLCPP_INFO(this->get_logger(), "Reached goal pose");
       response->success = true;
@@ -132,6 +125,22 @@ Eigen::VectorXd NavigationServiceNode::convertPoseToEigen(geometry_msgs::msg::Po
   pose_vector << pose.position.x, pose.position.y, pose.position.z,
     pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w;
   return pose_vector;
+}
+
+double NavigationServiceNode::computeTranslationError(
+  const geometry_msgs::msg::Point& p1, const geometry_msgs::msg::Point& p2)
+{
+  Eigen::Vector3d p1_eigen(p1.x, p1.y, p1.z);
+  Eigen::Vector3d p2_eigen(p2.x, p2.y, p2.z);
+  return (p1_eigen - p2_eigen).norm();
+}
+
+double NavigationServiceNode::computeOrientationError(
+  const geometry_msgs::msg::Quaternion& q1, const geometry_msgs::msg::Quaternion& q2)
+{
+  Eigen::Quaterniond q1_eigen(q1.w, q1.x, q1.y, q1.z);
+  Eigen::Quaterniond q2_eigen(q2.w, q2.x, q2.y, q2.z);
+  return q1_eigen.angularDistance(q2_eigen);
 }
 
 void NavigationServiceNode::initializeService()
