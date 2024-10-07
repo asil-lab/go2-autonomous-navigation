@@ -12,6 +12,7 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
 
+#include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <ltm_shared_msgs/srv/navigate_to_pose.hpp>
@@ -45,6 +46,11 @@ namespace lTM
 
       geometry_msgs::msg::PoseStamped getCurrentRobotPose();
       Eigen::VectorXd convertPoseToEigen(geometry_msgs::msg::Pose pose);
+
+      double computeTranslationError(const geometry_msgs::msg::Point& p1, 
+        const geometry_msgs::msg::Point& p2);
+      double computeOrientationError(const geometry_msgs::msg::Quaternion& q1, 
+        const geometry_msgs::msg::Quaternion& q2);
 
       void initializeService();
       void initializeRosTopic();
