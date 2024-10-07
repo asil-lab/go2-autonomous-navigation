@@ -78,6 +78,7 @@ namespace LTM
       void updateBaseFootprintTranslation(const geometry_msgs::msg::Point& position);
       void updateBaseFootprintOrientation(const std::array<float, ORIENTATION_SIZE>& rotation);
       void updateBaseFootprintOrientation(const geometry_msgs::msg::Quaternion& orientation);
+      void updateBaseFootprintOrientation(const unitree_go::msg::IMUState& imu_state);
 
       // TODO: Generalize updateFrameTranslation
       // TODO: Generalize updateFrameOrientation

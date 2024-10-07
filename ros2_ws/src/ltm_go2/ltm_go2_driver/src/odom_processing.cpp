@@ -28,6 +28,7 @@ OdomProcessing::~OdomProcessing()
 void OdomProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
   RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
+  updateBaseFootprintOrientation(msg->imu_state);
   publishImu(msg->imu_state);
 }
 
@@ -153,11 +154,13 @@ void OdomProcessing::updateBaseFootprintOrientation(const std::array<float, ORIE
   std::array<float, ORIENTATION_SIZE> inverse_rotation = invertQuaternion(rotation);
   
   // Focus only on pitch due to sitting
-  inverse_rotation[static_cast<int>(OrientationIdx::X)] = 0.0;
-  inverse_rotation[static_cast<int>(OrientationIdx::Z)] = 0.0;
-  inverse_rotation = normalizeQuaternion(inverse_rotation);
+  // inverse_rotation[static_cast<int>(OrientationIdx::X)] = 0.0;
+  // inverse_rotation[static_cast<int>(OrientationIdx::Z)] = 0.0;
+  // inverse_rotation = normalizeQuaternion(inverse_rotation);
 
+  m_base_footprint_msg->transform.rotation.x = inverse_rotation[static_cast<int>(OrientationIdx::X)];
   m_base_footprint_msg->transform.rotation.y = inverse_rotation[static_cast<int>(OrientationIdx::Y)];
+  m_base_footprint_msg->transform.rotation.z = inverse_rotation[static_cast<int>(OrientationIdx::Z)];
   m_base_footprint_msg->transform.rotation.w = inverse_rotation[static_cast<int>(OrientationIdx::W)];
 }
 
@@ -166,12 +169,24 @@ void OdomProcessing::updateBaseFootprintOrientation(const geometry_msgs::msg::Qu
   geometry_msgs::msg::Quaternion inverse_orientation = invertQuaternion(orientation);
 
   // Focus only on pitch due to sitting
-  inverse_orientation.x = 0.0;
-  inverse_orientation.z = 0.0;
-  inverse_orientation = normalizeQuaternion(inverse_orientation);
+  // inverse_orientation.x = 0.0;
+  // inverse_orientation.z = 0.0;
+  // inverse_orientation = normalizeQuaternion(inverse_orientation);
 
+  m_base_footprint_msg->transform.rotation.x = inverse_orientation.x;
   m_base_footprint_msg->transform.rotation.y = inverse_orientation.y;
+  m_base_footprint_msg->transform.rotation.z = inverse_orientation.z;
   m_base_footprint_msg->transform.rotation.w = inverse_orientation.w;
+}
+
+void OdomProcessing::updateBaseFootprintOrientation(const unitree_go::msg::IMUState& imu_state)
+{
+  std::array<float, ORIENTATION_SIZE> inverse_orientation = invertQuaternion(imu_state.quaternion);
+
+  m_base_footprint_msg->transform.rotation.x = inverse_orientation[static_cast<int>(OrientationIdx::X)];
+  m_base_footprint_msg->transform.rotation.y = inverse_orientation[static_cast<int>(OrientationIdx::Y)];
+  m_base_footprint_msg->transform.rotation.z = inverse_orientation[static_cast<int>(OrientationIdx::Z)];
+  m_base_footprint_msg->transform.rotation.w = inverse_orientation[static_cast<int>(OrientationIdx::W)];
 }
 
 std::array<float, ORIENTATION_SIZE> OdomProcessing::invertQuaternion(
@@ -243,9 +258,9 @@ double OdomProcessing::getQuaternionNorm(const geometry_msgs::msg::Quaternion& q
 
 void OdomProcessing::initializeROS()
 {
-  m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-    ODOM_PROCESSING_SUB_ROBOT_POSE_TOPIC, ODOM_PROCESSING_SUB_ROBOT_POSE_QUEUE_SIZE, 
-    std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
+  // m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+  //   ODOM_PROCESSING_SUB_ROBOT_POSE_TOPIC, ODOM_PROCESSING_SUB_ROBOT_POSE_QUEUE_SIZE, 
+  //   std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
   
   m_sport_mode_state_sub = this->create_subscription<unitree_go::msg::SportModeState>(
     ODOM_PROCESSING_SUB_SPORT_MODE_STATE_TOPIC, ODOM_PROCESSING_SUB_SPORT_MODE_STATE_QUEUE_SIZE, 
