@@ -1,0 +1,10 @@
+buffered_pointcloud_transformer_node:
+  ros__parameters:
+
+    # Topics
+    input_pointcloud_topic_name: "/point_cloud/filtered"
+    output_pointcloud_topic_name: "/point_cloud/transformed"
+
+    # Parameters
+    source_frame_id: "odom"
+    target_frame_id: "base_footprint"

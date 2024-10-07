@@ -1,0 +1,10 @@
+raw_pointcloud_transformer_node:
+  ros__parameters:
+
+    # Topics
+    input_pointcloud_topic_name: "/point_cloud/raw"
+    output_pointcloud_topic_name: "/point_cloud/deskewed"
+
+    # Parameters
+    source_frame_id: "radar"
+    target_frame_id: "odom"
