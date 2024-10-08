@@ -48,7 +48,7 @@ std::array<bool, NUMBER_OF_LEGS> FootContactProcessing::compareFootForces(const 
 
 bool FootContactProcessing::isFootContact(const uint16_t foot_force) const
 {
-  return foot_force > FOOT_CONTACT_THRESHOLD;
+  return foot_force >= FOOT_CONTACT_THRESHOLD;
 }
 
 void FootContactProcessing::initializeLowStateSubscriber()
