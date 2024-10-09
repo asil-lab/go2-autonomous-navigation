@@ -16,3 +16,7 @@
 	path = ros2_ws/src/libraries/pointcloud_to_laserscan
 	url = https://github.com/ros-perception/pointcloud_to_laserscan.git
 	branch = foxy
+[submodule "ros2_ws/src/libraries/realsense-ros"]
+	path = ros2_ws/src/libraries/realsense-ros
+	url = https://github.com/IntelRealSense/realsense-ros.git
+	branch = ros2-master
