@@ -21,6 +21,11 @@ def generate_launch_description():
             default_value='true',
             description='Flag to indicate if RViz should be launched'
         ),
+        DeclareLaunchArgument(
+            'camera',
+            default_value='false',
+            description='Flag to indicate if camera should be launched'
+        )
     ]
 
     # Get the launch configuration variables
@@ -47,6 +52,7 @@ def generate_launch_description():
             os.path.join(get_package_share_directory('ltm_go2_camera'), 
                 'launch', 'camera.launch.py')
         ),
+        condition=IfCondition(LaunchConfiguration('camera')),
     )
 
     # Go2 state handler node
