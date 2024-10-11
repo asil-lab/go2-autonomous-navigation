@@ -6,23 +6,13 @@ temp
 # Python
 __pycache__/
 
-# ROS1 workspace
-.catkin_tools
-.vscode/
-ros1_ws/src/CMakeLists.txt
-
-# ROS1 workspace
-.catkin_tools/
-.catkin_workspace
-src/CMakeLists.txt
-
 # Binaries
 build/
-
-# ROS1 cache
-ros1_ws/devel/
-ros1_ws/logs/
 
 # ROS2 cache
 ros2_ws/install/
 ros2_ws/log/
+
+# Logs
+*.log
+recordings/
