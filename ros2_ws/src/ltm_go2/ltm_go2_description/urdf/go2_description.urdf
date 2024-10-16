@@ -1214,4 +1214,34 @@ Stephen Brawner (brawner@gmail.com)
     <axis
       xyz="0 0 0" />
   </joint>
+  <link
+    name="d435_camera_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+  </link>
+  <joint
+    name="d435i_camera_joint"
+    type="fixed">
+    <origin
+      xyz="0.308 0 0.065"
+      rpy="0 0 0" />
+    <parent
+      link="base" />
+    <child
+      link="d435_camera_link" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
 </robot>
