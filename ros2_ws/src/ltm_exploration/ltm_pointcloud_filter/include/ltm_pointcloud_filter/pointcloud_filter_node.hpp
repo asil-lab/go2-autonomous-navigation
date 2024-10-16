@@ -57,7 +57,8 @@ namespace LTM // TODO: Change this to LTM
     void initializeGroundPlaneSegmentation();
     void initializeCropBoxFilter();
 
-    void initializePointcloudSubscriber();
+    void initializeLidarPointcloudSubscriber();
+    void initializeCameraPointcloudSubscriber();
     void initializePointcloudPublisher();
     void initializeTransformListener();
 
@@ -75,7 +76,8 @@ namespace LTM // TODO: Change this to LTM
     std::string m_input_pointcloud_frame_id;
     std::string m_output_pointcloud_frame_id;
 
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_sub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_lidar_pointcloud_sub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_camera_pointcloud_sub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_pub;
 
     rclcpp::TimerBase::SharedPtr m_visualization_timer;

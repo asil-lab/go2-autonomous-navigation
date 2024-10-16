@@ -36,7 +36,8 @@ PointCloudFilterNode::PointCloudFilterNode()
   initializeGroundPlaneSegmentation();
 
   // Initialize ROS communication
-  initializePointcloudSubscriber();
+  initializeLidarPointcloudSubscriber();
+  initializeCameraPointcloudSubscriber();
   initializePointcloudPublisher();
   initializeTransformListener();
 
@@ -142,20 +143,37 @@ void PointCloudFilterNode::transformPointCloud(const pcl::PointCloud<pcl::PointX
   }
 }
 
-void PointCloudFilterNode::initializePointcloudSubscriber()
+void PointCloudFilterNode::initializeLidarPointcloudSubscriber()
 {
-  this->declare_parameter("input_pointcloud_topic_name", "pointcloud");
-  this->declare_parameter("input_pointcloud_topic_queue_size", 10);
-  this->declare_parameter("input_pointcloud_topic_frame_id", "radar");
+  this->declare_parameter("input_lidar_pointcloud_topic_name", "pointcloud");
+  this->declare_parameter("input_lidar_pointcloud_topic_queue_size", 10);
+  this->declare_parameter("input_lidar_pointcloud_topic_frame_id", "radar");
 
-  std::string input_pointcloud_topic = this->get_parameter("input_pointcloud_topic_name").as_string();
-  int input_pointcloud_queue_size = this->get_parameter("input_pointcloud_topic_queue_size").as_int();
-  m_input_pointcloud_frame_id = this->get_parameter("input_pointcloud_topic_frame_id").as_string();
+  std::string input_pointcloud_topic = this->get_parameter("input_pointcloud_lidar_topic_name").as_string();
+  int input_pointcloud_queue_size = this->get_parameter("input_pointcloud_lidar_topic_queue_size").as_int();
+  m_input_pointcloud_frame_id = this->get_parameter("input_pointcloud_lidar_topic_frame_id").as_string();
   RCLCPP_INFO(get_logger(), "Subscribing to %s with queue size %d in frame %s",
     input_pointcloud_topic.c_str(), input_pointcloud_queue_size, m_input_pointcloud_frame_id.c_str());
 
-  m_pointcloud_sub = create_subscription<sensor_msgs::msg::PointCloud2>(
+  m_lidar_pointcloud_sub = create_subscription<sensor_msgs::msg::PointCloud2>(
     input_pointcloud_topic, input_pointcloud_queue_size,
+    std::bind(&PointCloudFilterNode::pointcloudCallback, this, std::placeholders::_1));
+}
+
+void PointCloudFilterNode::initializeCameraPointcloudSubscriber()
+{
+  this->declare_parameter("input_camera_pointcloud_topic_name", "camera_pointcloud");
+  this->declare_parameter("input_camera_pointcloud_topic_queue_size", 10);
+  this->declare_parameter("input_camera_pointcloud_topic_frame_id", "camera");
+
+  std::string input_camera_pointcloud_topic = this->get_parameter("input_camera_pointcloud_topic_name").as_string();
+  int input_camera_pointcloud_queue_size = this->get_parameter("input_camera_pointcloud_topic_queue_size").as_int();
+  m_input_pointcloud_frame_id = this->get_parameter("input_camera_pointcloud_topic_frame_id").as_string();
+  RCLCPP_INFO(get_logger(), "Subscribing to %s with queue size %d in frame %s",
+    input_camera_pointcloud_topic.c_str(), input_camera_pointcloud_queue_size, m_input_pointcloud_frame_id.c_str());
+
+  m_camera_pointcloud_sub = create_subscription<sensor_msgs::msg::PointCloud2>(
+    input_camera_pointcloud_topic, input_camera_pointcloud_queue_size,
     std::bind(&PointCloudFilterNode::pointcloudCallback, this, std::placeholders::_1));
 }
 
