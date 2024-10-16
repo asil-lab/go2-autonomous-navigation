@@ -118,7 +118,7 @@ void PointCloudFilterNode::cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output)
 {
   m_crop_box.setInputCloud(cloud_input);
-  m_crop_box.setNegative(false); // Set to true to remove points inside the box
+  m_crop_box.setNegative(true); // Set to true to remove points inside the box
   m_crop_box.filter(*cloud_output);
 }
 

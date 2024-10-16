@@ -121,11 +121,11 @@ def generate_launch_description():
         parameters=[{
             'resolution': 0.01,
             'frame_id': 'map',
-            'pointcloud_min_z': 0.0,
-            'occupancy_min_z': 0.0,
+            # 'pointcloud_min_z': 0.0,
+            # 'occupancy_min_z': 0.0,
         }],
         remappings=[
-            ('cloud_in', 'point_cloud/raw_transformed'),               # Input pointcloud
+            ('cloud_in', 'point_cloud/filtered'),               # Input pointcloud
             ('octomap_point_cloud_centers', 'point_cloud/octomap')     # Output pointcloud
         ],
     )
