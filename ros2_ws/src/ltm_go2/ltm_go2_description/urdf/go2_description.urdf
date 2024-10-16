@@ -1230,13 +1230,27 @@ Stephen Brawner (brawner@gmail.com)
         iyz="0"
         izz="0" />
     </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://realsense2_description/meshes/d435.dae" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
   </link>
   <joint
     name="d435i_camera_joint"
     type="fixed">
     <origin
-      xyz="0.308 0 0.065"
-      rpy="0 0 0" />
+      xyz="0.325 0 0.075"
+      rpy="-1.571 0 -1.571" />
     <parent
       link="base" />
     <child
