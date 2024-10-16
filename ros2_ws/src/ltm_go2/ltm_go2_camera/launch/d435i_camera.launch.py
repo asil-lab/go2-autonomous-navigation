@@ -36,7 +36,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {
-                'camera_name': 'd435i',
+                'camera_name': 'd435i_camera',
                 'camera_namespace': '',
                 # 'enable_depth': True,
                 # 'enable_infra': True,
@@ -47,7 +47,8 @@ def generate_launch_description():
                 # 'publish_tf': True,
                 'pointcloud.enable': True
             }
-        ]
+        ],
+    )
 
     return LaunchDescription([
         realsense_node
