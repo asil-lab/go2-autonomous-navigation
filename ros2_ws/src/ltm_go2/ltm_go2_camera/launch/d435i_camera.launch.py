@@ -17,6 +17,7 @@ def generate_launch_description():
         executable='realsense2_camera_node',
         name='realsense2_camera_node',
         output='screen',
+	namespace='',
         parameters=[
             {
                 'camera_name': 'd435i_camera',
@@ -39,17 +40,17 @@ def generate_launch_description():
         executable='depthimage_to_pointcloud2_node',
         name='depthimage_to_pointcloud2_node',
         output='screen',
-        parameters=[
-            {
-                'range_max': '0.0',
-                'use_quiet_nan': 'true',
-                'colorful': 'true'
-            }
-        ],
-        mappings=[
-            ('image', 'd435i_camera/color/image_raw'),
-            ('depth', 'd435i_camera/aligned_depth_to_color/image_raw'),
-            ('depth_camera_info', 'd435i_camera/aligned_depth_to_color/camera_info'),
+        #parameters=[
+        #    {
+        #        'range_max': '0.0',
+        #        'use_quiet_nan': 'true',
+        #        'colorful': 'false'
+        #    }
+        #],
+        remappings=[
+            # ('image', 'd435i_camera/color/image_raw'),
+            ('depth', 'realsense2_camera_node/depth/image_rect_raw'),
+            ('depth_camera_info', 'realsense2_camera_node/depth/camera_info'),
             ('pointcloud2', 'point_cloud/camera_raw'),
         ],
     )
