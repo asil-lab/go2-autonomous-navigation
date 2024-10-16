@@ -31,9 +31,14 @@ using namespace LTM;
 PointCloudFilterNode::PointCloudFilterNode()
 : Node("pointcloud_filter_node")
 {
+  // Initialize filters
+  initializeCropBox();
+
+  // Initialize ROS communication
   initializePointcloudSubscriber();
   initializePointcloudPublisher();
   initializeTransformListener();
+
   RCLCPP_INFO(get_logger(), "Point Cloud Filter Node has been initialized");
 
   // Determine if visualization debugging is enabled
@@ -113,6 +118,7 @@ void PointCloudFilterNode::cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output)
 {
   m_crop_box.setInputCloud(cloud_input);
+  m_crop_box.setNegative(false); // Set to true to remove points inside the box
   m_crop_box.filter(*cloud_output);
 }
 
@@ -213,6 +219,8 @@ void PointCloudFilterNode::initializeCropBox()
 
   m_crop_box.setMin(Eigen::Vector4f(crop_box_x_min, crop_box_y_min, crop_box_z_min, 1.0));
   m_crop_box.setMax(Eigen::Vector4f(crop_box_x_max, crop_box_y_max, crop_box_z_max, 1.0));
+  RCLCPP_INFO(get_logger(), "Crop box initialized with min (%f, %f, %f) and max (%f, %f, %f)",
+    crop_box_x_min, crop_box_y_min, crop_box_z_min, crop_box_x_max, crop_box_y_max, crop_box_z_max);
 }
 
 int main(int argc, char ** argv)
