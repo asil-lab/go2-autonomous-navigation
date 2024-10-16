@@ -63,13 +63,14 @@ def generate_launch_description():
         executable='pointcloud_to_laserscan_node',
         name='pointcloud_to_laserscan_node',
         output='screen',
-        remappings=[('cloud_in', 'point_cloud/octomap')],
+        remappings=[('cloud_in', 'point_cloud/filtered')],
         # parameters=[pointcloud_to_laserscan_config],
         parameters=[{
-            'transform_tolerance': 0.25,
+            'target_frame': 'base_footprint',
+            'transform_tolerance': 0.5,
             'angle_increment': np.pi / 360.0, #  0.001,
-            'scan_time': 0.1,
-            'use_inf': True,
+            # 'scan_time': 0.1,
+            'use_inf': False,
             'inf_epsilon': 1.0,
         }],
     )
@@ -139,5 +140,5 @@ def generate_launch_description():
         pointcloud_to_laserscan_node,
         online_sync_slam_node,
         # localization_slam_node,
-        octomap_server_node,
+        # octomap_server_node,
     ])

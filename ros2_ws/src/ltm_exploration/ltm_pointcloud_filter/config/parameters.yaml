@@ -8,7 +8,7 @@ pointcloud_filter_node:
 
     output_pointcloud_topic_name: "/point_cloud/filtered"
     output_pointcloud_topic_queue_size: 10
-    output_pointcloud_topic_frame_id: "map"
+    output_pointcloud_topic_frame_id: "base_footprint"
 
     # Parameters
     crop_box:

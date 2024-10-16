@@ -92,12 +92,12 @@ void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& trans
 void OdomProcessing::updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr pose_stamped)
 {
   // Update odom
-  m_odom_msg->header.stamp = pose_stamped->header.stamp;
+  m_odom_msg->header.stamp = rclcpp::Clock().now();
   updateOdomTranslation(pose_stamped->pose.position);
   updateOdomOrientation(pose_stamped->pose.orientation);
 
   // Update base_footprint
-  m_base_footprint_msg->header.stamp = pose_stamped->header.stamp;
+  m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
   updateBaseFootprintTranslation(pose_stamped->pose.position);
   // updateBaseFootprintOrientation(pose_stamped->pose.orientation);
 }
