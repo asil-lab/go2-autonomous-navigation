@@ -1,45 +1,19 @@
 pointcloud_filter_node:
   ros__parameters:
-    topics:
-      robot_description_topic: "/robot_description"
-      sim:
-        raw_pointcloud_topic: "/go2_gazebo/point_cloud/raw"
-        filtered_pointcloud_topic: "/go2_gazebo/point_cloud/filtered"
-      real:
-        raw_pointcloud_topic: "/point_cloud/buffered"
-        filtered_pointcloud_topic: "/point_cloud/filtered"
+    
+    # Topics
+    input_pointcloud_topic_name: "/point_cloud/raw"
+    input_pointcloud_topic_queue_size: 10
 
-    voxel_grid_filter:
-      leaf_size: # meters
-        x: 0.05
-        y: 0.05
-        z: 0.05
+    output_pointcloud_topic_name: "/point_cloud/filtered"
+    output_pointcloud_topic_queue_size: 10
+    output_pointcloud_topic_frame_id: "map"
 
-    statistical_outlier_removal:
-      mean_k: 50
-      std_dev_mul_thresh: 1.0
-
-    ground_plane_segmentation:
-      distance_threshold: 0.1 # meters
-      max_iterations: 5000
-      probability: 0.99
-
-    robot_cluster_removal:
-      robot_description:
-        package_name: "ltm_go2_description"
-        directory_name: "urdf"
-        file_name: "go2_description.urdf"
-      cluster_tolerance: 0.1 # meters
-      min_cluster_size: 100
-      mesh_resolution: 0.1
-      robot_frame: "base_footprint"
-      target_frame: "odom"
-      crop_box: # meters, in robot frame
-        min:
-          x: -0.3
-          y: -0.25
-          z: 0.0
-        max:
-          x: 0.35
-          y: 0.25
-          z: 3.0
+    # Parameters
+    crop_box:
+      min_x: -1.0
+      max_x: 1.0
+      min_y: -1.0
+      max_y: 1.0
+      min_z: -1.0
+      max_z: 1.0

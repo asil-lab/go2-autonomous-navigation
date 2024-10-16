@@ -17,6 +17,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.hpp>
 #include <pcl/common/common.h>
+#include <pcl/filters/crop_box.h>
 
 #include <tf2/transform_datatypes.h>
 #include <tf2_ros/buffer.h>
@@ -30,11 +31,6 @@
 
 #include <string>
 
-#include <ltm_pointcloud_filter/ground_plane_segmentation.hpp>
-#include <ltm_pointcloud_filter/robot_cluster_removal.hpp>
-#include <ltm_pointcloud_filter/statistical_outlier_removal.hpp>
-#include <ltm_pointcloud_filter/voxel_grid_filter.hpp>
-
 namespace LTM // TODO: Change this to LTM
 {
   class PointCloudFilterNode : public rclcpp::Node
@@ -45,38 +41,28 @@ namespace LTM // TODO: Change this to LTM
 
   private:
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
-    void publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
-      const std::string& frame_id, const rclcpp::Time& stamp);
+    void publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, 
+      const rclcpp::Time& stamp);
 
-    void removeGroundPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered);
+    void cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output);
+    void transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string& target_frame,
+      const std::string& source_frame) const;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr convertPointCloud2ToPCL(
-      const sensor_msgs::msg::PointCloud2::SharedPtr msg) const;
-    sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const;
+    void initializePointcloudSubscriber();
+    void initializePointcloudPublisher();
+    void initializeTransformListener();
+    void initializeCropBox();
 
-    void initializeGroundPlaneSegmentation();
-    void initializeRobotClusterRemoval();
-    void initializeStatisticalOutlierRemoval();
-    void initializeVoxelGridFilter();
+    pcl::CropBox<pcl::PointXYZ> m_crop_box;
 
-    void configureRosSubscribers(bool in_simulation);
-    void configureRosPublishers(bool in_simulation);
+    std::unique_ptr<tf2_ros::Buffer> m_tf_buffer;
+    std::unique_ptr<tf2_ros::TransformListener> m_tf_listener;
+    std::string m_output_pointcloud_frame_id;
 
-    enum Axis { X, Y, Z };
-
-    double m_voxel_grid_leaf_size;
-
-    std::unique_ptr<LTM::GroundPlaneSegmentation> m_ground_plane_segmentation;
-    std::unique_ptr<LTM::RobotClusterRemoval> m_robot_cluster_removal;
-    std::unique_ptr<LTM::StatisticalPointcloudFilter> m_statistical_outlier_removal;
-    std::unique_ptr<LTM::VoxelGridFilter> m_voxel_grid_filter;
-
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_raw_pointcloud_sub;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_filtered_pointcloud_pub;
-    rclcpp::Publisher<vision_msgs::msg::BoundingBox3D>::SharedPtr m_bounding_box_pub;
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_marker_array_pub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_sub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_pub;
 
   }; // class PointCloudFilterNode
 }   // namespace LTMPointcloudFilterNode
