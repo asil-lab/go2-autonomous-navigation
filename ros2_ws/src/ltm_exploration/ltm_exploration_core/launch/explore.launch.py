@@ -63,7 +63,7 @@ def generate_launch_description():
         executable='pointcloud_to_laserscan_node',
         name='pointcloud_to_laserscan_node',
         output='screen',
-        remappings=[('cloud_in', 'point_cloud/transformed')],
+        remappings=[('cloud_in', 'point_cloud/octomap')],
         # parameters=[pointcloud_to_laserscan_config],
         parameters=[{
             'transform_tolerance': 0.25,
@@ -121,8 +121,9 @@ def generate_launch_description():
         parameters=[{
             'resolution': 0.01,
             'frame_id': 'map',
-            # 'pointcloud_min_z': 0.0,
-            # 'occupancy_min_z': 0.0,
+            'filter_ground': 'true',
+            'pointcloud_min_z': 0.1,
+            'occupancy_min_z': 0.1,
         }],
         remappings=[
             ('cloud_in', 'point_cloud/filtered'),               # Input pointcloud
@@ -135,7 +136,7 @@ def generate_launch_description():
         # pointcloud_buffer_node,
         pointcloud_filter_node,
         # pointcloud_transformer_node,
-        # pointcloud_to_laserscan_node,
+        pointcloud_to_laserscan_node,
         online_sync_slam_node,
         # localization_slam_node,
         octomap_server_node,

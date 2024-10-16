@@ -32,7 +32,8 @@ PointCloudFilterNode::PointCloudFilterNode()
 : Node("pointcloud_filter_node")
 {
   // Initialize filters
-  initializeCropBox();
+  initializeCropBoxFilter();
+  initializeGroundPlaneSegmentation();
 
   // Initialize ROS communication
   initializePointcloudSubscriber();
@@ -70,7 +71,10 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
   transformPointCloud(cloud_filtered, cloud_transformed, m_output_pointcloud_frame_id, msg->header.frame_id);
 
-  publishFilteredPointCloud(cloud_transformed, msg->header.stamp);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_segmented(new pcl::PointCloud<pcl::PointXYZ>);
+  m_ground_plane_segmentation->segmentPlane(cloud_transformed, cloud_plane_segmented);
+
+  publishFilteredPointCloud(cloud_plane_segmented, msg->header.stamp);
 }
 
 void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
@@ -201,7 +205,23 @@ void PointCloudFilterNode::initializeTransformListener()
   m_tf_listener = std::make_unique<tf2_ros::TransformListener>(*m_tf_buffer);
 }
 
-void PointCloudFilterNode::initializeCropBox()
+void PointCloudFilterNode::initializeGroundPlaneSegmentation()
+{
+  this->declare_parameter("ground_plane_segmentation.distance_threshold", 0.01);
+  this->declare_parameter("ground_plane_segmentation.max_iterations", 1000);
+  this->declare_parameter("ground_plane_segmentation.probability", 0.99);
+
+  double distance_threshold = this->get_parameter("ground_plane_segmentation.distance_threshold").as_double();
+  int max_iterations = this->get_parameter("ground_plane_segmentation.max_iterations").as_int();
+  double probability = this->get_parameter("ground_plane_segmentation.probability").as_double();
+
+  m_ground_plane_segmentation = std::make_unique<GroundPlaneSegmentation>();
+  m_ground_plane_segmentation->configureSACSegmentationParameters(distance_threshold, max_iterations, probability);
+  RCLCPP_INFO(get_logger(), "Ground plane segmentation initialized with distance threshold %f, max iterations %d, and probability %f",
+    distance_threshold, max_iterations, probability);
+}
+
+void PointCloudFilterNode::initializeCropBoxFilter()
 {
   this->declare_parameter("crop_box.x_min", -1.0);
   this->declare_parameter("crop_box.x_max", 1.0);

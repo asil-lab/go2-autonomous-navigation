@@ -30,6 +30,8 @@
 
 #include <string>
 
+#include <ltm_pointcloud_filter/ground_plane_segmentation.hpp>
+
 namespace LTM // TODO: Change this to LTM
 {
   class PointCloudFilterNode : public rclcpp::Node
@@ -52,10 +54,12 @@ namespace LTM // TODO: Change this to LTM
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string& target_frame,
       const std::string& source_frame) const;
 
+    void initializeGroundPlaneSegmentation();
+    void initializeCropBoxFilter();
+
     void initializePointcloudSubscriber();
     void initializePointcloudPublisher();
     void initializeTransformListener();
-    void initializeCropBox();
 
     void initializeVisualizationTimer();
     void initializeCropBoxVisualizationPublisher();
@@ -63,6 +67,8 @@ namespace LTM // TODO: Change this to LTM
     enum { X, Y, Z, ROLL, PITCH, YAW };
 
     pcl::CropBox<pcl::PointXYZ> m_crop_box;
+
+    std::unique_ptr<GroundPlaneSegmentation> m_ground_plane_segmentation;
 
     std::unique_ptr<tf2_ros::Buffer> m_tf_buffer;
     std::unique_ptr<tf2_ros::TransformListener> m_tf_listener;

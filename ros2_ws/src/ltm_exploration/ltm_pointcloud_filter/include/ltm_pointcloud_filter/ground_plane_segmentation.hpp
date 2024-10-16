@@ -21,7 +21,9 @@ namespace LTM
     GroundPlaneSegmentation();
     ~GroundPlaneSegmentation();
 
-    bool segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+    void segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane) const;
+    bool findPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
       pcl::PointIndices::Ptr inliers, pcl::ModelCoefficients::Ptr coefficients) const;
     void removePlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered, pcl::PointIndices::Ptr inliers) const;
