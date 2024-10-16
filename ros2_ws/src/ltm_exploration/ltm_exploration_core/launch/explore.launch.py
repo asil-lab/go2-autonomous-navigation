@@ -131,7 +131,7 @@ def generate_launch_description():
             ('octomap_point_cloud_centers', 'point_cloud/octomap')     # Output pointcloud
         ],
     )
-    
+
     # Return launch description
     return LaunchDescription(declared_arguments + [
         # pointcloud_buffer_node,
