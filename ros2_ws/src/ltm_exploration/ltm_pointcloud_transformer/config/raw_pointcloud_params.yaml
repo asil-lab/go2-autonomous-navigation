@@ -3,8 +3,8 @@ raw_pointcloud_transformer_node:
 
     # Topics
     input_pointcloud_topic_name: "/point_cloud/raw"
-    output_pointcloud_topic_name: "/point_cloud/deskewed"
+    output_pointcloud_topic_name: "/point_cloud/raw_transformed"
 
     # Parameters
     source_frame_id: "radar"
-    target_frame_id: "odom"
+    target_frame_id: "map"
