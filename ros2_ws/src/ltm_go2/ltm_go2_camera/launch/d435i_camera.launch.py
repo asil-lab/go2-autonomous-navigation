@@ -23,11 +23,11 @@ def generate_launch_description():
                 'camera_namespace': '',
                 # 'enable_depth': True,
                 # 'enable_infra': True,
-                # 'enable_sync': True,
-                # 'enable_rgbd': True,
-                # 'enable_gyro': True,
-                # 'enable_accel': True,
-                # 'publish_tf': True,
+                'enable_sync': True,
+                'enable_rgbd': True,
+                'enable_gyro': True,
+                'enable_accel': True,
+                'publish_tf': True,
                 'pointcloud.enable': True
             }
         ],
