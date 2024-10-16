@@ -11,24 +11,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    # realsense_node = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         os.path.join(get_package_share_directory('realsense2_camera'),
-    #                         'launch', 'rs_launch.py')
-    #     ),
-    #     launch_arguments=[
-    #         ('camera_namespace', 'd435i'),
-    #         ('enable_depth', 'true'),
-    #         ('enable_infra', 'true'),
-    #         ('enable_sync', 'true'),
-    #         ('enable_rgbd', 'true'),
-    #         ('enable_gyro', 'true'),
-    #         ('enable_accel', 'true'),
-    #         ('publish_tf', 'true'),
-    #         ('pointcloud.enable', 'true'),
-    #     ],
-    # )
-
+    # Realsense d435i camera node
     realsense_node = Node(
         package='realsense2_camera',
         executable='realsense2_camera_node',
@@ -50,7 +33,29 @@ def generate_launch_description():
         ],
     )
 
+    # Depth image to pointcloud node
+    depth_image_to_pointcloud_node = Node(
+        package='depthimage_to_pointcloud2',
+        executable='depthimage_to_pointcloud2_node',
+        name='depthimage_to_pointcloud2_node',
+        output='screen',
+        parameters=[
+            {
+                'range_max': '0.0',
+                'use_quiet_nan': 'true',
+                'colorful': 'true'
+            }
+        ],
+        mappings=[
+            ('image', 'd435i_camera/color/image_raw'),
+            ('depth', 'd435i_camera/aligned_depth_to_color/image_raw'),
+            ('depth_camera_info', 'd435i_camera/aligned_depth_to_color/camera_info'),
+            ('pointcloud2', 'point_cloud/camera_raw'),
+        ],
+    )
+
     return LaunchDescription([
-        realsense_node
+        realsense_node,
+        depth_image_to_pointcloud_node,
     ])
     
