@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
-#include <visualization_msgs/msg/marker.hpp>
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/sample_consensus/method_types.h>
@@ -36,6 +35,18 @@ PointCloudFilterNode::PointCloudFilterNode()
   initializePointcloudPublisher();
   initializeTransformListener();
   RCLCPP_INFO(get_logger(), "Point Cloud Filter Node has been initialized");
+
+  // Determine if visualization debugging is enabled
+  this->declare_parameter("visualize_debug", false);
+  bool visualize_debug = this->get_parameter("visualize_debug").as_bool();
+  if (!visualize_debug)
+  {
+    RCLCPP_INFO(get_logger(), "Visualization debugging disabled");
+    return;
+  }
+  RCLCPP_INFO(get_logger(), "Visualization debugging enabled");
+  initializeCropBoxVisualizationPublisher();
+  initializeVisualizationTimer();
 }
 
 PointCloudFilterNode::~PointCloudFilterNode()
@@ -67,6 +78,37 @@ void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::
   m_pointcloud_pub->publish(msg);
 }
 
+void PointCloudFilterNode::visualizationTimerCallback()
+{
+  publishCropBoxVisualization();
+}
+
+void PointCloudFilterNode::publishCropBoxVisualization()
+{
+  // Get the min and max points of the crop box in (x, y, z, 1) format
+  Eigen::Vector4f min_pt = m_crop_box.getMin();
+  Eigen::Vector4f max_pt = m_crop_box.getMax();
+
+  // Create a box of markers
+  visualization_msgs::msg::Marker msg;
+  msg.header.frame_id = m_input_pointcloud_frame_id;
+  msg.header.stamp = get_clock()->now();
+  msg.type = visualization_msgs::msg::Marker::CUBE;
+  msg.action = visualization_msgs::msg::Marker::ADD;
+  msg.pose.position.x = (max_pt[X] + min_pt[X]) / 2;
+  msg.pose.position.y = (max_pt[Y] + min_pt[Y]) / 2;
+  msg.pose.position.z = (max_pt[Z] + min_pt[Z]) / 2;
+  msg.scale.x = max_pt[X] - min_pt[X];
+  msg.scale.y = max_pt[Y] - min_pt[Y];
+  msg.scale.z = max_pt[Z] - min_pt[Z];
+  msg.color.r = 0.0;
+  msg.color.g = 1.0;
+  msg.color.b = 0.0;
+  msg.color.a = 0.5;
+
+  m_crop_box_visualization_pub->publish(msg);
+}
+
 void PointCloudFilterNode::cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output)
 {
@@ -94,10 +136,13 @@ void PointCloudFilterNode::initializePointcloudSubscriber()
 {
   this->declare_parameter("input_pointcloud_topic_name", "pointcloud");
   this->declare_parameter("input_pointcloud_topic_queue_size", 10);
+  this->declare_parameter("input_pointcloud_topic_frame_id", "radar");
 
   std::string input_pointcloud_topic = this->get_parameter("input_pointcloud_topic_name").as_string();
   int input_pointcloud_queue_size = this->get_parameter("input_pointcloud_topic_queue_size").as_int();
-  RCLCPP_INFO(get_logger(), "Subscribing to %s with queue size %d", input_pointcloud_topic.c_str(), input_pointcloud_queue_size);
+  m_input_pointcloud_frame_id = this->get_parameter("input_pointcloud_topic_frame_id").as_string();
+  RCLCPP_INFO(get_logger(), "Subscribing to %s with queue size %d in frame %s",
+    input_pointcloud_topic.c_str(), input_pointcloud_queue_size, m_input_pointcloud_frame_id.c_str());
 
   m_pointcloud_sub = create_subscription<sensor_msgs::msg::PointCloud2>(
     input_pointcloud_topic, input_pointcloud_queue_size,
@@ -118,6 +163,30 @@ void PointCloudFilterNode::initializePointcloudPublisher()
 
   m_pointcloud_pub = create_publisher<sensor_msgs::msg::PointCloud2>(
     output_pointcloud_topic, output_pointcloud_queue_size);
+}
+
+void PointCloudFilterNode::initializeVisualizationTimer()
+{
+  this->declare_parameter("visualization_timer_period", 0.1);
+  double visualization_timer_period = this->get_parameter("visualization_timer_period").as_double();
+  RCLCPP_INFO(get_logger(), "Visualization timer period: %f", visualization_timer_period);
+
+  m_visualization_timer = create_wall_timer(std::chrono::duration<double>(visualization_timer_period),
+    std::bind(&PointCloudFilterNode::visualizationTimerCallback, this));
+}
+
+void PointCloudFilterNode::initializeCropBoxVisualizationPublisher()
+{
+  this->declare_parameter("crop_box_visualization_topic_name", "crop_box_visualization");
+  this->declare_parameter("crop_box_visualization_topic_queue_size", 10);
+
+  std::string crop_box_visualization_topic = this->get_parameter("crop_box_visualization_topic_name").as_string();
+  int crop_box_visualization_queue_size = this->get_parameter("crop_box_visualization_topic_queue_size").as_int();
+  RCLCPP_INFO(get_logger(), "Publishing crop box visualization to %s with queue size %d",
+    crop_box_visualization_topic.c_str(), crop_box_visualization_queue_size);
+
+  m_crop_box_visualization_pub = create_publisher<visualization_msgs::msg::Marker>(
+    crop_box_visualization_topic, crop_box_visualization_queue_size);
 }
 
 void PointCloudFilterNode::initializeTransformListener()

@@ -133,8 +133,8 @@ def generate_launch_description():
     # Return launch description
     return LaunchDescription(declared_arguments + [
         # pointcloud_buffer_node,
-        # pointcloud_filter_node,
-        pointcloud_transformer_node,
+        pointcloud_filter_node,
+        # pointcloud_transformer_node,
         # pointcloud_to_laserscan_node,
         online_sync_slam_node,
         # localization_slam_node,

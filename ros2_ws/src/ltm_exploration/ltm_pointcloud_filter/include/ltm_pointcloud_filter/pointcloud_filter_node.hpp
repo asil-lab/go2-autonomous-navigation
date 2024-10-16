@@ -11,8 +11,7 @@
 #include <rclcpp/qos.hpp>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <vision_msgs/msg/bounding_box3_d.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.hpp>
@@ -44,6 +43,9 @@ namespace LTM // TODO: Change this to LTM
     void publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, 
       const rclcpp::Time& stamp);
 
+    void visualizationTimerCallback();
+    void publishCropBoxVisualization();
+
     void cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output);
     void transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
@@ -55,14 +57,23 @@ namespace LTM // TODO: Change this to LTM
     void initializeTransformListener();
     void initializeCropBox();
 
+    void initializeVisualizationTimer();
+    void initializeCropBoxVisualizationPublisher();
+
+    enum { X, Y, Z, ROLL, PITCH, YAW };
+
     pcl::CropBox<pcl::PointXYZ> m_crop_box;
 
     std::unique_ptr<tf2_ros::Buffer> m_tf_buffer;
     std::unique_ptr<tf2_ros::TransformListener> m_tf_listener;
+    std::string m_input_pointcloud_frame_id;
     std::string m_output_pointcloud_frame_id;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_sub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_pub;
+
+    rclcpp::TimerBase::SharedPtr m_visualization_timer;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr m_crop_box_visualization_pub;
 
   }; // class PointCloudFilterNode
 }   // namespace LTMPointcloudFilterNode

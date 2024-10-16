@@ -4,6 +4,7 @@ pointcloud_filter_node:
     # Topics
     input_pointcloud_topic_name: "/point_cloud/raw"
     input_pointcloud_topic_queue_size: 10
+    input_pointcloud_topic_frame_id: "radar"
 
     output_pointcloud_topic_name: "/point_cloud/filtered"
     output_pointcloud_topic_queue_size: 10
@@ -17,3 +18,10 @@ pointcloud_filter_node:
       max_y: 1.0
       min_z: -1.0
       max_z: 1.0
+
+    # Visualization
+    visualize_debug: True
+    visualization_timer_period: 0.1 # in seconds
+
+    crop_box_visualization_topic_name: "/pointcloud_filter/crop_box_visualization"
+    crop_box_visualization_topic_queue_size: 10
