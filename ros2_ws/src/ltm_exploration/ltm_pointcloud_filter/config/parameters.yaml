@@ -6,13 +6,13 @@ pointcloud_filter_node:
     input_lidar_pointcloud_topic_queue_size: 10
     input_lidar_pointcloud_topic_frame_id: "radar"
 
-    input_camera_pointcloud_topic_name: "/point_cloud/camera"
+    input_camera_pointcloud_topic_name: "/point_cloud/camera/raw"
     input_camera_pointcloud_topic_queue_size: 10
-    input_camera_pointcloud_topic_frame_id: "d435i_camera_link"
+    input_camera_pointcloud_topic_frame_id: "d435i_camera_depth_optical_frame"
 
     output_pointcloud_topic_name: "/point_cloud/filtered"
     output_pointcloud_topic_queue_size: 10
-    output_pointcloud_topic_frame_id: "map"
+    output_pointcloud_topic_frame_id: "base_footprint"
 
     # Parameters
     crop_box:
@@ -24,8 +24,8 @@ pointcloud_filter_node:
       z_max: 0.25
 
     ground_plane_segmentation:
-      distance_threshold: 0.1 # meters
-      max_iterations: 100
+      distance_threshold: 0.25 # meters
+      max_iterations: 1000
       probability: 0.99
 
     # Visualization

@@ -1,13 +1,13 @@
 pointcloud_mux_node:
   ros__parameters:
 
-    input_lidar_pointcloud_topic_name: "point_cloud/filtered"
+    input_lidar_pointcloud_topic_name: "point_cloud/raw"
     input_lidar_pointcloud_topic_queue_size: 10
 
     input_camera_pointcloud_topic_name: "point_cloud/camera/transformed"
     input_camera_pointcloud_topic_queue_size: 10
 
-    output_pointcloud_topic_name: "point_cloud/mux"
-    output_pointcloud_topic_queue_size: 10
-    output_pointcloud_topic_period: 0.1 # [s]
-    output_pointcloud_topic_frame_id: "base_footprint"  # TODO
+    output_mux_pointcloud_topic_name: "point_cloud/mux"
+    output_mux_pointcloud_topic_queue_size: 10
+    output_mux_pointcloud_topic_period: 0.1 # [s]
+    output_mux_pointcloud_topic_frame_id: "radar"  # TODO

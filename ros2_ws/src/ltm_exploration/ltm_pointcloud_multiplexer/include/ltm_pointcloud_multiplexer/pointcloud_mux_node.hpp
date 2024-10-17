@@ -28,7 +28,7 @@ namespace LTM
   private:
     void lidarPointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void cameraPointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
-    void publishMuxedPointCloud() const;
+    void publishMuxedPointCloud();
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr mergePointClouds(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr lidar_cloud,
@@ -48,6 +48,7 @@ namespace LTM
 
     sensor_msgs::msg::PointCloud2::SharedPtr m_lidar_pointcloud_msg;
     sensor_msgs::msg::PointCloud2::SharedPtr m_camera_pointcloud_msg;
+    std::string m_output_mux_pointcloud_frame_id;
 
     rclcpp::TimerBase::SharedPtr m_mux_timer;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_lidar_pointcloud_sub;

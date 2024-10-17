@@ -69,6 +69,12 @@ void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
   cropPointCloud(cloud, cloud_filtered);
 
+  // Apply voxel grid filter
+  pcl::VoxelGrid<pcl::PointXYZ> voxel_grid_filter;
+  voxel_grid_filter.setInputCloud(cloud_filtered);
+  voxel_grid_filter.setLeafSize(0.05f, 0.05f, 0.05f);
+  voxel_grid_filter.filter(*cloud_filtered);
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
   transformPointCloud(cloud_filtered, cloud_transformed, m_output_pointcloud_frame_id, msg->header.frame_id);
 
