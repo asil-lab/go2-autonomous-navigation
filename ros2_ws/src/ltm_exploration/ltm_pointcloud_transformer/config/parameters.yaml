@@ -2,9 +2,9 @@ pointcloud_transformer_node:
   ros__parameters:
 
     # Topics
-    input_pointcloud_topic_name: "/point_cloud/filtered"
-    output_pointcloud_topic_name: "/point_cloud/transformed"
+    input_pointcloud_topic_name: "/point_cloud/camera/raw"
+    output_pointcloud_topic_name: "/point_cloud/camera/transformed"
 
     # Parameters
-    source_frame_id: "odom"
+    source_frame_id: "d435i_camera_link"
     target_frame_id: "base_footprint"

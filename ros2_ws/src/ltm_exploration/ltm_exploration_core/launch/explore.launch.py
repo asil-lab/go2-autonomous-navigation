@@ -51,7 +51,7 @@ def generate_launch_description():
     pointcloud_transformer_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_pointcloud_transformer'), 
-                'launch', 'raw_pointcloud_transformer.launch.py')
+                'launch', 'pointcloud_transformer.launch.py')
         ),
     )
     
@@ -63,7 +63,7 @@ def generate_launch_description():
         executable='pointcloud_to_laserscan_node',
         name='pointcloud_to_laserscan_node',
         output='screen',
-        remappings=[('cloud_in', 'point_cloud/filtered')],
+        remappings=[('cloud_in', 'point_cloud/mux')],
         # parameters=[pointcloud_to_laserscan_config],
         parameters=[{
             'target_frame': 'base_footprint',
@@ -132,13 +132,22 @@ def generate_launch_description():
         ],
     )
 
+    # Pointcloud multiplexer node
+    pointcloud_multiplexer_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_pointcloud_multiplexer'), 
+                'launch', 'pointcloud_mux.launch.py')
+        ),
+    )
+
     # Return launch description
     return LaunchDescription(declared_arguments + [
         # pointcloud_buffer_node,
         pointcloud_filter_node,
-        # pointcloud_transformer_node,
+        pointcloud_transformer_node,
         pointcloud_to_laserscan_node,
         online_sync_slam_node,
         # localization_slam_node,
         # octomap_server_node,
+        pointcloud_multiplexer_node,
     ])
