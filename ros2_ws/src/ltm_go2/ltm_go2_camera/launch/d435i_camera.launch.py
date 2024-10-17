@@ -12,28 +12,6 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    # # Realsense d435i camera node
-    # realsense_node = Node(
-    #     package='realsense2_camera',
-    #     executable='realsense2_camera_node',
-    #     name='realsense2_camera_node',
-    #     output='screen',
-	# namespace='',
-    #     parameters=[
-    #         {
-    #             'camera_name': 'd435i_camera',
-    #             'camera_namespace': '',
-    #             # 'enable_depth': True,
-    #             # 'enable_infra': True,
-    #             'enable_sync': True,
-    #             'enable_rgbd': True,
-    #             'enable_gyro': True,
-    #             'enable_accel': True,
-    #             'publish_tf': True,
-    #             'pointcloud.enable': True
-    #         }
-    #     ],
-    # )
     realsense_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('realsense2_camera'), 
@@ -42,6 +20,8 @@ def generate_launch_description():
         launch_arguments=[
             ('camera_name', 'd435i_camera'),
             ('camera_namespace', ''),
+            ('initial_reset', 'true'),
+            ('accelerate_gpu_with_glsl', 'true'),
             ('enable_infra1', 'true'),
             ('enable_infra2', 'true'),
             ('publish_tf', 'true'),
