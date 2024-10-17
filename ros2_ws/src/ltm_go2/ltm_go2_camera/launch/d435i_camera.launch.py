@@ -37,14 +37,14 @@ def generate_launch_description():
     realsense_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('realsense2_camera'), 
-                'launch', 'rs_launch.launch.py')
+                'launch', 'rs_launch.py')
         ),
         launch_arguments=[
-            {'camera_name': 'realsense2_camera'},
-            {'camera_namespace': ''},
-            {'enable_infra1': 'true'},
-            {'enable_infra2': 'true'},
-            {'publish_tf': 'true'},
+            ('camera_name', 'd435i_camera'),
+            ('camera_namespace', ''),
+            ('enable_infra1', 'true'),
+            ('enable_infra2', 'true'),
+            ('publish_tf', 'true'),
         ],
     )
 
@@ -63,9 +63,9 @@ def generate_launch_description():
         #],
         remappings=[
             # ('image', 'd435i_camera/color/image_raw'),
-            ('depth', 'realsense2_camera_node/depth/image_rect_raw'),
-            ('depth_camera_info', 'realsense2_camera_node/depth/camera_info'),
-            ('pointcloud2', 'point_cloud/camera_raw'),
+            ('depth', 'd435i_camera/depth/image_rect_raw'),
+            ('depth_camera_info', 'd435i_camera/depth/camera_info'),
+            ('pointcloud2', 'point_cloud/camera/raw'),
         ],
     )
 

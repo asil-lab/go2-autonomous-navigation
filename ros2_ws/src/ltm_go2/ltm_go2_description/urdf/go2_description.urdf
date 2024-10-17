@@ -1233,7 +1233,7 @@ Stephen Brawner (brawner@gmail.com)
     <visual>
       <origin
         xyz="0 0 0"
-        rpy="0 0 0" />
+        rpy="-1.571 3.141 -1.571" />
       <geometry>
         <mesh
           filename="package://realsense2_description/meshes/d435.dae" />
@@ -1249,8 +1249,8 @@ Stephen Brawner (brawner@gmail.com)
     name="d435i_camera_joint"
     type="fixed">
     <origin
-      xyz="0.325 0 0.075"
-      rpy="-1.571 0 -1.571" />
+      xyz="0.345 0 0.115"
+      rpy="0 0 0" />
     <parent
       link="base" />
     <child

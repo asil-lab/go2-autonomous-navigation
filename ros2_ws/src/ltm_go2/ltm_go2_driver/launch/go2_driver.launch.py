@@ -31,7 +31,7 @@ def generate_launch_description():
     # URDF file location
     urdf_location = os.path.join(
         get_package_share_directory("ltm_go2_description"), "urdf", "go2_description.urdf")
-    
+
     # Read the URDF file content
     with open(urdf_location, 'r') as infp:
         robot_description = infp.read()
@@ -82,12 +82,13 @@ def generate_launch_description():
     )
 
     # RViz with Go2
+
     rviz_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_go2_description'), 
                 'launch', 'go2_rviz.launch.py')
         ),
-        condition=IfCondition(LaunchConfiguration('rviz') or LaunchConfiguration('go2')),
+        condition=UnlessCondition(LaunchConfiguration('go2')),
     )
 
     return LaunchDescription(declared_arguments + [
