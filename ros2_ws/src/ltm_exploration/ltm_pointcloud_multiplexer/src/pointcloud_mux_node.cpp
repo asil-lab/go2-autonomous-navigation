@@ -77,10 +77,10 @@ sensor_msgs::msg::PointCloud2::SharedPtr PointCloudMuxNode::convertPCLToPointClo
 void PointCloudMuxNode::initializeLidarPointCloudSubscriber()
 {
   this->declare_parameter("input_lidar_pointcloud_topic_name", "/lidar/pointcloud");
-  this->declare_parameter("input_lidar_pointcloud_queue_size", 10);
+  this->declare_parameter("input_lidar_pointcloud_topic_queue_size", 10);
 
   std::string input_lidar_pointcloud_topic_name = this->get_parameter("input_lidar_pointcloud_topic_name").as_string();
-  int input_lidar_pointcloud_queue_size = this->get_parameter("input_lidar_pointcloud_queue_size").as_int();
+  int input_lidar_pointcloud_queue_size = this->get_parameter("input_lidar_pointcloud_topic_queue_size").as_int();
 
   m_lidar_pointcloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
     input_lidar_pointcloud_topic_name, input_lidar_pointcloud_queue_size,
@@ -95,10 +95,10 @@ void PointCloudMuxNode::initializeLidarPointCloudSubscriber()
 void PointCloudMuxNode::initializeCameraPointCloudSubscriber()
 {
   this->declare_parameter("input_camera_pointcloud_topic_name", "/camera/pointcloud");
-  this->declare_parameter("input_camera_pointcloud_queue_size", 10);
+  this->declare_parameter("input_camera_pointcloud_topic_queue_size", 10);
 
   std::string input_camera_pointcloud_topic_name = this->get_parameter("input_camera_pointcloud_topic_name").as_string();
-  int input_camera_pointcloud_queue_size = this->get_parameter("input_camera_pointcloud_queue_size").as_int();
+  int input_camera_pointcloud_queue_size = this->get_parameter("input_camera_pointcloud_topic_queue_size").as_int();
 
   m_camera_pointcloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
     input_camera_pointcloud_topic_name, input_camera_pointcloud_queue_size,
@@ -113,10 +113,10 @@ void PointCloudMuxNode::initializeCameraPointCloudSubscriber()
 void PointCloudMuxNode::initializeMuxedPointCloudPublisher()
 {
   this->declare_parameter("output_muxed_pointcloud_topic_name", "/muxed/pointcloud");
-  this->declare_parameter("output_muxed_pointcloud_queue_size", 10);
+  this->declare_parameter("output_muxed_pointcloud_topic_queue_size", 10);
 
   std::string output_muxed_pointcloud_topic_name = this->get_parameter("output_muxed_pointcloud_topic_name").as_string();
-  int output_muxed_pointcloud_queue_size = this->get_parameter("output_muxed_pointcloud_queue_size").as_int();
+  int output_muxed_pointcloud_queue_size = this->get_parameter("output_muxed_pointcloud_topic_queue_size").as_int();
 
   m_muxed_pointcloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>(
     output_muxed_pointcloud_topic_name, output_muxed_pointcloud_queue_size);
@@ -126,9 +126,9 @@ void PointCloudMuxNode::initializeMuxedPointCloudPublisher()
 
 void PointCloudMuxNode::initializeMuxTimer()
 {
-  this->declare_parameter("mux_timer_period", 0.1);
+  this->declare_parameter("output_pointcloud_topic_period", 0.1);
 
-  double mux_timer_period = this->get_parameter("mux_timer_period").as_double();
+  double mux_timer_period = this->get_parameter("output_pointcloud_topic_period").as_double();
 
   m_mux_timer = this->create_wall_timer(std::chrono::milliseconds((int)(mux_timer_period * 1000)),
     std::bind(&PointCloudMuxNode::publishMuxedPointCloud, this));
