@@ -65,10 +65,16 @@ class MapReader:
         crisp_map = np.zeros_like(fuzzied_map)
         crisp_map[fuzzied_map >= 128] = 255
 
-        kernel = np.ones((12, 12), np.uint8)
+        kernel = np.ones((5, 5), np.uint8)
         filtered_map = cv.erode(crisp_map, kernel, iterations=1)
 
-        thinned_map = thin(filtered_map, max_iter=25)
+        # Get the largest contour
+        contours, _ = cv.findContours(filtered_map, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        largest_contour = max(contours, key=cv.contourArea)
+        contour_map = np.zeros_like(filtered_map)
+        cv.drawContours(contour_map, [largest_contour], -1, (255), -1)
+
+        thinned_map = thin(contour_map) #, max_iter=25)
         skeleton_map = skeletonize(thinned_map)
 
         scale = 0.5
@@ -76,10 +82,10 @@ class MapReader:
         upscaled_skeleton = cv.resize(downscaled_skeleton, (skeleton_map.shape[1], skeleton_map.shape[0]))
         upscaled_skeleton = thin(upscaled_skeleton)
 
-        waypoints = np.array(np.where(upscaled_skeleton)).T
-        transformed_skeleton = np.zeros_like(waypoints).astype(np.float64)
-        for i, point in enumerate(waypoints):
-            transformed_skeleton[i] = point * self.resolution + self.origin[:2]
+        skeleton_points = np.array(np.where(skeleton_map)).T
+        waypoints = np.zeros_like(skeleton_points).astype(np.float64)
+        for i, point in enumerate(skeleton_points):
+            waypoints[i] = point * self.resolution + self.origin[:2]
 
         return waypoints
 
