@@ -2,13 +2,17 @@ pointcloud_filter_node:
   ros__parameters:
     
     # Topics
-    input_pointcloud_topic_name: "/point_cloud/raw"
-    input_pointcloud_topic_queue_size: 10
-    input_pointcloud_topic_frame_id: "radar"
+    input_lidar_pointcloud_topic_name: "/point_cloud/raw"
+    input_lidar_pointcloud_topic_queue_size: 10
+    input_lidar_pointcloud_topic_frame_id: "radar"
+
+    input_camera_pointcloud_topic_name: "/point_cloud/camera"
+    input_camera_pointcloud_topic_queue_size: 10
+    input_camera_pointcloud_topic_frame_id: "d435i_camera_link"
 
     output_pointcloud_topic_name: "/point_cloud/filtered"
     output_pointcloud_topic_queue_size: 10
-    output_pointcloud_topic_frame_id: "base_footprint"
+    output_pointcloud_topic_frame_id: "map"
 
     # Parameters
     crop_box:

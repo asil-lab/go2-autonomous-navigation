@@ -73,7 +73,8 @@ namespace LTM // TODO: Change this to LTM
 
     std::unique_ptr<tf2_ros::Buffer> m_tf_buffer;
     std::unique_ptr<tf2_ros::TransformListener> m_tf_listener;
-    std::string m_input_pointcloud_frame_id;
+    std::string m_input_lidar_pointcloud_frame_id;
+    std::string m_input_camera_pointcloud_frame_id;
     std::string m_output_pointcloud_frame_id;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_lidar_pointcloud_sub;
