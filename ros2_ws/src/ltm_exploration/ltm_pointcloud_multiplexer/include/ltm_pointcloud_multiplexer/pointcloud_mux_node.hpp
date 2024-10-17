@@ -38,6 +38,9 @@ namespace LTM
     sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(
       const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const;
 
+    void resetLidarPointCloud();
+    void resetCameraPointCloud();
+
     void initializeLidarPointCloudSubscriber();
     void initializeCameraPointCloudSubscriber();
     void initializeMuxedPointCloudPublisher();

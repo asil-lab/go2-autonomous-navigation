@@ -62,6 +62,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudMuxNode::convertPointCloud2ToPCL(
   const sensor_msgs::msg::PointCloud2::SharedPtr msg) const
 {
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+  // Check if the message is empty
+  if (msg == nullptr || msg->data.empty()) {
+    return cloud;
+  }
+
   pcl::fromROSMsg(*msg, *cloud);
   return cloud;
 }
@@ -72,6 +78,16 @@ sensor_msgs::msg::PointCloud2::SharedPtr PointCloudMuxNode::convertPCLToPointClo
   sensor_msgs::msg::PointCloud2::SharedPtr msg(new sensor_msgs::msg::PointCloud2);
   pcl::toROSMsg(*cloud, *msg);
   return msg;
+}
+
+void PointCloudMuxNode::resetLidarPointCloud()
+{
+  m_lidar_pointcloud_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
+}
+
+void PointCloudMuxNode::resetCameraPointCloud()
+{
+  m_camera_pointcloud_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
 }
 
 void PointCloudMuxNode::initializeLidarPointCloudSubscriber()
