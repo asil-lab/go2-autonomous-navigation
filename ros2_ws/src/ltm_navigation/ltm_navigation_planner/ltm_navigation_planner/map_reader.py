@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 from scipy.ndimage import gaussian_filter
 from skimage.measure import find_contours
+from skimage.morphology import thin, skeletonize
 
 MAP_CELL_LIST_UNKNOWN   = -1
 MAP_CELL_LIST_FREE      = 0
@@ -47,51 +48,38 @@ class MapReader:
         self.width = width
         self.height = height
 
+    def configure_metadata(self, resolution: float, origin: list, width: int, height: int) -> None:
+        self.resolution = resolution
+        self.origin = np.array(origin)
+        self.width = width
+        self.height = height
+
     def read(self, plot=False) -> np.ndarray:
-        self.plot_map(self.map, 'Original Map', plot)
+        # self.plot_map(self.map, 'Original Map', plot)
 
-        # Apply Gaussian smoothing to the map
-        smoothed_map = gaussian_filter(self.map, sigma=MAP_SMOOTHING_SIGMA)
-        self.plot_map(smoothed_map, 'Smoothed Map', plot)
+        adjusted_map = self.map.copy()
+        adjusted_map[adjusted_map < 254] = 0
 
-        # Crisp the map
-        crisp_map = np.zeros(smoothed_map.shape)
-        crisp_map[smoothed_map >= MAP_CRISP_THRESHOLD] = 1
-        self.plot_map(crisp_map, 'Crisp Map', plot)
+        fuzzied_map = gaussian_filter(adjusted_map, sigma=3)
+        
+        crisp_map = np.zeros_like(fuzzied_map)
+        crisp_map[fuzzied_map >= 128] = 255
 
-        # Find the contours of the map
-        contours = find_contours(crisp_map, 0.8, fully_connected='high')
+        kernel = np.ones((12, 12), np.uint8)
+        filtered_map = cv.erode(crisp_map, kernel, iterations=1)
 
-        # Skip several points in each contour
-        waypoints = []
-        for contour in contours:
-            waypoints.extend(contour[::MAP_CONTOUR_SKIP])
+        thinned_map = thin(filtered_map, max_iter=25)
+        skeleton_map = skeletonize(thinned_map)
 
-        # # Create a 2D grid of points
-        # x = np.arange(0, self.map.shape[1], MAP_GRID_SIZE)
-        # y = np.arange(0, self.map.shape[0], MAP_GRID_SIZE)
-        # xx, yy = np.meshgrid(x, y)
-        # grid = np.vstack((yy.ravel(), xx.ravel())).T
+        scale = 0.5
+        downscaled_skeleton = cv.resize(skeleton_map.astype(np.uint8), (0, 0), fx=scale, fy=scale)
+        upscaled_skeleton = cv.resize(downscaled_skeleton, (skeleton_map.shape[1], skeleton_map.shape[0]))
+        upscaled_skeleton = thin(upscaled_skeleton)
 
-        # # Fit the grid into the crisp map
-        # grid = grid[crisp_map[grid[:, 0].astype(int), grid[:, 1].astype(int)] == 1]
-
-        # # Merge the waypoints and the grid
-        # waypoints.extend(grid)
-
-        # Combine points that are close to each other
-        merged_waypoints = []
-        for point in waypoints:
-            if not merged_waypoints:
-                merged_waypoints.append(point)
-            else:
-                if np.linalg.norm(merged_waypoints[-1] - point) > MAP_MERGE_DISTANCE:
-                    merged_waypoints.append(point)
-        waypoints = merged_waypoints
-        waypoints = np.array(waypoints)
-
-        # Transform the waypoints to XY coordinates
-        waypoints = (waypoints * self.resolution) + self.origin
+        waypoints = np.array(np.where(upscaled_skeleton)).T
+        transformed_skeleton = np.zeros_like(waypoints).astype(np.float64)
+        for i, point in enumerate(waypoints):
+            transformed_skeleton[i] = point * self.resolution + self.origin[:2]
 
         return waypoints
 

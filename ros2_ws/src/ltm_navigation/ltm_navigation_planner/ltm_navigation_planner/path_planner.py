@@ -248,10 +248,14 @@ class PathPlanner:
         assert self.start is not None, 'The starting position of the robot has not been set'
         assert self.graph.get_num_vertices() > 0, 'The graph has no vertices'
 
-        # Solve the TSP problem for the graph
-        tsp_solver = TSPSolver(self.graph)
-        tsp_solver.solve()
-        self.path = deque(tsp_solver.get_path(self.start)[1:]) # Skip the first waypoint which is the starting position
+        # # Solve the TSP problem for the graph
+        # tsp_solver = TSPSolver(self.graph)
+        # tsp_solver.solve()
+        # self.path = deque(tsp_solver.get_path(self.start)[1:]) # Skip the first waypoint which is the starting position
+        # return self.path
+
+        # Hardcoded path for testing
+        self.path = deque(self.graph.get_vertices())
         return self.path
 
     def get_next_waypoint(self) -> Vertex:
