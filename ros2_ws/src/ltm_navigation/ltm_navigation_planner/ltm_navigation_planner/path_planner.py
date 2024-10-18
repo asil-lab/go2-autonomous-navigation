@@ -381,7 +381,7 @@ class PathPlanner:
             path = self.get_path(starting_leaf_node, next_leaf_node)
 
             # Iterate over every node in the path
-            for node in path:
+            for node in path[::5]:
                 if node in visited_nodes:
                     continue
                 visited_nodes.add(node)
@@ -390,7 +390,7 @@ class PathPlanner:
             starting_leaf_node = next_leaf_node
 
         # Convert the visited nodes to array (n, 2) format
-        path = np.array([self.waypoints[node] for node in visited_nodes])
+        self.path = np.array([self.waypoints[node] for node in visited_nodes])
         return path
 
     def find_leaf_nodes(self) -> list:
@@ -404,3 +404,25 @@ class PathPlanner:
     def get_path(self, source, target) -> list:
         path = nx.shortest_path(self.graph, source=source, target=target)
         return path
+    
+    def get_next_waypoint(self) -> np.ndarray:
+        if self.path is None:
+            print('The path has not been planned.')
+            return None
+        
+        if len(self.path) == 0:
+            print('The path is completed.')
+            return None
+
+        waypoint = self.path[0]
+        self.path = self.path[1:]
+        return waypoint
+    
+    # def get_distance_between_waypoints(self, a: np.ndarray, b: np.ndarray) -> float:
+    #     return np.linalg.norm(b - a)
+    
+    # def get_orientation_between_waypoints(self, a: np.ndarray, b: np.ndarray) -> float:
+    #     return np.arctan2(b[1] - a[1], b[0] - a[0])
+    
+    # def get_orientation_to_waypoint(self, waypoint: np.ndarray) -> float:
+    #     return self.get_orientation_between_waypoints(self.start, waypoint)

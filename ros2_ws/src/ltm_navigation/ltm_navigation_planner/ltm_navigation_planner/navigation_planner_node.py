@@ -139,15 +139,15 @@ class NavigationPlannerNode(Node):
     def check_destination_callback(self, request, response) -> CheckDestination.Response:
         self.get_logger().info('Check destination has been requested.')
 
-        # Store the destination's position
-        response.destination.x = self.current_waypoint['x']
-        response.destination.y = self.current_waypoint['y']
-        response.destination.theta = self.path_planner.get_orientation_to_waypoint(
-            Vertex(self.current_waypoint['x'], self.current_waypoint['y']))
-
         # Check if the robot has reached the destination
         robot_x, robot_y = self.get_robot_position()
         distance = np.linalg.norm(np.array([robot_x, robot_y]) - np.array([self.current_waypoint['x'], self.current_waypoint['y']]))
+
+        # Store the destination's position
+        response.destination.x = self.current_waypoint['x']
+        response.destination.y = self.current_waypoint['y']
+        response.destination.theta = np.arctan2(
+            self.current_waypoint['y'] - robot_y, self.current_waypoint['x'] - robot_x)
         
         if distance < request.distance_tolerance:
             response.destination_reached = True
