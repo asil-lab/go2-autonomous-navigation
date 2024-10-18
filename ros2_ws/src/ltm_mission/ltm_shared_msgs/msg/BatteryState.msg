@@ -1,0 +1,1 @@
+uint16 battery_level    # Range: 0-100 

@@ -25,6 +25,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   # Common messages and services
+  "msg/BatteryState.msg"
   "msg/FootContact.msg"
   "srv/GetImage.srv"
   "srv/GetPointCloud.srv"
