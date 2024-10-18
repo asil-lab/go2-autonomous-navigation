@@ -34,6 +34,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 # Create executable
 add_executable(go2_driver_node 
   src/go2_driver_node.cpp 
+  src/battery_management_processing.cpp
   src/foot_contact_processing.cpp
   src/gesture_processing.cpp
   src/joint_state_processing.cpp

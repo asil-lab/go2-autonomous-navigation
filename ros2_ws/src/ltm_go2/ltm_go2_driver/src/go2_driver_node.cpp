@@ -9,6 +9,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include <ltm_go2_driver/battery_management_processing.hpp>
 #include <ltm_go2_driver/foot_contact_processing.hpp>
 #include <ltm_go2_driver/gesture_processing.hpp>
 #include <ltm_go2_driver/joint_state_processing.hpp>
@@ -21,6 +22,7 @@ int main(int argc, char **argv)
   rclcpp::init(argc, argv);
 
   // Create nodes
+  rclcpp::Node::SharedPtr battery_management_processing_node = std::make_shared<LTM::BatteryManagementProcessing>();
   rclcpp::Node::SharedPtr foot_contact_processing_node = std::make_shared<LTM::FootContactProcessing>();
   rclcpp::Node::SharedPtr gesture_processing_node = std::make_shared<LTM::GestureProcessing>();
   rclcpp::Node::SharedPtr joint_state_processing_node = std::make_shared<LTM::JointStateProcessing>();
@@ -30,6 +32,7 @@ int main(int argc, char **argv)
 
   // Create executor, and add nodes
   rclcpp::executors::MultiThreadedExecutor executor;
+  executor.add_node(battery_management_processing_node);
   executor.add_node(foot_contact_processing_node);
   executor.add_node(gesture_processing_node);
   executor.add_node(joint_state_processing_node);

@@ -1,1 +1,1 @@
-uint16 battery_level    # Range: 0-100 
+uint8 percentage    # Range: 0-100 
