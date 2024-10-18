@@ -16,6 +16,6 @@ scan_procedure_node:
     scan_pointcloud_buffer_time: 5.0         # Time to buffer pointclouds in seconds
     scan_gesture_sequence:                    # Sequence of gestures to perform during scan
     - "stand_up"
-    - "sit"
+    # - "sit"
     - "recover"
     scan_gesture_delay: 5.0                   # Delay after a gesture in seconds

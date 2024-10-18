@@ -391,7 +391,7 @@ class PathPlanner:
 
         # Convert the visited nodes to array (n, 2) format
         self.path = np.array([self.waypoints[node] for node in visited_nodes])
-        return path
+        return path[::2]
 
     def find_leaf_nodes(self) -> list:
         leaf_nodes = [node for node in self.graph.nodes if self.graph.degree(node) == 1]

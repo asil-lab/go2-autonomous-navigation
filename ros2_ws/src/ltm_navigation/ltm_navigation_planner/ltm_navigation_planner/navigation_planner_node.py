@@ -105,7 +105,7 @@ class NavigationPlannerNode(Node):
 
         # # Plan the path
         self.get_logger().info('Configuring path planner...')
-        self.path_planner.set_waypoints(waypoints)
+        self.path_planner.set_waypoints(waypoints, self.map_reader.resolution)
         robot_x, robot_y = self.get_robot_position()
         self.path_planner.set_start(robot_x, robot_y)
         self.get_logger().info('Path planner is configured.')
@@ -141,13 +141,13 @@ class NavigationPlannerNode(Node):
 
         # Check if the robot has reached the destination
         robot_x, robot_y = self.get_robot_position()
-        distance = np.linalg.norm(np.array([robot_x, robot_y]) - np.array([self.current_waypoint['x'], self.current_waypoint['y']]))
+        distance = np.linalg.norm(np.array([robot_x, robot_y]) - np.array([self.current_waypoint[0], self.current_waypoint[1]]))
 
         # Store the destination's position
-        response.destination.x = self.current_waypoint['x']
-        response.destination.y = self.current_waypoint['y']
+        response.destination.x = self.current_waypoint[0]
+        response.destination.y = self.current_waypoint[1]
         response.destination.theta = np.arctan2(
-            self.current_waypoint['y'] - robot_y, self.current_waypoint['x'] - robot_x)
+            self.current_waypoint[1] - robot_y, self.current_waypoint[0] - robot_x)
         
         if distance < request.distance_tolerance:
             response.destination_reached = True
@@ -169,8 +169,8 @@ class NavigationPlannerNode(Node):
         
         pose = PoseStamped()
 
-        pose.pose.position.x = waypoint['x']
-        pose.pose.position.y = waypoint['y']
+        pose.pose.position.x = waypoint[0]
+        pose.pose.position.y = waypoint[1]
         pose.pose.position.z = 0.0
 
         pose.pose.orientation.x = 0.0
@@ -193,8 +193,8 @@ class NavigationPlannerNode(Node):
 
         for waypoint in waypoints:
             pose = Pose()
-            pose.position.x = waypoint[1]
-            pose.position.y = waypoint[0]
+            pose.position.x = waypoint[0]
+            pose.position.y = waypoint[1]
             pose.position.z = 0.0
             # pose.orientation.x = 0.0
             # pose.orientation.y = 0.0

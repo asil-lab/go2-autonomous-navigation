@@ -27,7 +27,7 @@
 #define CMD_VEL_PUB_TOPIC "wirelesscontroller"
 #define CMD_VEL_PUB_QUEUE_SIZE 10
 
-#define MAX_LINEAR_VELOCITY_X 0.30
+#define MAX_LINEAR_VELOCITY_X 0.50
 #define MAX_LINEAR_VELOCITY_Y 0.40
 #define MAX_ANGULAR_VELOCITY 0.5
 

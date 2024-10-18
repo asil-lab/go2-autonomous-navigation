@@ -68,7 +68,7 @@ class MapReader:
         crisp_map[fuzzied_map >= 128] = 255
 
         # Erode the map to remove small obstacles
-        kernel = np.ones((5, 5), np.uint8)
+        kernel = np.ones((3, 3), np.uint8)
         filtered_map = cv.erode(crisp_map, kernel, iterations=1)
 
         # Get the largest area of the map by finding the largest contour

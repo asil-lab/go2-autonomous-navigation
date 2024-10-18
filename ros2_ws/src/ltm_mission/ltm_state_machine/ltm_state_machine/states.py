@@ -356,7 +356,7 @@ class ScanEnvironmentState(State):
 
         self.get_logger().info('Scanning environment...')
         scan_environment_request = ScanEnvironment.Request()
-        scan_environment_request.num_orientations = 4
+        scan_environment_request.num_orientations = 2
         scan_environment_request.scan_time = 5.0
         scan_environment_future = self.scan_environment_client.call_async(scan_environment_request)
         rclpy.spin_until_future_complete(self, scan_environment_future)
