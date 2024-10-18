@@ -57,37 +57,37 @@ class MapReader:
     def read(self, plot=False) -> np.ndarray:
         # self.plot_map(self.map, 'Original Map', plot)
 
+        # Adjust the map to only have free and occupied cells
+        # Unknown cells are set as occupied
         adjusted_map = self.map.copy()
         adjusted_map[adjusted_map < 254] = 0
 
+        # Smooth the map
         fuzzied_map = gaussian_filter(adjusted_map, sigma=3)
-        
         crisp_map = np.zeros_like(fuzzied_map)
         crisp_map[fuzzied_map >= 128] = 255
 
-        kernel = np.ones((5, 5), np.uint8)
+        # Erode the map to remove small obstacles
+        kernel = np.ones((3, 3), np.uint8)
         filtered_map = cv.erode(crisp_map, kernel, iterations=1)
 
-        # Get the largest contour
+        # Get the largest area of the map by finding the largest contour
         contours, _ = cv.findContours(filtered_map, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         largest_contour = max(contours, key=cv.contourArea)
         contour_map = np.zeros_like(filtered_map)
         cv.drawContours(contour_map, [largest_contour], -1, (255), -1)
 
+        # Get the skeleton of the area
         thinned_map = thin(contour_map) #, max_iter=25)
         skeleton_map = skeletonize(thinned_map)
 
-        scale = 0.5
-        downscaled_skeleton = cv.resize(skeleton_map.astype(np.uint8), (0, 0), fx=scale, fy=scale)
-        upscaled_skeleton = cv.resize(downscaled_skeleton, (skeleton_map.shape[1], skeleton_map.shape[0]))
-        upscaled_skeleton = thin(upscaled_skeleton)
-
+        # Convert every point in the skeleton into Cartesian coordinates
         skeleton_points = np.array(np.where(skeleton_map)).T
         waypoints = np.zeros_like(skeleton_points).astype(np.float64)
         for i, point in enumerate(skeleton_points):
             waypoints[i] = point * self.resolution + self.origin[:2]
 
-        return waypoints
+        return waypoints[:, [1, 0]] # Convert to (x, y) format
 
     def read_map_list(self, map: list) -> None:
         self.map = np.array(map).reshape(self.height, self.width).astype(np.uint8)

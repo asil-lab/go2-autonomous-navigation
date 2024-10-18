@@ -92,17 +92,18 @@ class ScanProcedureNode(Node):
         navigate_to_pose_request.goal.pose.orientation = orientation
 
         navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
-        # rclpy.spin_until_future_complete(self, navigate_to_pose_future)
-        self.executor.spin_until_future_complete(self, navigate_to_pose_future)
-        self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
-        return navigate_to_pose_future.result().success
+        # self.executor.spin_until_future_complete(navigate_to_pose_future)
+        # self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
+        # return navigate_to_pose_future.result().success
+        sleep(5.0)
+        return True
 
     def request_image(self) -> Image:
         """Requests an image from the /get_image service."""
         get_image_request = GetImage.Request()
         get_image_future = self.get_image_client.call_async(get_image_request)
         # rclpy.spin_until_future_complete(self, get_image_future)
-        self.executor.spin_until_future_complete(self, get_image_future)
+        self.executor.spin_until_future_complete(get_image_future)
         return get_image_future.result().image
     
     def request_point_cloud(self) -> PointCloud2:
@@ -110,7 +111,7 @@ class ScanProcedureNode(Node):
         get_pointcloud_request = GetPointCloud.Request()
         get_pointcloud_future = self.get_pointcloud_client.call_async(get_pointcloud_request)
         # rclpy.spin_until_future_complete(self, get_pointcloud_future)
-        self.executor.spin_until_future_complete(self, get_pointcloud_future)
+        self.executor.spin_until_future_complete(get_pointcloud_future)
         return get_pointcloud_future.result().point_cloud
 
     def perform_scan(self) -> None:
