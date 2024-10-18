@@ -87,7 +87,7 @@ class MapReader:
         for i, point in enumerate(skeleton_points):
             waypoints[i] = point * self.resolution + self.origin[:2]
 
-        return waypoints
+        return waypoints[:, [1, 0]] # Convert to (x, y) format
 
     def read_map_list(self, map: list) -> None:
         self.map = np.array(map).reshape(self.height, self.width).astype(np.uint8)
