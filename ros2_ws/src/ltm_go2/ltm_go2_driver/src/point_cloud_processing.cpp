@@ -33,9 +33,10 @@ void PointCloudProcessing::publishPointCloud(const sensor_msgs::msg::PointCloud2
   point_cloud_pub_->publish(*msg);
 }
 
-void PointCloudProcessing::changeFrameId(sensor_msgs::msg::PointCloud2::SharedPtr msg) const
+void PointCloudProcessing::changeFrameId(sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
   msg->header.frame_id = POINT_CLOUD_PUB_FRAME_ID;
+  msg->header.stamp = this->get_clock()->now();
 }
 
 void PointCloudProcessing::initializeROS()

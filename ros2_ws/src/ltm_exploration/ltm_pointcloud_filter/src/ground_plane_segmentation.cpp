@@ -44,7 +44,25 @@ namespace LTM
     m_extract_indices.reset();
   }
 
-  bool GroundPlaneSegmentation::segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+  void GroundPlaneSegmentation::segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane) const
+  {
+    // Create the inliers and coefficients objects
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+
+    // Find the plane in the point cloud and store the inliers and coefficients
+    if (!findPlane(cloud, inliers, coefficients))
+    {
+      // If the plane was not found, return the original point cloud
+      return;
+    }
+
+    // Remove the plane from the point cloud
+    removePlane(cloud, cloud_plane, inliers);
+  }
+
+  bool GroundPlaneSegmentation::findPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
     pcl::PointIndices::Ptr inliers, pcl::ModelCoefficients::Ptr coefficients) const
   {
     // Perform the segmentation and store the inliers and coefficients

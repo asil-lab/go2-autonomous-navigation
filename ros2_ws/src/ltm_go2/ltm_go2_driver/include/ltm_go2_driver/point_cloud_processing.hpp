@@ -36,7 +36,7 @@ namespace LTM
       void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
       void publishPointCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
-      void changeFrameId(sensor_msgs::msg::PointCloud2::SharedPtr msg) const;
+      void changeFrameId(sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
       void initializeROS();
 

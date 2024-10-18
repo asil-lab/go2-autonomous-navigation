@@ -92,7 +92,8 @@ class ScanProcedureNode(Node):
         navigate_to_pose_request.goal.pose.orientation = orientation
 
         navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
-        rclpy.spin_until_future_complete(self, navigate_to_pose_future)
+        # rclpy.spin_until_future_complete(self, navigate_to_pose_future)
+        self.executor.spin_until_future_complete(self, navigate_to_pose_future)
         self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
         return navigate_to_pose_future.result().success
 
@@ -100,14 +101,16 @@ class ScanProcedureNode(Node):
         """Requests an image from the /get_image service."""
         get_image_request = GetImage.Request()
         get_image_future = self.get_image_client.call_async(get_image_request)
-        rclpy.spin_until_future_complete(self, get_image_future)
+        # rclpy.spin_until_future_complete(self, get_image_future)
+        self.executor.spin_until_future_complete(self, get_image_future)
         return get_image_future.result().image
     
     def request_point_cloud(self) -> PointCloud2:
         """Requests a point cloud from the /get_pointcloud service."""
         get_pointcloud_request = GetPointCloud.Request()
         get_pointcloud_future = self.get_pointcloud_client.call_async(get_pointcloud_request)
-        rclpy.spin_until_future_complete(self, get_pointcloud_future)
+        # rclpy.spin_until_future_complete(self, get_pointcloud_future)
+        self.executor.spin_until_future_complete(self, get_pointcloud_future)
         return get_pointcloud_future.result().point_cloud
 
     def perform_scan(self) -> None:
@@ -181,13 +184,15 @@ class ScanProcedureNode(Node):
         
         self.current_robot_yaw = normalize_yaw(self.current_robot_yaw + angle)
         is_goal_reached = False
+
         while not is_goal_reached:
             self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
             is_goal_reached = self.request_goal_pose(self.current_robot_position, 
                                                      yaw_to_quaternion(self.current_robot_yaw))
             self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
-        # is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-        #     yaw_to_quaternion(self.current_robot_yaw))
+
+        is_goal_reached = self.request_goal_pose(self.current_robot_position, 
+            yaw_to_quaternion(self.current_robot_yaw))
         self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
     def perform_gesture(self, gesture: str) -> None:
@@ -358,7 +363,8 @@ def main():
     scan_procedure_node = ScanProcedureNode()
     executor = MultiThreadedExecutor()
     executor.add_node(scan_procedure_node)
-    executor.spin()
+    scan_procedure_node.executor = executor
+    rclpy.spin(scan_procedure_node, executor)
     scan_procedure_node.destroy_node()
     rclpy.shutdown()
 

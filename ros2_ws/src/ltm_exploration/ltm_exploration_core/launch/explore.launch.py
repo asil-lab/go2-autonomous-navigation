@@ -1,0 +1,153 @@
+"""
+Project Lava Tube Mapping, Technical University of Delft.
+Author: Alexander James Becoy @alexanderjamesbecoy
+"""
+
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition, UnlessCondition
+from launch_ros.actions import Node
+
+import numpy as np
+
+def generate_launch_description():
+    
+    # Declare launch arguments
+    declared_arguments = [
+        DeclareLaunchArgument(
+            'mapping',
+            default_value='true',
+            description='Enable mapping. If false, only localization is performed.'
+        ),
+        DeclareLaunchArgument(
+            'use_map_saver',
+            default_value='false',
+            description='Enable map saver node.'
+        )
+    ]
+
+    # Pointcloud buffer node
+    pointcloud_buffer_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_pointcloud_buffer'), 
+                'launch', 'pointcloud_buffer.launch.py')
+        )
+    )
+    
+    # Pointcloud filter node
+    pointcloud_filter_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_pointcloud_filter'), 
+                'launch', 'pointcloud_filter.launch.py')
+        ),
+        launch_arguments=[('in_simulation', 'false')]
+    )
+
+    # Pointcloud filter node
+    pointcloud_transformer_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_pointcloud_transformer'), 
+                'launch', 'pointcloud_transformer.launch.py')
+        ),
+    )
+    
+    # Pointcloud-to-laserscan node
+    # pointcloud_to_laserscan_config = os.path.join(
+    #     get_package_share_directory('ltm_exploration_core'), 'config', 'parameters.yaml')
+    pointcloud_to_laserscan_node = Node(
+        package='pointcloud_to_laserscan',
+        executable='pointcloud_to_laserscan_node',
+        name='pointcloud_to_laserscan_node',
+        output='screen',
+        remappings=[('cloud_in', 'point_cloud/filtered')],
+        # parameters=[pointcloud_to_laserscan_config],
+        parameters=[{
+            'target_frame': 'base_footprint',
+            'transform_tolerance': 0.5,
+            'angle_increment': np.pi / 360.0, #  0.001,
+            'scan_time': 0.5,
+            'use_inf': False,
+            'inf_epsilon': 1.0,
+        }],
+    )
+
+    # Online synchronous SLAM node
+    # Launch only if mapping is enabled
+    online_sync_slam_config_filename = 'mapper_params_online_sync.yaml'
+    online_sync_slam_config_filepath = os.path.join(
+        get_package_share_directory('ltm_exploration_core'), 'config', online_sync_slam_config_filename)
+    
+    online_sync_slam_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('slam_toolbox'),
+                            'launch', 'online_sync_launch.py')
+        ),
+        launch_arguments=[
+            ('use_sim_time', 'false'),
+            ('params_file', online_sync_slam_config_filepath),
+            ('use_map_saver', LaunchConfiguration('use_map_saver')),
+        ],
+        condition=IfCondition(LaunchConfiguration('mapping')),
+    )
+
+    # Localization SLAM node
+    # Launch only if mapping is disabled
+    localization_slam_config_filename = 'mapper_params_localization.yaml'
+    localization_slam_config_filepath = os.path.join(
+        get_package_share_directory('ltm_exploration_core'), 'config', localization_slam_config_filename)
+
+    localization_slam_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('slam_toolbox'),
+                            'launch', 'localization_launch.py')
+        ),
+        launch_arguments=[
+            ('use_sim_time', 'false'),
+            ('params_file', localization_slam_config_filepath),
+            ('use_map_saver', LaunchConfiguration('use_map_saver')),
+        ],
+        condition=UnlessCondition(LaunchConfiguration('mapping')),
+    )
+
+    # Octomap server node
+    octomap_server_node = Node(
+        package='octomap_server',
+        executable='octomap_server_node',
+        name='octomap_server_node',
+        output='screen',
+        parameters=[{
+            'resolution': 0.01,
+            'frame_id': 'map',
+            'filter_ground': 'true',
+            'pointcloud_min_z': 0.1,
+            'occupancy_min_z': 0.1,
+        }],
+        remappings=[
+            ('cloud_in', 'point_cloud/filtered'),               # Input pointcloud
+            ('octomap_point_cloud_centers', 'point_cloud/octomap')     # Output pointcloud
+        ],
+    )
+
+    # Pointcloud multiplexer node
+    pointcloud_multiplexer_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_pointcloud_multiplexer'), 
+                'launch', 'pointcloud_mux.launch.py')
+        ),
+    )
+
+    # Return launch description
+    return LaunchDescription(declared_arguments + [
+        pointcloud_buffer_node,
+        pointcloud_filter_node,
+        # pointcloud_transformer_node,
+        pointcloud_to_laserscan_node,
+        online_sync_slam_node,
+        # localization_slam_node,
+        # octomap_server_node,
+        # pointcloud_multiplexer_node,
+    ])

@@ -1,45 +1,36 @@
 pointcloud_filter_node:
   ros__parameters:
-    topics:
-      robot_description_topic: "/robot_description"
-      sim:
-        raw_pointcloud_topic: "/go2_gazebo/point_cloud/raw"
-        filtered_pointcloud_topic: "/go2_gazebo/point_cloud/filtered"
-      real:
-        raw_pointcloud_topic: "/point_cloud/buffered"
-        filtered_pointcloud_topic: "/point_cloud/filtered"
+    
+    # Topics
+    input_lidar_pointcloud_topic_name: "/point_cloud/raw"
+    input_lidar_pointcloud_topic_queue_size: 10
+    input_lidar_pointcloud_topic_frame_id: "radar"
 
-    voxel_grid_filter:
-      leaf_size: # meters
-        x: 0.05
-        y: 0.05
-        z: 0.05
+    input_camera_pointcloud_topic_name: "/point_cloud/camera/raw"
+    input_camera_pointcloud_topic_queue_size: 10
+    input_camera_pointcloud_topic_frame_id: "d435i_camera_depth_optical_frame"
 
-    statistical_outlier_removal:
-      mean_k: 50
-      std_dev_mul_thresh: 1.0
+    output_pointcloud_topic_name: "/point_cloud/filtered"
+    output_pointcloud_topic_queue_size: 10
+    output_pointcloud_topic_frame_id: "base_footprint"
+
+    # Parameters
+    crop_box:
+      x_min: -0.1
+      x_max: 0.65
+      y_min: -0.25
+      y_max: 0.25
+      z_min: -0.4
+      z_max: 0.25
 
     ground_plane_segmentation:
-      distance_threshold: 0.1 # meters
-      max_iterations: 5000
+      distance_threshold: 0.25 # meters
+      max_iterations: 1000
       probability: 0.99
 
-    robot_cluster_removal:
-      robot_description:
-        package_name: "ltm_go2_description"
-        directory_name: "urdf"
-        file_name: "go2_description.urdf"
-      cluster_tolerance: 0.1 # meters
-      min_cluster_size: 100
-      mesh_resolution: 0.1
-      robot_frame: "base_footprint"
-      target_frame: "odom"
-      crop_box: # meters, in robot frame
-        min:
-          x: -0.3
-          y: -0.25
-          z: 0.0
-        max:
-          x: 0.35
-          y: 0.25
-          z: 3.0
+    # Visualization
+    visualize_debug: True
+    visualization_timer_period: 0.1 # in seconds
+
+    crop_box_visualization_topic_name: "/pointcloud_filter/crop_box_visualization"
+    crop_box_visualization_topic_queue_size: 10

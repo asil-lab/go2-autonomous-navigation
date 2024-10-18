@@ -9,7 +9,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.actions import Node
 
 def generate_launch_description():
@@ -22,19 +22,16 @@ def generate_launch_description():
             description='Flag to indicate if RViz should be launched'
         ),
         DeclareLaunchArgument(
-            'camera',
+            'go2',
             default_value='false',
-            description='Flag to indicate if camera should be launched'
+            description='Flag to indicate if the script is running on the Go2'
         )
     ]
-
-    # Get the launch configuration variables
-    rviz = LaunchConfiguration('rviz', default='true')
 
     # URDF file location
     urdf_location = os.path.join(
         get_package_share_directory("ltm_go2_description"), "urdf", "go2_description.urdf")
-    
+
     # Read the URDF file content
     with open(urdf_location, 'r') as infp:
         robot_description = infp.read()
@@ -52,7 +49,16 @@ def generate_launch_description():
             os.path.join(get_package_share_directory('ltm_go2_camera'), 
                 'launch', 'camera.launch.py')
         ),
-        condition=IfCondition(LaunchConfiguration('camera')),
+        condition=UnlessCondition(LaunchConfiguration('go2')),
+    )
+
+    # D435i camera node
+    d435i_camera_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ltm_go2_camera'),
+                'launch', 'd435i_camera.launch.py')
+        ),
+        condition=IfCondition(LaunchConfiguration('go2')),
     )
 
     # Go2 state handler node
@@ -76,17 +82,19 @@ def generate_launch_description():
     )
 
     # RViz with Go2
+
     rviz_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_go2_description'), 
                 'launch', 'go2_rviz.launch.py')
         ),
-        condition=IfCondition(rviz),
+        condition=UnlessCondition(LaunchConfiguration('go2')),
     )
 
     return LaunchDescription(declared_arguments + [
         go2_driver_node,
         go2_camera_node,
+        d435i_camera_node,
         go2_state_handler_node,
         robot_state_publisher_node,
         rviz_node,

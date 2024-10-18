@@ -1214,4 +1214,48 @@ Stephen Brawner (brawner@gmail.com)
     <axis
       xyz="0 0 0" />
   </joint>
+  <link
+    name="d435i_camera_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="-1.571 3.141 -1.571" />
+      <geometry>
+        <mesh
+          filename="package://realsense2_description/meshes/d435.dae" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="d435i_camera_joint"
+    type="fixed">
+    <origin
+      xyz="0.345 0 0.115"
+      rpy="0 0 0" />
+    <parent
+      link="base" />
+    <child
+      link="d435i_camera_link" />
+    <axis
+      xyz="0 0 0" />
+  </joint>
 </robot>

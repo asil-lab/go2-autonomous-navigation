@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
-#include <visualization_msgs/msg/marker.hpp>
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/sample_consensus/method_types.h>
@@ -30,361 +29,242 @@
 using namespace LTM;
 
 PointCloudFilterNode::PointCloudFilterNode()
-: Node("ltm_pointcloud_filter_node")
+: Node("pointcloud_filter_node")
 {
-  // Determine if the node is running in simulation mode
-  declare_parameter("in_simulation", true);
-  bool in_simulation = this->get_parameter("in_simulation").as_bool();
-
-  // Initialize filtering objects
+  // Initialize filters
+  initializeCropBoxFilter();
   initializeGroundPlaneSegmentation();
-  initializeRobotClusterRemoval();
-  initializeStatisticalOutlierRemoval();
-  initializeVoxelGridFilter();
 
-  // Configure ROS subscribers and publishers
-  configureRosSubscribers(in_simulation);
-  configureRosPublishers(in_simulation);
+  // Initialize ROS communication
+  initializeLidarPointcloudSubscriber();
+  initializeCameraPointcloudSubscriber();
+  initializePointcloudPublisher();
+  initializeTransformListener();
 
-  RCLCPP_INFO(this->get_logger(), "LTM Pointcloud Filter Node has been initialized.");
+  RCLCPP_INFO(get_logger(), "Point Cloud Filter Node has been initialized");
+
+  // Determine if visualization debugging is enabled
+  this->declare_parameter("visualize_debug", false);
+  bool visualize_debug = this->get_parameter("visualize_debug").as_bool();
+  if (!visualize_debug)
+  {
+    RCLCPP_INFO(get_logger(), "Visualization debugging disabled");
+    return;
+  }
+  RCLCPP_INFO(get_logger(), "Visualization debugging enabled");
+  initializeCropBoxVisualizationPublisher();
+  initializeVisualizationTimer();
 }
 
 PointCloudFilterNode::~PointCloudFilterNode()
 {
-  this->m_raw_pointcloud_sub.reset();
-  this->m_filtered_pointcloud_pub.reset();
-  RCLCPP_WARN(this->get_logger(), "LTM Pointcloud Filter Node has been destroyed.");
+  RCLCPP_WARN(get_logger(), "Point Cloud Filter Node has been terminated");
 }
-
-// void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
-// {
-//   // Convert the ROS PointCloud2 message to a PCL PointCloud
-//   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = convertPointCloud2ToPCL(msg);
-
-//   // Downsample the pointcloud using leaf size
-//   pcl::VoxelGrid<pcl::PointXYZ> voxel_grid;
-//   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
-//   voxel_grid.setInputCloud(cloud);
-//   voxel_grid.setLeafSize(m_voxel_grid_leaf_size, m_voxel_grid_leaf_size, m_voxel_grid_leaf_size);
-//   voxel_grid.filter(*cloud_downsampled);
-
-//   // Remove the ground plane from the pointcloud
-//   pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-//   pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-
-//   if (!m_ground_plane_segmentation->segmentPlane(cloud_downsampled, inliers, coefficients)) {
-//     RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model for the given dataset.");
-//     return;
-//   }
-
-//   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
-//   m_ground_plane_segmentation->removePlane(cloud_downsampled, cloud_plane_removed, inliers);
-
-//   // // Create the KdTree object for the search method of the extraction
-//   // pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-//   // tree->setInputCloud(cloud_plane_removed);
-
-//   // // Create the Euclidean Cluster Extraction object
-//   // std::vector<pcl::PointIndices> cluster_indices;
-//   // pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-//   // ec.setClusterTolerance(0.1);  // 10cm
-//   // ec.setMinClusterSize(100);
-//   // ec.setMaxClusterSize(25000);
-//   // ec.setSearchMethod(tree);
-//   // ec.setInputCloud(cloud_plane_removed);
-
-//   // // Obtain the cluster indices from the input cloud
-//   // ec.extract(cluster_indices);
-
-//   // // Create a marker array for the bounding boxes
-//   // visualization_msgs::msg::MarkerArray marker_array;
-
-//   // // Iterate over the clusters and publish the bounding boxes
-//   // RCLCPP_INFO(this->get_logger(), "Number of clusters: %lu", cluster_indices.size());
-//   // for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it) {
-//   //   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-//   //   for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit) {
-//   //     cloud_cluster->points.push_back(cloud_plane_removed->points[*pit]);
-//   //   }
-//   //   cloud_cluster->width = cloud_cluster->points.size();
-//   //   cloud_cluster->height = 1;
-//   //   cloud_cluster->is_dense = true;
-
-//   //   // Compute the bounding box of the cluster
-//   //   pcl::PointXYZ min_pt, max_pt;
-//   //   pcl::getMinMax3D(*cloud_cluster, min_pt, max_pt);
-
-//   //   // Create the bounding box message
-//   //   vision_msgs::msg::BoundingBox3D bounding_box;
-//   //   bounding_box.center.position.x = (min_pt.x + max_pt.x) / 2;
-//   //   bounding_box.center.position.y = (min_pt.y + max_pt.y) / 2;
-//   //   bounding_box.center.position.z = (min_pt.z + max_pt.z) / 2;
-//   //   bounding_box.size.x = max_pt.x - min_pt.x;
-//   //   bounding_box.size.y = max_pt.y - min_pt.y;
-//   //   bounding_box.size.z = max_pt.z - min_pt.z;
-
-//   //   // Publish the bounding box message
-//   //   m_bounding_box_pub->publish(bounding_box);
-
-//   //   // Create a marker array for the bounding box
-//   //   visualization_msgs::msg::Marker marker;
-//   //   marker.header.frame_id = msg->header.frame_id;
-//   //   marker.header.stamp = msg->header.stamp;
-//   //   marker.ns = "bounding_box";
-//   //   marker.id = static_cast<int>(it - cluster_indices.begin());
-//   //   marker.type = visualization_msgs::msg::Marker::CUBE;
-//   //   marker.action = visualization_msgs::msg::Marker::ADD;
-//   //   marker.pose.position.x = bounding_box.center.position.x;
-//   //   marker.pose.position.y = bounding_box.center.position.y;
-//   //   marker.pose.position.z = bounding_box.center.position.z;
-//   //   marker.pose.orientation.x = 0.0;
-//   //   marker.pose.orientation.y = 0.0;
-//   //   marker.pose.orientation.z = 0.0;
-//   //   marker.pose.orientation.w = 1.0;
-//   //   marker.scale.x = bounding_box.size.x;
-//   //   marker.scale.y = bounding_box.size.y;
-//   //   marker.scale.z = bounding_box.size.z;
-//   //   marker.color.r = 0.0f;
-//   //   marker.color.g = 1.0f;
-//   //   marker.color.b = 0.0f;
-//   //   marker.color.a = 0.5;
-//   //   marker.lifetime = rclcpp::Duration(0.5);
-//   //   marker_array.markers.push_back(marker);
-//   // }
-
-//   // Convert the PCL PointCloud back to a ROS PointCloud2 message
-//   sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud_plane_removed);
-
-//   // Publish the filtered PointCloud2 message
-//   m_filtered_pointcloud_pub->publish(*filtered_msg);
-
-//   // // Publish the bounding box marker array
-//   // m_marker_array_pub->publish(marker_array);
-// }
 
 void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 5000, "Received pointcloud message with %d points", msg->width * msg->height);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input = convertPointCloud2ToPCL(msg);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromROSMsg(*msg, *cloud);
 
-  // Determine if the pointcloud is empty
-  if (cloud_input->empty()) {
-    RCLCPP_DEBUG(this->get_logger(), "Received empty pointcloud message.");
-    return;
-  }
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+  cropPointCloud(cloud, cloud_filtered);
 
-  // // Downsample the pointcloud using leaf size
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_downsampled(new pcl::PointCloud<pcl::PointXYZ>);
-  m_voxel_grid_filter->filter(cloud_input, cloud_downsampled);
+  // Apply voxel grid filter
+  pcl::VoxelGrid<pcl::PointXYZ> voxel_grid_filter;
+  voxel_grid_filter.setInputCloud(cloud_filtered);
+  voxel_grid_filter.setLeafSize(0.05f, 0.05f, 0.05f);
+  voxel_grid_filter.filter(*cloud_filtered);
 
-  // Remove the ground plane from the pointcloud
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  removeGroundPlane(cloud_downsampled, cloud_plane_removed);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_transformed(new pcl::PointCloud<pcl::PointXYZ>);
+  transformPointCloud(cloud_filtered, cloud_transformed, m_output_pointcloud_frame_id, msg->header.frame_id);
 
-  // Remove the robot clusters from the pointcloud
-  // As of now, returns the pointcloud in the base frame
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_robot_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  m_robot_cluster_removal->removeRobotCluster(cloud_plane_removed, cloud_robot_removed);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_segmented(new pcl::PointCloud<pcl::PointXYZ>);
+  m_ground_plane_segmentation->segmentPlane(cloud_transformed, cloud_plane_segmented);
 
-  // // Remove statistical outliers from the pointcloud
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_outliers_removed(new pcl::PointCloud<pcl::PointXYZ>);
-  m_statistical_outlier_removal->filter(cloud_robot_removed, cloud_outliers_removed);
-
-  publishFilteredPointCloud(cloud_outliers_removed, "odom", msg->header.stamp);
+  publishFilteredPointCloud(cloud_plane_segmented, msg->header.stamp);
 }
 
 void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
-  const std::string& frame_id, const rclcpp::Time& stamp)
+  const rclcpp::Time& stamp)
 {
-  // Convert the PCL PointCloud back to a ROS PointCloud2 message
-  sensor_msgs::msg::PointCloud2::SharedPtr filtered_msg = convertPCLToPointCloud2(cloud);
-
-  // Set the header information for the PointCloud2 message
-  filtered_msg->header.frame_id = frame_id;
-  filtered_msg->header.stamp = stamp;
-
-  // Publish the filtered PointCloud2 message
-  m_filtered_pointcloud_pub->publish(*filtered_msg);
+  sensor_msgs::msg::PointCloud2 msg;
+  pcl::toROSMsg(*cloud, msg);
+  msg.header.frame_id = m_output_pointcloud_frame_id;
+  msg.header.stamp = stamp;
+  m_pointcloud_pub->publish(msg);
 }
 
-void PointCloudFilterNode::removeGroundPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered)
+void PointCloudFilterNode::visualizationTimerCallback()
 {
-  pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-  pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-  if (!m_ground_plane_segmentation->segmentPlane(cloud_input, inliers, coefficients)) {
-    RCLCPP_WARN(this->get_logger(), "Could not estimate a planar model from input pointcloud.");
-    return; // TODO: Return buffer instead?
+  publishCropBoxVisualization();
+}
+
+void PointCloudFilterNode::publishCropBoxVisualization()
+{
+  // Get the min and max points of the crop box in (x, y, z, 1) format
+  Eigen::Vector4f min_pt = m_crop_box.getMin();
+  Eigen::Vector4f max_pt = m_crop_box.getMax();
+
+  // Create a box of markers
+  visualization_msgs::msg::Marker msg;
+  msg.header.frame_id = m_input_lidar_pointcloud_frame_id;
+  msg.header.stamp = get_clock()->now();
+  msg.type = visualization_msgs::msg::Marker::CUBE;
+  msg.action = visualization_msgs::msg::Marker::ADD;
+  msg.pose.position.x = (max_pt[X] + min_pt[X]) / 2;
+  msg.pose.position.y = (max_pt[Y] + min_pt[Y]) / 2;
+  msg.pose.position.z = (max_pt[Z] + min_pt[Z]) / 2;
+  msg.scale.x = max_pt[X] - min_pt[X];
+  msg.scale.y = max_pt[Y] - min_pt[Y];
+  msg.scale.z = max_pt[Z] - min_pt[Z];
+  msg.color.r = 0.0;
+  msg.color.g = 1.0;
+  msg.color.b = 0.0;
+  msg.color.a = 0.5;
+
+  m_crop_box_visualization_pub->publish(msg);
+}
+
+void PointCloudFilterNode::cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output)
+{
+  m_crop_box.setInputCloud(cloud_input);
+  m_crop_box.setNegative(true); // Set to true to remove points inside the box
+  m_crop_box.filter(*cloud_output);
+}
+
+void PointCloudFilterNode::transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string& target_frame,
+  const std::string& source_frame) const
+{
+  geometry_msgs::msg::TransformStamped transform;
+  try
+  {
+    pcl_ros::transformPointCloud(target_frame, rclcpp::Time(0), *cloud_input, source_frame, *cloud_output, *m_tf_buffer);
   }
-  m_ground_plane_segmentation->removePlane(cloud_input, cloud_filtered, inliers);
+  catch (tf2::TransformException& ex)
+  {
+    RCLCPP_ERROR(get_logger(), "Transform error: %s", ex.what());
+    return;
+  }
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr PointCloudFilterNode::convertPointCloud2ToPCL(
-  const sensor_msgs::msg::PointCloud2::SharedPtr msg) const
+void PointCloudFilterNode::initializeLidarPointcloudSubscriber()
 {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::fromROSMsg(*msg, *cloud);
-  return cloud;
+  this->declare_parameter("input_lidar_pointcloud_topic_name", "pointcloud");
+  this->declare_parameter("input_lidar_pointcloud_topic_queue_size", 10);
+  this->declare_parameter("input_lidar_pointcloud_topic_frame_id", "radar");
+
+  std::string input_pointcloud_topic = this->get_parameter("input_lidar_pointcloud_topic_name").as_string();
+  int input_pointcloud_queue_size = this->get_parameter("input_lidar_pointcloud_topic_queue_size").as_int();
+  m_input_lidar_pointcloud_frame_id = this->get_parameter("input_lidar_pointcloud_topic_frame_id").as_string();
+  RCLCPP_INFO(get_logger(), "Subscribing to %s with queue size %d in frame %s",
+    input_pointcloud_topic.c_str(), input_pointcloud_queue_size, m_input_lidar_pointcloud_frame_id.c_str());
+
+  m_lidar_pointcloud_sub = create_subscription<sensor_msgs::msg::PointCloud2>(
+    input_pointcloud_topic, input_pointcloud_queue_size,
+    std::bind(&PointCloudFilterNode::pointcloudCallback, this, std::placeholders::_1));
 }
 
-sensor_msgs::msg::PointCloud2::SharedPtr PointCloudFilterNode::convertPCLToPointCloud2(
-  const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const
+void PointCloudFilterNode::initializeCameraPointcloudSubscriber()
 {
-  sensor_msgs::msg::PointCloud2::SharedPtr msg(new sensor_msgs::msg::PointCloud2);
-  pcl::toROSMsg(*cloud, *msg);
-  return msg;
+  this->declare_parameter("input_camera_pointcloud_topic_name", "camera_pointcloud");
+  this->declare_parameter("input_camera_pointcloud_topic_queue_size", 10);
+  this->declare_parameter("input_camera_pointcloud_topic_frame_id", "camera");
+
+  std::string input_camera_pointcloud_topic = this->get_parameter("input_camera_pointcloud_topic_name").as_string();
+  int input_camera_pointcloud_queue_size = this->get_parameter("input_camera_pointcloud_topic_queue_size").as_int();
+  m_input_camera_pointcloud_frame_id = this->get_parameter("input_camera_pointcloud_topic_frame_id").as_string();
+  RCLCPP_INFO(get_logger(), "Subscribing to %s with queue size %d in frame %s",
+    input_camera_pointcloud_topic.c_str(), input_camera_pointcloud_queue_size, m_input_camera_pointcloud_frame_id.c_str());
+
+  m_camera_pointcloud_sub = create_subscription<sensor_msgs::msg::PointCloud2>(
+    input_camera_pointcloud_topic, input_camera_pointcloud_queue_size,
+    std::bind(&PointCloudFilterNode::pointcloudCallback, this, std::placeholders::_1));
+}
+
+void PointCloudFilterNode::initializePointcloudPublisher()
+{
+  this->declare_parameter("output_pointcloud_topic_name", "filtered_pointcloud");
+  this->declare_parameter("output_pointcloud_topic_queue_size", 10);
+  this->declare_parameter("output_pointcloud_topic_frame_id", "map");
+
+  std::string output_pointcloud_topic = this->get_parameter("output_pointcloud_topic_name").as_string();
+  int output_pointcloud_queue_size = this->get_parameter("output_pointcloud_topic_queue_size").as_int();
+  m_output_pointcloud_frame_id = this->get_parameter("output_pointcloud_topic_frame_id").as_string();
+  RCLCPP_INFO(get_logger(), "Publishing to %s with queue size %d in frame %s",
+    output_pointcloud_topic.c_str(), output_pointcloud_queue_size, m_output_pointcloud_frame_id.c_str());
+
+  m_pointcloud_pub = create_publisher<sensor_msgs::msg::PointCloud2>(
+    output_pointcloud_topic, output_pointcloud_queue_size);
+}
+
+void PointCloudFilterNode::initializeVisualizationTimer()
+{
+  this->declare_parameter("visualization_timer_period", 0.1);
+  double visualization_timer_period = this->get_parameter("visualization_timer_period").as_double();
+  RCLCPP_INFO(get_logger(), "Visualization timer period: %f", visualization_timer_period);
+
+  m_visualization_timer = create_wall_timer(std::chrono::duration<double>(visualization_timer_period),
+    std::bind(&PointCloudFilterNode::visualizationTimerCallback, this));
+}
+
+void PointCloudFilterNode::initializeCropBoxVisualizationPublisher()
+{
+  this->declare_parameter("crop_box_visualization_topic_name", "crop_box_visualization");
+  this->declare_parameter("crop_box_visualization_topic_queue_size", 10);
+
+  std::string crop_box_visualization_topic = this->get_parameter("crop_box_visualization_topic_name").as_string();
+  int crop_box_visualization_queue_size = this->get_parameter("crop_box_visualization_topic_queue_size").as_int();
+  RCLCPP_INFO(get_logger(), "Publishing crop box visualization to %s with queue size %d",
+    crop_box_visualization_topic.c_str(), crop_box_visualization_queue_size);
+
+  m_crop_box_visualization_pub = create_publisher<visualization_msgs::msg::Marker>(
+    crop_box_visualization_topic, crop_box_visualization_queue_size);
+}
+
+void PointCloudFilterNode::initializeTransformListener()
+{
+  m_tf_buffer = std::make_unique<tf2_ros::Buffer>(get_clock());
+  m_tf_listener = std::make_unique<tf2_ros::TransformListener>(*m_tf_buffer);
 }
 
 void PointCloudFilterNode::initializeGroundPlaneSegmentation()
 {
-  // Initialize the GroundPlaneSegmentation object
-  m_ground_plane_segmentation = std::make_unique<LTM::GroundPlaneSegmentation>();
+  this->declare_parameter("ground_plane_segmentation.distance_threshold", 0.01);
+  this->declare_parameter("ground_plane_segmentation.max_iterations", 1000);
+  this->declare_parameter("ground_plane_segmentation.probability", 0.99);
 
-  // Declare parameters for the GroundPlaneSegmentation object
-  declare_parameter("ground_plane_segmentation.distance_threshold", 0.01);
-  declare_parameter("ground_plane_segmentation.max_iterations", 1000);
-  declare_parameter("ground_plane_segmentation.probability", 0.99);
+  double distance_threshold = this->get_parameter("ground_plane_segmentation.distance_threshold").as_double();
+  int max_iterations = this->get_parameter("ground_plane_segmentation.max_iterations").as_int();
+  double probability = this->get_parameter("ground_plane_segmentation.probability").as_double();
 
-  // Set the parameters for the SAC segmentation
-  double sac_segmentation_distance_threshold = this->get_parameter("ground_plane_segmentation.distance_threshold").as_double();
-  int sac_segmentation_max_iterations = this->get_parameter("ground_plane_segmentation.max_iterations").as_int();
-  double sac_segmentation_probability = this->get_parameter("ground_plane_segmentation.probability").as_double();
-
-  m_ground_plane_segmentation->configureSACSegmentationParameters(
-    sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
-  RCLCPP_INFO(this->get_logger(), "Ground plane removal, SAC segmentation parameters configured: \n Distance threshold: %f m\n Max iterations: %d\n Probability: %f",
-    sac_segmentation_distance_threshold, sac_segmentation_max_iterations, sac_segmentation_probability);
+  m_ground_plane_segmentation = std::make_unique<GroundPlaneSegmentation>();
+  m_ground_plane_segmentation->configureSACSegmentationParameters(distance_threshold, max_iterations, probability);
+  RCLCPP_INFO(get_logger(), "Ground plane segmentation initialized with distance threshold %f, max iterations %d, and probability %f",
+    distance_threshold, max_iterations, probability);
 }
 
-void PointCloudFilterNode::initializeRobotClusterRemoval()
+void PointCloudFilterNode::initializeCropBoxFilter()
 {
-  // Initialize the RobotClusterRemoval object
-  m_robot_cluster_removal = std::make_unique<LTM::RobotClusterRemoval>(this->get_clock());
+  this->declare_parameter("crop_box.x_min", -1.0);
+  this->declare_parameter("crop_box.x_max", 1.0);
+  this->declare_parameter("crop_box.y_min", -1.0);
+  this->declare_parameter("crop_box.y_max", 1.0);
+  this->declare_parameter("crop_box.z_min", -1.0);
+  this->declare_parameter("crop_box.z_max", 1.0);
 
-  // Set the robot mesh resolution
-  declare_parameter("robot_cluster_removal.robot_mesh_resolution", 0.01);
+  double crop_box_x_min = this->get_parameter("crop_box.x_min").as_double();
+  double crop_box_x_max = this->get_parameter("crop_box.x_max").as_double();
+  double crop_box_y_min = this->get_parameter("crop_box.y_min").as_double();
+  double crop_box_y_max = this->get_parameter("crop_box.y_max").as_double();
+  double crop_box_z_min = this->get_parameter("crop_box.z_min").as_double();
+  double crop_box_z_max = this->get_parameter("crop_box.z_max").as_double();
 
-  m_robot_cluster_removal->setRobotMeshResolution(
-    this->get_parameter("robot_cluster_removal.robot_mesh_resolution").as_double());
-
-  // Set the robot model from the URDF
-  declare_parameter("robot_cluster_removal.robot_description.package_name", "ltm_go2_description");
-  declare_parameter("robot_cluster_removal.robot_description.directory_name", "urdf");
-  declare_parameter("robot_cluster_removal.robot_description.file_name", "go2_description.urdf");
-
-  std::string urdf_package_name = this->get_parameter("robot_cluster_removal.robot_description.package_name").as_string();
-  std::string urdf_directory_name = this->get_parameter("robot_cluster_removal.robot_description.directory_name").as_string();
-  std::string urdf_file_name = this->get_parameter("robot_cluster_removal.robot_description.file_name").as_string();
-  std::string urdf_filepath = ament_index_cpp::get_package_share_directory(
-    this->get_parameter("robot_cluster_removal.robot_description.package_name").as_string()) + "/" + 
-    this->get_parameter("robot_cluster_removal.robot_description.directory_name").as_string() + "/" + 
-    this->get_parameter("robot_cluster_removal.robot_description.file_name").as_string();
-
-  // Set the robot model from the URDF file path, exit if failed
-  if (!m_robot_cluster_removal->setRobotModel(urdf_filepath)) {
-    RCLCPP_ERROR(this->get_logger(), "Failed to set the robot model from URDF file: %s", urdf_filepath.c_str());
-    exit(EXIT_FAILURE);
-  } else {
-    RCLCPP_INFO(this->get_logger(), "Robot model set from URDF file: %s", urdf_filepath.c_str());
-  }
-
-  // Set the robot crop box
-  declare_parameter("robot_cluster_removal.crop_box.min.x", -1.0);
-  declare_parameter("robot_cluster_removal.crop_box.max.x", 1.0);
-  declare_parameter("robot_cluster_removal.crop_box.min.y", -1.0);
-  declare_parameter("robot_cluster_removal.crop_box.max.y", 1.0);
-  declare_parameter("robot_cluster_removal.crop_box.min.z", -1.0);
-  declare_parameter("robot_cluster_removal.crop_box.max.z", 1.0);
-
-  double x_min = this->get_parameter("robot_cluster_removal.crop_box.min.x").as_double();
-  double x_max = this->get_parameter("robot_cluster_removal.crop_box.max.x").as_double();
-  double y_min = this->get_parameter("robot_cluster_removal.crop_box.min.y").as_double();
-  double y_max = this->get_parameter("robot_cluster_removal.crop_box.max.y").as_double();
-  double z_min = this->get_parameter("robot_cluster_removal.crop_box.min.z").as_double();
-  double z_max = this->get_parameter("robot_cluster_removal.crop_box.max.z").as_double();
-  m_robot_cluster_removal->setRobotCropBox(x_min, x_max, y_min, y_max, z_min, z_max);
-  RCLCPP_INFO(this->get_logger(), "Voxel grid filter leaf size configured: \n min x: %f m\n max x: %f m\n min y: %f m\n max y: %f m\n min z: %f m\n max z: %f m",
-    x_min, x_max, y_min, y_max, z_min, z_max);
-
-  RCLCPP_INFO(this->get_logger(), "Robot cluster removal configured.");
-}
-
-void PointCloudFilterNode::initializeStatisticalOutlierRemoval()
-{
-  // Initialize the StatisticalPointcloudFilter object
-  m_statistical_outlier_removal = std::make_unique<LTM::StatisticalPointcloudFilter>();
-
-  // Declare parameters for the StatisticalPointcloudFilter object
-  declare_parameter("statistical_outlier_removal.mean_k", 50);
-  declare_parameter("statistical_outlier_removal.stddev_mul_thresh", 1.0);
-
-  // Set the parameters for the Statistical Outlier Removal filter
-  int mean_k = this->get_parameter("statistical_outlier_removal.mean_k").as_int();
-  double stddev_mul_thresh = this->get_parameter("statistical_outlier_removal.stddev_mul_thresh").as_double();
-  m_statistical_outlier_removal->setMeanK(mean_k);
-  m_statistical_outlier_removal->setStddevMulThresh(stddev_mul_thresh);
-
-  RCLCPP_INFO(this->get_logger(), "Statistical outlier removal configured: \n Mean K: %d\n Stddev Mul Thresh: %f",
-    mean_k, stddev_mul_thresh);
-}
-
-void PointCloudFilterNode::initializeVoxelGridFilter()
-{
-  // Initialize the VoxelGridFilter object
-  m_voxel_grid_filter = std::make_unique<LTM::VoxelGridFilter>();
-
-  // Declare parameters for the VoxelGridFilter object
-  declare_parameter("voxel_grid_filter.leaf_size.x", 0.1);
-  declare_parameter("voxel_grid_filter.leaf_size.y", 0.1);
-  declare_parameter("voxel_grid_filter.leaf_size.z", 0.1);
-
-  // Set the leaf size for the VoxelGridFilter object
-  double leaf_size_x = this->get_parameter("voxel_grid_filter.leaf_size.x").as_double();
-  double leaf_size_y = this->get_parameter("voxel_grid_filter.leaf_size.y").as_double();
-  double leaf_size_z = this->get_parameter("voxel_grid_filter.leaf_size.z").as_double();
-  m_voxel_grid_filter->setLeafSize(leaf_size_x, leaf_size_y, leaf_size_z);
-
-  RCLCPP_INFO(this->get_logger(), "Voxel grid filter leaf size configured: \n x: %f m\n y: %f m\n z: %f m",
-    leaf_size_x, leaf_size_y, leaf_size_z);
-}
-
-void PointCloudFilterNode::configureRosSubscribers(bool in_simulation)
-{
-  // Get the pointcloud topic parameter from the parameter server
-  std::string robot_type = in_simulation ? "sim" : "real";
-  std::string raw_pointcloud_topic_param = "topics." + robot_type + ".raw_pointcloud_topic";
-  RCLCPP_INFO(this->get_logger(), "Raw pointcloud topic parameter: %s", raw_pointcloud_topic_param.c_str());
-
-  declare_parameter(raw_pointcloud_topic_param, "point_cloud");
-  std::string raw_pointcloud_topic = this->get_parameter(raw_pointcloud_topic_param).as_string();
-  RCLCPP_INFO(this->get_logger(), "Subscribe to raw pointcloud topic: %s", raw_pointcloud_topic.c_str());
-
-  // Create the raw pointcloud subscriber
-  m_raw_pointcloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    raw_pointcloud_topic, rclcpp::SensorDataQoS(), 
-    std::bind(&PointCloudFilterNode::pointcloudCallback, this, std::placeholders::_1));
-}
-
-void PointCloudFilterNode::configureRosPublishers(bool in_simulation)
-{
-  // Get the filtered pointcloud topic parameter from the parameter server
-  std::string robot_type = in_simulation ? "sim" : "real";
-  std::string filtered_pointcloud_topic_param = "topics." + robot_type + ".filtered_pointcloud_topic";
-  RCLCPP_INFO(this->get_logger(), "Filtered pointcloud topic parameter: %s", filtered_pointcloud_topic_param.c_str());
-
-  declare_parameter(filtered_pointcloud_topic_param, "filtered_point_cloud");
-  std::string filtered_pointcloud_topic = this->get_parameter(filtered_pointcloud_topic_param).as_string();
-  RCLCPP_INFO(this->get_logger(), "Publish filtered pointcloud topic: %s", filtered_pointcloud_topic.c_str());
-
-  // Create the filtered pointcloud publisher
-  m_filtered_pointcloud_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-    filtered_pointcloud_topic, 1);
-
-  // Create the bounding box publisher
-  m_bounding_box_pub = this->create_publisher<vision_msgs::msg::BoundingBox3D>(
-    "bounding_box", 1);
-  m_marker_array_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "marker_array", 1);
+  m_crop_box.setMin(Eigen::Vector4f(crop_box_x_min, crop_box_y_min, crop_box_z_min, 1.0));
+  m_crop_box.setMax(Eigen::Vector4f(crop_box_x_max, crop_box_y_max, crop_box_z_max, 1.0));
+  RCLCPP_INFO(get_logger(), "Crop box initialized with min (%f, %f, %f) and max (%f, %f, %f)",
+    crop_box_x_min, crop_box_y_min, crop_box_z_min, crop_box_x_max, crop_box_y_max, crop_box_z_max);
 }
 
 int main(int argc, char ** argv)

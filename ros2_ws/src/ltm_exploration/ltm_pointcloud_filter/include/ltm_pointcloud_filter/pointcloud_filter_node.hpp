@@ -11,12 +11,12 @@
 #include <rclcpp/qos.hpp>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <vision_msgs/msg/bounding_box3_d.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.hpp>
 #include <pcl/common/common.h>
+#include <pcl/filters/crop_box.h>
 
 #include <tf2/transform_datatypes.h>
 #include <tf2_ros/buffer.h>
@@ -31,9 +31,6 @@
 #include <string>
 
 #include <ltm_pointcloud_filter/ground_plane_segmentation.hpp>
-#include <ltm_pointcloud_filter/robot_cluster_removal.hpp>
-#include <ltm_pointcloud_filter/statistical_outlier_removal.hpp>
-#include <ltm_pointcloud_filter/voxel_grid_filter.hpp>
 
 namespace LTM // TODO: Change this to LTM
 {
@@ -45,38 +42,47 @@ namespace LTM // TODO: Change this to LTM
 
   private:
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
-    void publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
-      const std::string& frame_id, const rclcpp::Time& stamp);
+    void publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, 
+      const rclcpp::Time& stamp);
 
-    void removeGroundPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered);
+    void visualizationTimerCallback();
+    void publishCropBoxVisualization();
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr convertPointCloud2ToPCL(
-      const sensor_msgs::msg::PointCloud2::SharedPtr msg) const;
-    sensor_msgs::msg::PointCloud2::SharedPtr convertPCLToPointCloud2(
-      const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) const;
+    void cropPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output);
+    void transformPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output, const std::string& target_frame,
+      const std::string& source_frame) const;
 
     void initializeGroundPlaneSegmentation();
-    void initializeRobotClusterRemoval();
-    void initializeStatisticalOutlierRemoval();
-    void initializeVoxelGridFilter();
+    void initializeCropBoxFilter();
 
-    void configureRosSubscribers(bool in_simulation);
-    void configureRosPublishers(bool in_simulation);
+    void initializeLidarPointcloudSubscriber();
+    void initializeCameraPointcloudSubscriber();
+    void initializePointcloudPublisher();
+    void initializeTransformListener();
 
-    enum Axis { X, Y, Z };
+    void initializeVisualizationTimer();
+    void initializeCropBoxVisualizationPublisher();
 
-    double m_voxel_grid_leaf_size;
+    enum { X, Y, Z, ROLL, PITCH, YAW };
 
-    std::unique_ptr<LTM::GroundPlaneSegmentation> m_ground_plane_segmentation;
-    std::unique_ptr<LTM::RobotClusterRemoval> m_robot_cluster_removal;
-    std::unique_ptr<LTM::StatisticalPointcloudFilter> m_statistical_outlier_removal;
-    std::unique_ptr<LTM::VoxelGridFilter> m_voxel_grid_filter;
+    pcl::CropBox<pcl::PointXYZ> m_crop_box;
 
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_raw_pointcloud_sub;
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_filtered_pointcloud_pub;
-    rclcpp::Publisher<vision_msgs::msg::BoundingBox3D>::SharedPtr m_bounding_box_pub;
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_marker_array_pub;
+    std::unique_ptr<GroundPlaneSegmentation> m_ground_plane_segmentation;
+
+    std::unique_ptr<tf2_ros::Buffer> m_tf_buffer;
+    std::unique_ptr<tf2_ros::TransformListener> m_tf_listener;
+    std::string m_input_lidar_pointcloud_frame_id;
+    std::string m_input_camera_pointcloud_frame_id;
+    std::string m_output_pointcloud_frame_id;
+
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_lidar_pointcloud_sub;
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_camera_pointcloud_sub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_pointcloud_pub;
+
+    rclcpp::TimerBase::SharedPtr m_visualization_timer;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr m_crop_box_visualization_pub;
 
   }; // class PointCloudFilterNode
 }   // namespace LTMPointcloudFilterNode
