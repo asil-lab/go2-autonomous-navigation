@@ -15,13 +15,14 @@ import pyomo.environ as pyo
 """
 
 class Vertex:
-    def __init__(self, x: float, y: float, yaw=0.0) -> None:
+    def __init__(self, id: int, x: float, y: float, yaw=0.0) -> None:
+        self.id = id
         self.x = x
         self.y = y
         self.yaw = yaw
 
     def __eq__(self, other) -> bool:
-        return self.x == other.x and self.y == other.y
+        return self.id == other.id
     
     def __str__(self) -> str:
         return f'({self.x}, {self.y}, {self.yaw})'
@@ -59,6 +60,10 @@ class Graph:
     def __str__(self) -> str:
         return f'The graph has {len(self.vertices)} vertices and {len(self.edges)} edges'
     
+    def add_point(self, x: float, y: float, yaw=0.0) -> None:
+        vertex = Vertex(len(self.vertices), x, y, yaw)
+        self.add_vertex(vertex)
+
     def add_vertex(self, vertex: Vertex) -> None:
         # Check if the vertex already exists
         if vertex in self.vertices:
@@ -125,7 +130,7 @@ class Graph:
         return len(self.adjacency_list[vertex])
     
     def get_vertex_index(self, vertex: Vertex) -> int:
-        return self.vertices.index(self.get_vertex(vertex.x, vertex.y))
+        return self.vertices.id
 
 
 class TSPSolver:
