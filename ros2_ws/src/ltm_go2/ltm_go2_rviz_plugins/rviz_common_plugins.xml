@@ -1,5 +1,5 @@
 <library path="battery_management_display">
-    <class type="LTM::BatteryManagementDisplay" base_class_type="rviz_common::Display">
+    <class type="LTM::BatteryManagementDisplay" base_class_type="rviz_common::Panel">
       <description></description>
     </class>
-</library>
+  </library>

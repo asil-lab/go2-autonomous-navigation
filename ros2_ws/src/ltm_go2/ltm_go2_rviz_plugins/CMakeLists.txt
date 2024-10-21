@@ -17,14 +17,22 @@ endif()
 
 # find dependencies
 find_package(ament_cmake_ros REQUIRED)
+find_package(rclcpp REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
 find_package(ltm_shared_msgs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
-# include_directories(include)
+include_directories(
+  include
+  ${Qt5Core_INCLUDE_DIRS}
+  ${Qt5Widgets_INCLUDE_DIRS}
+)
 
+# Enable Qt MOC compiler
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 qt5_wrap_cpp(MOC_FILES
   include/ltm_go2_rviz_plugins/battery_management_display.hpp
 )
@@ -40,6 +48,7 @@ target_include_directories(battery_management_display PUBLIC
 )
 
 ament_target_dependencies(battery_management_display
+  rclcpp
   pluginlib
   rviz_common
   rviz_default_plugins

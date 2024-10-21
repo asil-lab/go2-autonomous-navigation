@@ -10,14 +10,34 @@
 #include <rviz_common/message_filter_display.hpp>
 #include <ltm_shared_msgs/msg/battery_state.hpp>
 
+#include <QVBoxLayout>
+#include <QLabel>
+#include <rviz_common/panel.hpp>
+#include <rclcpp/rclcpp.hpp>
+
 namespace LTM
 {
-  class BatteryManagementDisplay : public rviz_common::MessageFilterDisplay<ltm_shared_msgs::msg::BatteryState>
+  class BatteryManagementDisplay : public rviz_common::Panel
   {
     Q_OBJECT
 
-    protected:
-      void processMessage(const ltm_shared_msgs::msg::BatteryState::ConstSharedPtr msg) override;
+  public:
+    BatteryManagementDisplay(QWidget * parent = 0);
+    
+    virtual void save(rviz_common::Config config) const;
+    virtual void load(const rviz_common::Config & config);
+
+  public Q_SLOTS:
+    
+  private Q_SLOTS:
+    void batteryStateCallback(const ltm_shared_msgs::msg::BatteryState::ConstSharedPtr msg);
+    void updateBatteryState();
+
+  protected:
+    QLabel * m_battery_percentage_label;
+    rclcpp::Node::SharedPtr m_node;
+    rclcpp::Subscription<ltm_shared_msgs::msg::BatteryState>::SharedPtr m_battery_state_sub;
+    uint8_t m_battery_percentage;
 
   }; // class BatteryManagementDisplay
 }  // namespace LTM

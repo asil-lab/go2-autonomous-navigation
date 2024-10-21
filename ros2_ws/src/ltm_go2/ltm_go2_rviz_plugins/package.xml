@@ -7,7 +7,9 @@
   <maintainer email="gungnir@todo.todo">gungnir</maintainer>
   <license>TODO: License declaration</license>
 
+  <depend>rclcpp</depend>
   <depend>pluginlib</depend>
+  <depend>rviz2</depend>
   <depend>rviz_common</depend>
   <depend>rviz_default_plugins</depend>
   <depend>ltm_shared_msgs</depend>
