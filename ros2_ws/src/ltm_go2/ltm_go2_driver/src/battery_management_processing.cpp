@@ -29,6 +29,8 @@ void BatteryManagementProcessing::lowStateCallback(const unitree_go::msg::LowSta
 void BatteryManagementProcessing::publishBatteryState(uint8_t percentage)
 {
   ltm_shared_msgs::msg::BatteryState battery_state;
+  battery_state.header.stamp = now();
+  battery_state.header.frame_id = "base";
   battery_state.percentage = percentage;
   m_battery_state_pub->publish(battery_state);
 }
