@@ -12,9 +12,17 @@ namespace LTM
   BatteryManagementDisplay::BatteryManagementDisplay(QWidget * parent)
   : rviz_common::Panel(parent)
   {
-    m_battery_percentage_label = new QLabel("Battery Percentage: 0%");
-    QVBoxLayout * layout = new QVBoxLayout;
+    m_battery_percentage_label = new QLabel("Battery Percentage: ");
+    m_battery_percentage_label->setAlignment(Qt::AlignCenter);
+    m_battery_percentage_label->setStyleSheet("font-size: 20px; font-weight: bold;");
+
+    m_battery_percentage_value = new QLabel("N/A");
+    m_battery_percentage_value->setAlignment(Qt::AlignCenter);
+    m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold; color: gray;");
+
+    QHBoxLayout * layout = new QHBoxLayout;
     layout->addWidget(m_battery_percentage_label);
+    layout->addWidget(m_battery_percentage_value);
     setLayout(layout);
 
     m_node = rclcpp::Node::make_shared("battery_management_display");
@@ -64,7 +72,20 @@ namespace LTM
 
   void BatteryManagementDisplay::updateBatteryState()
   {
-    m_battery_percentage_label->setText("Battery Percentage: " + QString::number(m_battery_percentage) + "%");
+    // m_battery_percentage_label->setText("Battery Percentage: " + QString::number(m_battery_percentage) + "%");
+    m_battery_percentage_value->setText(QString::number(m_battery_percentage) + "%");
+    if (m_battery_percentage <= 25)
+    {
+      m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold; color: red;");
+    }
+    else if (m_battery_percentage <= 50)
+    {
+      m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold; color: orange;");
+    }
+    else
+    {
+      m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold; color: green;");
+    }
   }
 }
 

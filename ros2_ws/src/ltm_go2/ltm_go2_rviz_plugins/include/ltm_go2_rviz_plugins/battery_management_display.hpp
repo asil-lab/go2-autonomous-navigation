@@ -11,6 +11,7 @@
 #include <ltm_shared_msgs/msg/battery_state.hpp>
 
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <rviz_common/panel.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -37,9 +38,11 @@ namespace LTM
 
   protected:
     QLabel * m_battery_percentage_label;
+    QLabel * m_battery_percentage_value;
+    uint8_t m_battery_percentage;
+
     rclcpp::Node::SharedPtr m_node;
     rclcpp::Subscription<ltm_shared_msgs::msg::BatteryState>::SharedPtr m_battery_state_sub;
-    uint8_t m_battery_percentage;
     std::shared_ptr<std::thread> m_thread;
 
   }; // class BatteryManagementDisplay
