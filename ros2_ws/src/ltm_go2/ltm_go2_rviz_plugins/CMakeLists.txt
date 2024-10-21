@@ -16,53 +16,54 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
-find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_ros REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(rviz_common REQUIRED)
-find_package(rviz_ogre_vendor REQUIRED)
-find_package(rviz_rendering REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
-find_package(std_msgs REQUIRED)
 find_package(ltm_shared_msgs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
-include_directories(include)
+# include_directories(include)
 
-add_library(${PROJECT_NAME} SHARED
-  src/battery_display.cpp
+set(CMAKE_AUTOMOC ON)
+qt5_wrap_cpp(MOC_FILES
+  include/ltm_go2_rviz_plugins/battery_management_display.hpp
 )
 
-target_link_libraries(${PROJECT_NAME}
-  Qt5::Core
-  Qt5::Widgets
-  rclcpp
-  ltm_shared_msgs
-  rviz_common::rviz_common
-  # rviz_ogre_vendor::rviz_ogre_vendor
-  # rviz_rendering::rviz_rendering
-  # rviz_default_plugins::rviz_default_plugins
-  # std_msgs::std_msgs
-  # ltm_shared_msgs::ltm_shared_msgs
+add_library(battery_management_display
+  src/battery_management_display.cpp
+  ${MOC_FILES}
 )
 
-ament_target_dependencies(${PROJECT_NAME}
-  rclcpp
-  ltm_shared_msgs
+target_include_directories(battery_management_display PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(battery_management_display
+  pluginlib
   rviz_common
-  # rviz_ogre_vendor
-  # rviz_rendering
-  # rviz_default_plugins
-  # std_msgs
-  # ltm_shared_msgs
+  rviz_default_plugins
+  ltm_shared_msgs
 )
 
-install(TARGETS ${PROJECT_NAME}
-  # ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib/${PROJECT_NAME}
-  # RUNTIME DESTINATION bin
+install(TARGETS battery_management_display
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
   DESTINATION include
 )
+
+install(FILES rviz_common_plugins.xml
+  DESTINATION share/${PROJECT_NAME}
+)
+
+ament_export_include_directories(include)
+ament_export_targets(export_${PROJECT_NAME})
+pluginlib_export_plugin_description_file(rviz_common rviz_common_plugins.xml)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

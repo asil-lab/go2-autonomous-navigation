@@ -1,0 +1,5 @@
+<library path="battery_management_display.xml">
+    <class type="LTMGo2::BatteryManagementDisplay" base_class_type="rviz_common::Display">
+      <description></description>
+    </class>
+  </library>
