@@ -3,8 +3,8 @@
 <package format="3">
   <name>ltm_go2_rviz_plugins</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="gungnir@todo.todo">gungnir</maintainer>
+  <description>This package contains rviz plugins for the LTM GO2 project.</description>
+  <maintainer email="alexanderjames.becoy@outlook.com">Alexander James Becoy</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclcpp</depend>

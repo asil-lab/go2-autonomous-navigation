@@ -14,6 +14,7 @@
 #include <QLabel>
 #include <rviz_common/panel.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <thread>
 
 namespace LTM
 {
@@ -23,6 +24,7 @@ namespace LTM
 
   public:
     BatteryManagementDisplay(QWidget * parent = 0);
+    ~BatteryManagementDisplay() override;
     
     virtual void save(rviz_common::Config config) const;
     virtual void load(const rviz_common::Config & config);
@@ -38,6 +40,7 @@ namespace LTM
     rclcpp::Node::SharedPtr m_node;
     rclcpp::Subscription<ltm_shared_msgs::msg::BatteryState>::SharedPtr m_battery_state_sub;
     uint8_t m_battery_percentage;
+    std::shared_ptr<std::thread> m_thread;
 
   }; // class BatteryManagementDisplay
 }  // namespace LTM
