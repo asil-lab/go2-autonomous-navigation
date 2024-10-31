@@ -79,25 +79,9 @@ namespace LTM
       void updateBaseFootprintOrientation(
         const geometry_msgs::msg::Point& position, const geometry_msgs::msg::Quaternion& orientation);
 
-      // TODO: Generalize updateFrameTranslation
-      // TODO: Generalize updateFrameOrientation
-
       void initializeROS();
       void initializeOdomTransformMsg();
       void initializeBaseFootprintMsg();
-
-      std::array<float, ORIENTATION_SIZE> invertQuaternion(
-        const std::array<float, ORIENTATION_SIZE>& quaternion);
-      geometry_msgs::msg::Quaternion invertQuaternion(
-        const geometry_msgs::msg::Quaternion& quaternion);
-
-      std::array<float, ORIENTATION_SIZE> normalizeQuaternion(
-        const std::array<float, ORIENTATION_SIZE>& quaternion);
-      geometry_msgs::msg::Quaternion normalizeQuaternion(
-        const geometry_msgs::msg::Quaternion& quaternion);
-
-      double getQuaternionNorm(const std::array<float, ORIENTATION_SIZE>& quaternion);
-      double getQuaternionNorm(const geometry_msgs::msg::Quaternion& quaternion);
 
       enum class TranslationIdx { X = 0, Y = 1, Z = 2 };
       enum class OrientationIdx { X = 1, Y = 2, Z = 3, W = 0 };
