@@ -25,9 +25,6 @@
 
 #define ODOM_PROCESSING_NODE_NAME "odom_processing_node"
 
-#define ODOM_PROCESSING_SUB_ROBOT_POSE_TOPIC "utlidar/robot_pose"
-#define ODOM_PROCESSING_SUB_ROBOT_POSE_QUEUE_SIZE 10
-
 #define ODOM_PROCESSING_SUB_SPORT_MODE_STATE_TOPIC "sportmodestate"
 #define ODOM_PROCESSING_SUB_SPORT_MODE_STATE_QUEUE_SIZE 10
 
@@ -55,29 +52,20 @@ namespace LTM
       OdomProcessing();
       ~OdomProcessing();
 
-      geometry_msgs::msg::TransformStamped::SharedPtr getOdomMsg() const;
-      geometry_msgs::msg::TransformStamped::SharedPtr getBaseFootprintMsg() const;
-
     private:
       void lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg);
-      void robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
       void sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg);
       void publishImu(const unitree_go::msg::IMUState& imu_state);
       void broadcastTransform(const geometry_msgs::msg::TransformStamped::SharedPtr msg) const;
 
       void updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
         const std::array<float, ORIENTATION_SIZE>& orientation);
-      void updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr pose_stamped);
 
       void updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation);
-      void updateOdomTranslation(const geometry_msgs::msg::Point& position);
       void updateOdomOrientation(const std::array<float, ORIENTATION_SIZE>& rotation);
-      void updateOdomOrientation(const geometry_msgs::msg::Quaternion& orientation);
 
-      void updateBaseFootprintOrientation(
-        const std::array<float, TRANSLATION_SIZE>& translation, const std::array<float, ORIENTATION_SIZE>& rotation);
-      void updateBaseFootprintOrientation(
-        const geometry_msgs::msg::Point& position, const geometry_msgs::msg::Quaternion& orientation);
+      void updateBaseFootprint(const std::array<float, TRANSLATION_SIZE>& translation, 
+        const std::array<float, ORIENTATION_SIZE>& rotation);
 
       void initializeROS();
       void initializeOdomTransformMsg();
@@ -89,7 +77,6 @@ namespace LTM
       geometry_msgs::msg::TransformStamped::SharedPtr m_odom_msg;
       geometry_msgs::msg::TransformStamped::SharedPtr m_base_footprint_msg;
 
-      rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr m_robot_pose_sub;
       rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;
       rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
       rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr m_imu_pub;

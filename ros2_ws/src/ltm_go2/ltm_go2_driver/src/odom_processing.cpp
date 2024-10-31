@@ -23,7 +23,6 @@ OdomProcessing::~OdomProcessing()
 {
   m_odom_msg.reset();
   m_base_footprint_msg.reset();
-  m_robot_pose_sub.reset();
   m_tf_broadcaster.reset();
   RCLCPP_WARN(this->get_logger(), "Odom Processing Node destroyed.");
 }
@@ -32,14 +31,6 @@ void OdomProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr
 {
   RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
   publishImu(msg->imu_state);
-}
-
-void OdomProcessing::robotPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
-{
-  RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Robot Pose Message.");
-  updateOdom(msg);
-  broadcastTransform(m_odom_msg);
-  broadcastTransform(m_base_footprint_msg);
 }
 
 void OdomProcessing::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
@@ -87,29 +78,7 @@ void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& trans
 
   // Update base_footprint
   m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
-  updateBaseFootprintOrientation(translation, orientation);
-}
-
-void OdomProcessing::updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr pose_stamped)
-{
-  // Update odom
-  m_odom_msg->header.stamp = rclcpp::Clock().now();
-  updateOdomTranslation(pose_stamped->pose.position);
-  updateOdomOrientation(pose_stamped->pose.orientation);
-
-  // Update base_footprint
-  m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
-  updateBaseFootprintOrientation(pose_stamped->pose.position, pose_stamped->pose.orientation);
-}
-
-geometry_msgs::msg::TransformStamped::SharedPtr OdomProcessing::getOdomMsg() const
-{
-  return m_odom_msg;
-}
-
-geometry_msgs::msg::TransformStamped::SharedPtr OdomProcessing::getBaseFootprintMsg() const
-{
-  return m_base_footprint_msg;
+  updateBaseFootprint(translation, orientation);
 }
 
 void OdomProcessing::updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation)
@@ -117,13 +86,6 @@ void OdomProcessing::updateOdomTranslation(const std::array<float, TRANSLATION_S
   m_odom_msg->transform.translation.x = translation[static_cast<int>(TranslationIdx::X)];
   m_odom_msg->transform.translation.y = translation[static_cast<int>(TranslationIdx::Y)];
   m_odom_msg->transform.translation.z = translation[static_cast<int>(TranslationIdx::Z)];
-}
-
-void OdomProcessing::updateOdomTranslation(const geometry_msgs::msg::Point& position)
-{
-  m_odom_msg->transform.translation.x = position.x;
-  m_odom_msg->transform.translation.y = position.y;
-  m_odom_msg->transform.translation.z = position.z;
 }
 
 void OdomProcessing::updateOdomOrientation(const std::array<float, ORIENTATION_SIZE>& rotation)
@@ -134,12 +96,7 @@ void OdomProcessing::updateOdomOrientation(const std::array<float, ORIENTATION_S
   m_odom_msg->transform.rotation.w = rotation[static_cast<int>(OrientationIdx::W)];
 }
 
-void OdomProcessing::updateOdomOrientation(const geometry_msgs::msg::Quaternion& orientation)
-{
-  m_odom_msg->transform.rotation = orientation;
-}
-
-void OdomProcessing::updateBaseFootprintOrientation(
+void OdomProcessing::updateBaseFootprint(
   const std::array<float, TRANSLATION_SIZE>& translation, const std::array<float, ORIENTATION_SIZE>& rotation)
 {
   Eigen::Quaterniond q(rotation[static_cast<int>(OrientationIdx::W)], rotation[static_cast<int>(OrientationIdx::X)],
@@ -159,31 +116,8 @@ void OdomProcessing::updateBaseFootprintOrientation(
   m_base_footprint_msg->transform.translation.z = rotated_translation.z();
 }
 
-void OdomProcessing::updateBaseFootprintOrientation(
-  const geometry_msgs::msg::Point& position, const geometry_msgs::msg::Quaternion& orientation)
-{
-  Eigen::Quaterniond q(orientation.w, orientation.x, orientation.y, orientation.z);
-  Eigen::Quaterniond q_inverse = q.inverse();
-
-  m_base_footprint_msg->transform.rotation.x = q_inverse.x();
-  m_base_footprint_msg->transform.rotation.y = q_inverse.y();
-  m_base_footprint_msg->transform.rotation.z = q_inverse.z();
-  m_base_footprint_msg->transform.rotation.w = q_inverse.w();
-
-  Eigen::Vector3d translation_vector(0, 0, -position.z);
-  Eigen::Vector3d rotated_translation = q_inverse * translation_vector;
-
-  m_base_footprint_msg->transform.translation.x = rotated_translation.x();
-  m_base_footprint_msg->transform.translation.y = rotated_translation.y();
-  m_base_footprint_msg->transform.translation.z = rotated_translation.z();
-}
-
 void OdomProcessing::initializeROS()
 {
-  // m_robot_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-  //   ODOM_PROCESSING_SUB_ROBOT_POSE_TOPIC, ODOM_PROCESSING_SUB_ROBOT_POSE_QUEUE_SIZE, 
-  //   std::bind(&OdomProcessing::robotPoseCallback, this, std::placeholders::_1));
-  
   m_sport_mode_state_sub = this->create_subscription<unitree_go::msg::SportModeState>(
     ODOM_PROCESSING_SUB_SPORT_MODE_STATE_TOPIC, ODOM_PROCESSING_SUB_SPORT_MODE_STATE_QUEUE_SIZE, 
     std::bind(&OdomProcessing::sportModeStateCallback, this, std::placeholders::_1));
