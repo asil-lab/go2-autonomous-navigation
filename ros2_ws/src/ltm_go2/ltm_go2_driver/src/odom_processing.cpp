@@ -31,7 +31,6 @@ OdomProcessing::~OdomProcessing()
 void OdomProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
   RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
-  // updateBaseFootprintOrientation(msg->imu_state);
   publishImu(msg->imu_state);
 }
 
@@ -88,7 +87,6 @@ void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& trans
 
   // Update base_footprint
   m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
-  // updateBaseFootprintTranslation(translation);
   updateBaseFootprintOrientation(translation, orientation);
 }
 
@@ -101,7 +99,6 @@ void OdomProcessing::updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr
 
   // Update base_footprint
   m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
-  // updateBaseFootprintTranslation(pose_stamped->pose.position);
   updateBaseFootprintOrientation(pose_stamped->pose.position, pose_stamped->pose.orientation);
 }
 
@@ -142,18 +139,6 @@ void OdomProcessing::updateOdomOrientation(const geometry_msgs::msg::Quaternion&
   m_odom_msg->transform.rotation = orientation;
 }
 
-void OdomProcessing::updateBaseFootprintTranslation(const std::array<float, TRANSLATION_SIZE>& translation)
-{
-  // TODO: To be removed
-  m_base_footprint_msg->transform.translation.z = -translation[static_cast<int>(TranslationIdx::Z)];
-}
-
-void OdomProcessing::updateBaseFootprintTranslation(const geometry_msgs::msg::Point& position)
-{
-  // TODO: To be removed
-  m_base_footprint_msg->transform.translation.z = -position.z;
-}
-
 void OdomProcessing::updateBaseFootprintOrientation(
   const std::array<float, TRANSLATION_SIZE>& translation, const std::array<float, ORIENTATION_SIZE>& rotation)
 {
@@ -191,16 +176,6 @@ void OdomProcessing::updateBaseFootprintOrientation(
   m_base_footprint_msg->transform.translation.x = rotated_translation.x();
   m_base_footprint_msg->transform.translation.y = rotated_translation.y();
   m_base_footprint_msg->transform.translation.z = rotated_translation.z();
-}
-
-void OdomProcessing::updateBaseFootprintOrientation(const unitree_go::msg::IMUState& imu_state)
-{
-  std::array<float, ORIENTATION_SIZE> inverse_orientation = invertQuaternion(imu_state.quaternion);
-
-  m_base_footprint_msg->transform.rotation.x = inverse_orientation[static_cast<int>(OrientationIdx::X)];
-  m_base_footprint_msg->transform.rotation.y = inverse_orientation[static_cast<int>(OrientationIdx::Y)];
-  m_base_footprint_msg->transform.rotation.z = inverse_orientation[static_cast<int>(OrientationIdx::Z)];
-  m_base_footprint_msg->transform.rotation.w = inverse_orientation[static_cast<int>(OrientationIdx::W)];
 }
 
 std::array<float, ORIENTATION_SIZE> OdomProcessing::invertQuaternion(
