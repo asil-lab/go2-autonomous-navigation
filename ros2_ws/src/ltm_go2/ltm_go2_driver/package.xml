@@ -21,6 +21,7 @@
   <depend>ltm_go2_description</depend>
   <depend>ltm_go2_camera</depend>
   <depend>ltm_shared_msgs</depend>
+  <depend>Eigen3</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

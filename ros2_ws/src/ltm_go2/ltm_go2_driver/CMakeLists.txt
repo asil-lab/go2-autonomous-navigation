@@ -30,6 +30,8 @@ find_package(ltm_shared_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(eigen3_cmake_module REQUIRED)
 
 # Create executable
 add_executable(go2_driver_node 
@@ -59,6 +61,7 @@ ament_target_dependencies(go2_driver_node
   tf2
   tf2_ros
   tf2_geometry_msgs
+  Eigen3
 )
 
 # Install executable

@@ -6,6 +6,9 @@
 
 #include <ltm_go2_driver/odom_processing.hpp>
 
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
+
 using namespace LTM;
 
 OdomProcessing::OdomProcessing() : Node(ODOM_PROCESSING_NODE_NAME)
@@ -28,7 +31,7 @@ OdomProcessing::~OdomProcessing()
 void OdomProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg)
 {
   RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Low State Message.");
-  updateBaseFootprintOrientation(msg->imu_state);
+  // updateBaseFootprintOrientation(msg->imu_state);
   publishImu(msg->imu_state);
 }
 
@@ -85,8 +88,8 @@ void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& trans
 
   // Update base_footprint
   m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
-  updateBaseFootprintTranslation(translation);
-  // updateBaseFootprintOrientation(orientation);
+  // updateBaseFootprintTranslation(translation);
+  updateBaseFootprintOrientation(translation, orientation);
 }
 
 void OdomProcessing::updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr pose_stamped)
@@ -98,8 +101,8 @@ void OdomProcessing::updateOdom(const geometry_msgs::msg::PoseStamped::SharedPtr
 
   // Update base_footprint
   m_base_footprint_msg->header.stamp = rclcpp::Clock().now();
-  updateBaseFootprintTranslation(pose_stamped->pose.position);
-  // updateBaseFootprintOrientation(pose_stamped->pose.orientation);
+  // updateBaseFootprintTranslation(pose_stamped->pose.position);
+  updateBaseFootprintOrientation(pose_stamped->pose.position, pose_stamped->pose.orientation);
 }
 
 geometry_msgs::msg::TransformStamped::SharedPtr OdomProcessing::getOdomMsg() const
@@ -141,42 +144,53 @@ void OdomProcessing::updateOdomOrientation(const geometry_msgs::msg::Quaternion&
 
 void OdomProcessing::updateBaseFootprintTranslation(const std::array<float, TRANSLATION_SIZE>& translation)
 {
+  // TODO: To be removed
   m_base_footprint_msg->transform.translation.z = -translation[static_cast<int>(TranslationIdx::Z)];
 }
 
 void OdomProcessing::updateBaseFootprintTranslation(const geometry_msgs::msg::Point& position)
 {
+  // TODO: To be removed
   m_base_footprint_msg->transform.translation.z = -position.z;
 }
 
-void OdomProcessing::updateBaseFootprintOrientation(const std::array<float, ORIENTATION_SIZE>& rotation)
+void OdomProcessing::updateBaseFootprintOrientation(
+  const std::array<float, TRANSLATION_SIZE>& translation, const std::array<float, ORIENTATION_SIZE>& rotation)
 {
-  std::array<float, ORIENTATION_SIZE> inverse_rotation = invertQuaternion(rotation);
-  
-  // Focus only on pitch due to sitting
-  // inverse_rotation[static_cast<int>(OrientationIdx::X)] = 0.0;
-  // inverse_rotation[static_cast<int>(OrientationIdx::Z)] = 0.0;
-  // inverse_rotation = normalizeQuaternion(inverse_rotation);
+  Eigen::Quaterniond q(rotation[static_cast<int>(OrientationIdx::W)], rotation[static_cast<int>(OrientationIdx::X)],
+    rotation[static_cast<int>(OrientationIdx::Y)], rotation[static_cast<int>(OrientationIdx::Z)]);
+  Eigen::Quaterniond q_inverse = q.inverse();
 
-  m_base_footprint_msg->transform.rotation.x = inverse_rotation[static_cast<int>(OrientationIdx::X)];
-  m_base_footprint_msg->transform.rotation.y = inverse_rotation[static_cast<int>(OrientationIdx::Y)];
-  m_base_footprint_msg->transform.rotation.z = inverse_rotation[static_cast<int>(OrientationIdx::Z)];
-  m_base_footprint_msg->transform.rotation.w = inverse_rotation[static_cast<int>(OrientationIdx::W)];
+  m_base_footprint_msg->transform.rotation.x = q_inverse.x();
+  m_base_footprint_msg->transform.rotation.y = q_inverse.y();
+  m_base_footprint_msg->transform.rotation.z = q_inverse.z();
+  m_base_footprint_msg->transform.rotation.w = q_inverse.w();
+
+  Eigen::Vector3d translation_vector(0, 0, -translation[static_cast<int>(TranslationIdx::Z)]);
+  Eigen::Vector3d rotated_translation = q_inverse * translation_vector;
+
+  m_base_footprint_msg->transform.translation.x = rotated_translation.x();
+  m_base_footprint_msg->transform.translation.y = rotated_translation.y();
+  m_base_footprint_msg->transform.translation.z = rotated_translation.z();
 }
 
-void OdomProcessing::updateBaseFootprintOrientation(const geometry_msgs::msg::Quaternion& orientation)
+void OdomProcessing::updateBaseFootprintOrientation(
+  const geometry_msgs::msg::Point& position, const geometry_msgs::msg::Quaternion& orientation)
 {
-  geometry_msgs::msg::Quaternion inverse_orientation = invertQuaternion(orientation);
+  Eigen::Quaterniond q(orientation.w, orientation.x, orientation.y, orientation.z);
+  Eigen::Quaterniond q_inverse = q.inverse();
 
-  // Focus only on pitch due to sitting
-  // inverse_orientation.x = 0.0;
-  // inverse_orientation.z = 0.0;
-  // inverse_orientation = normalizeQuaternion(inverse_orientation);
+  m_base_footprint_msg->transform.rotation.x = q_inverse.x();
+  m_base_footprint_msg->transform.rotation.y = q_inverse.y();
+  m_base_footprint_msg->transform.rotation.z = q_inverse.z();
+  m_base_footprint_msg->transform.rotation.w = q_inverse.w();
 
-  m_base_footprint_msg->transform.rotation.x = inverse_orientation.x;
-  m_base_footprint_msg->transform.rotation.y = inverse_orientation.y;
-  m_base_footprint_msg->transform.rotation.z = inverse_orientation.z;
-  m_base_footprint_msg->transform.rotation.w = inverse_orientation.w;
+  Eigen::Vector3d translation_vector(0, 0, -position.z);
+  Eigen::Vector3d rotated_translation = q_inverse * translation_vector;
+
+  m_base_footprint_msg->transform.translation.x = rotated_translation.x();
+  m_base_footprint_msg->transform.translation.y = rotated_translation.y();
+  m_base_footprint_msg->transform.translation.z = rotated_translation.z();
 }
 
 void OdomProcessing::updateBaseFootprintOrientation(const unitree_go::msg::IMUState& imu_state)
