@@ -64,9 +64,9 @@ void PointCloudFilterNode::filterPointCloud(const pcl::PointCloud<pcl::PointXYZ>
 
 void PointCloudFilterNode::initializeInputPointcloudSubscriber()
 {
-  this->declare_parameter("input_pointcloud_topic_name", "pointcloud");
-  this->declare_parameter("input_pointcloud_topic_queue_size", 10);
-  this->declare_parameter("input_pointcloud_topic_frame_id", "radar");
+  this->declare_parameter("input_pointcloud_topic_name", "input_pointcloud");
+  this->declare_parameter("input_pointcloud_topic_queue_size", 1);
+  this->declare_parameter("input_pointcloud_topic_frame_id", "input_link");
 
   std::string input_pointcloud_topic = this->get_parameter("input_pointcloud_topic_name").as_string();
   int input_pointcloud_queue_size = this->get_parameter("input_pointcloud_topic_queue_size").as_int();
@@ -80,9 +80,9 @@ void PointCloudFilterNode::initializeInputPointcloudSubscriber()
 
 void PointCloudFilterNode::initializeOutputPointcloudPublisher()
 {
-  this->declare_parameter("output_pointcloud_topic_name", "filtered_pointcloud");
-  this->declare_parameter("output_pointcloud_topic_queue_size", 10);
-  this->declare_parameter("output_pointcloud_topic_frame_id", "map");
+  this->declare_parameter("output_pointcloud_topic_name", "output_pointcloud");
+  this->declare_parameter("output_pointcloud_topic_queue_size", 1);
+  this->declare_parameter("output_pointcloud_topic_frame_id", "output_link");
 
   std::string output_pointcloud_topic = this->get_parameter("output_pointcloud_topic_name").as_string();
   int output_pointcloud_queue_size = this->get_parameter("output_pointcloud_topic_queue_size").as_int();
@@ -98,12 +98,4 @@ void PointCloudFilterNode::initializeTransformListener()
 {
   m_tf_buffer = std::make_unique<tf2_ros::Buffer>(get_clock());
   m_tf_listener = std::make_unique<tf2_ros::TransformListener>(*m_tf_buffer);
-}
-
-int main(int argc, char ** argv)
-{
-  rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<PointCloudFilterNode>());
-  rclcpp::shutdown();
-  return 0;
 }

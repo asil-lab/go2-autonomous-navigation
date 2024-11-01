@@ -34,30 +34,33 @@ find_package(assimp REQUIRED)
 find_package(PCL REQUIRED)
 include_directories(include)
 
-# Create pointcloud_filter_node executable
-add_executable(pointcloud_filter_node 
+# Create voxel_grid_filter_node executable
+add_executable(voxel_grid_filter_node 
+  src/voxel_grid_filter_node.cpp
   src/pointcloud_filter_node.cpp
 )
 
-target_include_directories(pointcloud_filter_node PUBLIC
+target_include_directories(voxel_grid_filter_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(pointcloud_filter_node
+ament_target_dependencies(voxel_grid_filter_node
   rclcpp
   sensor_msgs
   pcl_ros
   tf2_ros
 )
 
-target_link_libraries(pointcloud_filter_node
+target_link_libraries(voxel_grid_filter_node
   ${PCL_LIBRARIES}
   ${ASSIMP_LIBRARIES}
 )
 
 # Install executables
-install(TARGETS pointcloud_filter_node
-  DESTINATION lib/${PROJECT_NAME})
+install(TARGETS 
+  voxel_grid_filter_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 # Install launch files.
 install(DIRECTORY
