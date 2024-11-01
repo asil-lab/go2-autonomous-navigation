@@ -37,9 +37,6 @@ include_directories(include)
 # Create pointcloud_filter_node executable
 add_executable(pointcloud_filter_node 
   src/pointcloud_filter_node.cpp
-  src/ground_plane_segmentation.cpp
-  src/robot_cluster_removal.cpp
-  src/statistical_outlier_removal.cpp
 )
 
 target_include_directories(pointcloud_filter_node PUBLIC
@@ -48,18 +45,9 @@ target_include_directories(pointcloud_filter_node PUBLIC
 
 ament_target_dependencies(pointcloud_filter_node
   rclcpp
-  ament_index_cpp
-  tf2_ros
-  tf2
-  tf2_eigen
-  tf2_geometry_msgs
   sensor_msgs
-  visualization_msgs
-  vision_msgs
-  geometry_msgs
   pcl_ros
-  urdf
-  assimp
+  tf2_ros
 )
 
 target_link_libraries(pointcloud_filter_node

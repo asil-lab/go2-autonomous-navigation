@@ -29,13 +29,14 @@ namespace LTM // TODO: Change this to LTM
     PointCloudFilterNode();
     ~PointCloudFilterNode();
 
-  private:
+  protected:
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, 
       const rclcpp::Time& stamp);
 
     virtual void filterPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in,
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out);
+    
 
     void initializeInputPointcloudSubscriber();
     void initializeOutputPointcloudPublisher();
