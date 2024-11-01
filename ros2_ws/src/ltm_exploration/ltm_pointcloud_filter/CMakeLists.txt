@@ -78,9 +78,32 @@ target_link_libraries(ground_plane_segmentation_node
   ${ASSIMP_LIBRARIES}
 )
 
+# Create statistical_outlier_removal_node executable
+add_executable(statistical_outlier_removal_node 
+  src/statistical_outlier_removal_node.cpp
+  src/pointcloud_filter_node.cpp
+)
+
+target_include_directories(statistical_outlier_removal_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(statistical_outlier_removal_node
+  rclcpp
+  sensor_msgs
+  pcl_ros
+  tf2_ros
+)
+
+target_link_libraries(statistical_outlier_removal_node
+  ${PC_LIBRARIES}
+  ${ASSIMP_LIBRARIES}
+)
+
 # Install executables
 install(TARGETS
   ground_plane_segmentation_node
+  statistical_outlier_removal_node
   voxel_grid_filter_node
   DESTINATION lib/${PROJECT_NAME}
 )
