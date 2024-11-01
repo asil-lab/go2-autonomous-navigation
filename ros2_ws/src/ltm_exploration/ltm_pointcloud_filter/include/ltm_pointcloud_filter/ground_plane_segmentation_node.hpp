@@ -17,24 +17,21 @@
 
 namespace LTM
 {
-  class GroundPlaneSegmentation : public PointcloudFilter
-  {
+  class GroundPlaneSegmentation : public PointCloudFilterNode {
   public:
     GroundPlaneSegmentation();
     ~GroundPlaneSegmentation() = default;
 
-    void segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
-      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane) const;
+  private:
+    void filterPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out) override;
+
     bool findPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
       pcl::PointIndices::Ptr inliers, pcl::ModelCoefficients::Ptr coefficients) const;
     void removePlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered, pcl::PointIndices::Ptr inliers) const;
 
-    void configureSACSegmentationParameters(const double& distance_threshold,
-      int max_iterations, const double& probability);
-
-  private:
-    
+    void initializeSacSegmentationParameters();
 
     std::unique_ptr<pcl::SACSegmentation<pcl::PointXYZ>> m_sac_segmentation;
     std::unique_ptr<pcl::ExtractIndices<pcl::PointXYZ>> m_extract_indices;

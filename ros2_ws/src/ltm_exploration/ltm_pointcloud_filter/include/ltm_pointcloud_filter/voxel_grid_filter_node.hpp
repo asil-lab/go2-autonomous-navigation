@@ -15,8 +15,6 @@
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 
-#include <string>
-
 namespace LTM {
   class VoxelGridFilter: public PointCloudFilterNode {
     public:

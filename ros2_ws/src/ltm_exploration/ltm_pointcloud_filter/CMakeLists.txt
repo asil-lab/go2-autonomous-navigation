@@ -56,8 +56,31 @@ target_link_libraries(voxel_grid_filter_node
   ${ASSIMP_LIBRARIES}
 )
 
+# Create ground_plane_segmentation_node executable
+add_executable(ground_plane_segmentation_node 
+  src/ground_plane_segmentation_node.cpp
+  src/pointcloud_filter_node.cpp
+)
+
+target_include_directories(ground_plane_segmentation_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(ground_plane_segmentation_node
+  rclcpp
+  sensor_msgs
+  pcl_ros
+  tf2_ros
+)
+
+target_link_libraries(ground_plane_segmentation_node
+  ${PCL_LIBRARIES}
+  ${ASSIMP_LIBRARIES}
+)
+
 # Install executables
-install(TARGETS 
+install(TARGETS
+  ground_plane_segmentation_node
   voxel_grid_filter_node
   DESTINATION lib/${PROJECT_NAME}
 )
