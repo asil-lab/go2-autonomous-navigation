@@ -6,6 +6,8 @@
 
 #include "ltm_pointcloud_filter/pointcloud_filter_node.hpp"
 
+#include <geometry_msgs/msg/transform_stamped.hpp>
+
 using namespace LTM;
 
 PointCloudFilterNode::PointCloudFilterNode()
@@ -26,22 +28,30 @@ PointCloudFilterNode::~PointCloudFilterNode()
 
 void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
+  // Convert ROS message to PCL point cloud as input point cloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromROSMsg(*msg, *cloud_in);
 
+  // Filter the input point cloud to get the output point cloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out(new pcl::PointCloud<pcl::PointXYZ>);
-  // filterPointCloud(cloud_in, cloud_out);
+  filterPointCloud(cloud_in, cloud_out);
 
+  // Publish the output point cloud
   publishFilteredPointCloud(cloud_out, msg->header.stamp);
 }
 
 void PointCloudFilterNode::publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
   const rclcpp::Time& stamp)
 {
+  // Convert PCL point cloud to ROS message as output point cloud
   sensor_msgs::msg::PointCloud2 msg;
   pcl::toROSMsg(*cloud, msg);
+
+  // Set the header of the output point cloud message
   msg.header.frame_id = m_output_pointcloud_frame_id;
   msg.header.stamp = stamp;
+
+  // Publish the output point cloud message
   m_output_pointcloud_pub->publish(msg);
 }
 

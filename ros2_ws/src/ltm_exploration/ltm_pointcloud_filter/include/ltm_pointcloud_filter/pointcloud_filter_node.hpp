@@ -36,7 +36,6 @@ namespace LTM // TODO: Change this to LTM
 
     virtual void filterPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in,
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out);
-    
 
     void initializeInputPointcloudSubscriber();
     void initializeOutputPointcloudPublisher();
