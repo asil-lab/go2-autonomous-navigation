@@ -6,26 +6,6 @@
 
 #include "ltm_pointcloud_filter/pointcloud_filter_node.hpp"
 
-#include <vector>
-
-#include <geometry_msgs/msg/transform_stamped.hpp>
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/extract_indices.h>
-	
-#include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/search/kdtree.h>
-#include <pcl/segmentation/extract_clusters.h>
-
-#include <ament_index_cpp/get_package_share_directory.hpp>
-
-#include <Eigen/Geometry>
-
 using namespace LTM;
 
 PointCloudFilterNode::PointCloudFilterNode()

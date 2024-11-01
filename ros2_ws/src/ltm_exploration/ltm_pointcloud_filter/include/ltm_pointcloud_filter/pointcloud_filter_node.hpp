@@ -8,25 +8,16 @@
 #define LTM_POINTCLOUD_FILTER__POINTCLOUD_FILTER_NODE_HPP_
 
 #include "rclcpp/rclcpp.hpp"
-#include <rclcpp/qos.hpp>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <visualization_msgs/msg/marker.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/transforms.hpp>
 #include <pcl/common/common.h>
-#include <pcl/filters/crop_box.h>
 
-#include <tf2/transform_datatypes.h>
 #include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
 #include <tf2/convert.h>
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2_eigen/tf2_eigen.h>
-
-#include <urdf/model.h>
-#include <pcl/PolygonMesh.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <string>
 
