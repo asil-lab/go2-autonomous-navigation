@@ -26,7 +26,7 @@ namespace LTM // TODO: Change this to LTM
   class PointCloudFilterNode : public rclcpp::Node
   {
   public:
-    PointCloudFilterNode();
+    PointCloudFilterNode(const std::string& node_name);
     ~PointCloudFilterNode();
 
   protected:
@@ -43,7 +43,6 @@ namespace LTM // TODO: Change this to LTM
 
     std::unique_ptr<tf2_ros::Buffer> m_tf_buffer;
     std::unique_ptr<tf2_ros::TransformListener> m_tf_listener;
-
     std::string m_input_pointcloud_frame_id;
     std::string m_output_pointcloud_frame_id;
 

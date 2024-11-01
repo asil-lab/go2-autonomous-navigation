@@ -4,8 +4,10 @@
  * Date: 31-07-2024.
  */
 
-#ifndef LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_HPP_
-#define LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_HPP_
+#ifndef LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_NODE_HPP_
+#define LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_NODE_HPP_
+
+#include <ltm_pointcloud_filter/pointcloud_filter_node.hpp>
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
@@ -15,11 +17,11 @@
 
 namespace LTM
 {
-  class GroundPlaneSegmentation
+  class GroundPlaneSegmentation : public PointcloudFilter
   {
   public:
     GroundPlaneSegmentation();
-    ~GroundPlaneSegmentation();
+    ~GroundPlaneSegmentation() = default;
 
     void segmentPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane) const;
@@ -32,10 +34,12 @@ namespace LTM
       int max_iterations, const double& probability);
 
   private:
+    
+
     std::unique_ptr<pcl::SACSegmentation<pcl::PointXYZ>> m_sac_segmentation;
     std::unique_ptr<pcl::ExtractIndices<pcl::PointXYZ>> m_extract_indices;
 
   }; // class GroundPlaneSegmentation
 } // namespace LTMPointcloudFilter
 
-#endif // LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_HPP_
+#endif // LTM_POINTCLOUD_FILTER__GROUND_PLANE_SEGMENTATION_NODE_HPP_

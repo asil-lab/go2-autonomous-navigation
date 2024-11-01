@@ -9,7 +9,7 @@
 using namespace LTM;
 
 VoxelGridFilter::VoxelGridFilter()
-: PointCloudFilterNode()
+: PointCloudFilterNode("voxel_grid_filter_node")
 {
   initialLeafSize();
 }

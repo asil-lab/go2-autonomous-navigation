@@ -10,20 +10,20 @@
 
 using namespace LTM;
 
-PointCloudFilterNode::PointCloudFilterNode()
-: Node("pointcloud_filter_node")
+PointCloudFilterNode::PointCloudFilterNode(const std::string& node_name)
+: Node(node_name)
 {
   // Initialize ROS communication
   initializeInputPointcloudSubscriber();
   initializeOutputPointcloudPublisher();
   initializeTransformListener();
 
-  RCLCPP_INFO(get_logger(), "Point Cloud Filter Node has been initialized");
+  RCLCPP_INFO(get_logger(), "%s has been initialized", get_name());
 }
 
 PointCloudFilterNode::~PointCloudFilterNode()
 {
-  RCLCPP_WARN(get_logger(), "Point Cloud Filter Node has been terminated");
+  RCLCPP_WARN(get_logger(), "%s has been terminated", get_name());
 }
 
 void PointCloudFilterNode::pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
