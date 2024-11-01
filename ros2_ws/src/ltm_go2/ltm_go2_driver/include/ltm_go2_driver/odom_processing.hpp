@@ -71,9 +71,13 @@ namespace LTM
       void initializeOdomTransformMsg();
       void initializeBaseFootprintMsg();
 
+      void declareInitialTranslation();
+      void initializeInitialTranslation(const double& x, const double& y);
+
       enum class TranslationIdx { X = 0, Y = 1, Z = 2 };
       enum class OrientationIdx { X = 1, Y = 2, Z = 3, W = 0 };
 
+      std::array<float, TRANSLATION_SIZE> m_initial_translation;
       geometry_msgs::msg::TransformStamped::SharedPtr m_odom_msg;
       geometry_msgs::msg::TransformStamped::SharedPtr m_base_footprint_msg;
 
