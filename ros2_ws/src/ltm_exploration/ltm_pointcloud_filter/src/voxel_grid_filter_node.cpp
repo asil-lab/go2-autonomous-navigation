@@ -4,7 +4,7 @@
  * Date: 06-08-2024.
  */
 
-#include <ltm_pointcloud_filter/voxel_grid_filter.hpp>
+#include <ltm_pointcloud_filter/voxel_grid_filter_node.hpp>
 
 using namespace LTM;
 
@@ -26,5 +26,7 @@ void VoxelGridFilter::setLeafSize(const double& x, const double& y, const double
 {
   m_voxel_grid_filter.setLeafSize(x, y, z);
 }
+
+
 
 // End of file: ltm_pointcloud_filter/src/voxel_grid_filter.cpp
