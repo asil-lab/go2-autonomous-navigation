@@ -17,20 +17,12 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(visualization_msgs REQUIRED)
-find_package(vision_msgs)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2 REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
-find_package(tf2_eigen REQUIRED)
-find_package(urdf REQUIRED)
-find_package(assimp REQUIRED)
 find_package(PCL REQUIRED)
 include_directories(include)
 
@@ -100,8 +92,31 @@ target_link_libraries(statistical_outlier_removal_node
   ${ASSIMP_LIBRARIES}
 )
 
+# Create crop_box_filter_node executable
+add_executable(crop_box_filter_node 
+  src/crop_box_filter_node.cpp
+  src/pointcloud_filter_node.cpp
+)
+
+target_include_directories(crop_box_filter_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(crop_box_filter_node
+  rclcpp
+  sensor_msgs
+  pcl_ros
+  tf2_ros
+)
+
+target_link_libraries(crop_box_filter_node
+  ${PCL_LIBRARIES}
+  ${ASSIMP_LIBRARIES}
+)
+
 # Install executables
 install(TARGETS
+  crop_box_filter_node
   ground_plane_segmentation_node
   statistical_outlier_removal_node
   voxel_grid_filter_node
