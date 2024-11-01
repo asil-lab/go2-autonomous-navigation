@@ -13,6 +13,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPalette>
 #include <rviz_common/panel.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <thread>
@@ -39,6 +40,7 @@ namespace LTM
   protected:
     QLabel * m_battery_percentage_label;
     QLabel * m_battery_percentage_value;
+    QPalette m_battery_percentage_value_palette;
     uint8_t m_battery_percentage;
 
     rclcpp::Node::SharedPtr m_node;

@@ -16,9 +16,12 @@ namespace LTM
     m_battery_percentage_label->setAlignment(Qt::AlignCenter);
     m_battery_percentage_label->setStyleSheet("font-size: 20px; font-weight: bold;");
 
+    m_battery_percentage_value_palette.setColor(QPalette::WindowText, Qt::gray);
+
     m_battery_percentage_value = new QLabel("N/A");
     m_battery_percentage_value->setAlignment(Qt::AlignCenter);
-    m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold; color: gray;");
+    m_battery_percentage_value->setPalette(m_battery_percentage_value_palette);
+    m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold;");
 
     QHBoxLayout * layout = new QHBoxLayout;
     layout->addWidget(m_battery_percentage_label);
@@ -76,16 +79,17 @@ namespace LTM
     m_battery_percentage_value->setText(QString::number(m_battery_percentage) + "%");
     if (m_battery_percentage <= 25)
     {
-      m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold; color: red;");
+      m_battery_percentage_value_palette.setColor(QPalette::WindowText, Qt::red);
     }
     else if (m_battery_percentage <= 50)
     {
-      m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold; color: orange;");
+      m_battery_percentage_value_palette.setColor(QPalette::WindowText, Qt::yellow);
     }
     else
     {
-      m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold; color: green;");
+      m_battery_percentage_value_palette.setColor(QPalette::WindowText, Qt::green);
     }
+    m_battery_percentage_value->setPalette(m_battery_percentage_value_palette);
   }
 }
 
