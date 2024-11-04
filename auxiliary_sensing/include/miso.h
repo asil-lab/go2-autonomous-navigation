@@ -29,6 +29,20 @@ void float_to_uint32(float f, uint32_t *i) {
     memcpy(i, &f, sizeof(f));
 }
 
+// Function to convert uint32_t to binary string for transmission.
+char * uint32_to_string(uint32_t i) {
+    static char buffer[FLOAT_SIZE + 1];
+    buffer[FLOAT_SIZE] = '\0';
+
+    // Order the bits from MSB to LSB.
+    for (int j = FLOAT_SIZE - 1; j >= 0; j--) {
+        buffer[j] = (i & 1) + '0';
+        i >>= 1;
+    }
+
+    return buffer;
+}
+
 // Function to output the data as string of bits received from the slave device.
 char * mosi_to_string(struct MOSI *mosi) {
     static char buffer[MISO_BUFFER_SIZE];
@@ -40,7 +54,12 @@ char * mosi_to_string(struct MOSI *mosi) {
     float_to_uint32(mosi->lux, &lux);
 
     // Convert the uint32_t values to string of bits.
-    sprintf(buffer, "%lu%lu%lu", temperature, humidity, lux);
+    char *temperature_str = uint32_to_string(temperature);
+    char *humidity_str = uint32_to_string(humidity);
+    char *lux_str = uint32_to_string(lux);
+
+    // Concatenate the strings.
+    snprintf(buffer, MISO_BUFFER_SIZE, "%s %s %s", temperature_str, humidity_str, lux_str);
 
     return buffer;
 }
