@@ -15,3 +15,6 @@
 [submodule "ros2_ws/src/libraries/depthimage_to_pointcloud2"]
 	path = ros2_ws/src/libraries/depthimage_to_pointcloud2
 	url = https://github.com/AlexanderJamesBecoy/depthimage_to_pointcloud2.git
+[submodule "auxiliary_sensing/lib/hp_BH1750"]
+	path = auxiliary_sensing/lib/hp_BH1750
+	url = https://github.com/Starmbi/hp_BH1750.git
