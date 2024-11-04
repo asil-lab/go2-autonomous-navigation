@@ -40,7 +40,7 @@ char * mosi_to_string(struct MOSI *mosi) {
     float_to_uint32(mosi->lux, &lux);
 
     // Convert the uint32_t values to string of bits.
-    sprintf(buffer, "%u%u%u", temperature, humidity, lux);
+    sprintf(buffer, "%lu%lu%lu", temperature, humidity, lux);
 
     return buffer;
 }
