@@ -1,53 +1,38 @@
 #include <Arduino.h>
-#include <hp_BH1750.h>
-#include <Adafruit_SHT31.h>
-#include <Wire.h>
+#include "miso.h"
+#include "sensors/lux.h"
+#include "sensors/temp_humidity.h"
 
-struct MISO {
-  u_int32_t lux;
-  u_int32_t temperature;
-  u_int32_t humidity;
-};
+#define SERIAL_BAUD_RATE 115200
+#define DELAY_TIME 100
 
-Adafruit_SHT31 sht31 = Adafruit_SHT31();
-hp_BH1750 BH1750;
+struct MOSI mosi;
 
 void setup() {
-  Serial.begin(115200);
+  // Initialize the serial communication.
+    Serial.begin(SERIAL_BAUD_RATE);
 
-  bool avail = BH1750.begin(BH1750_TO_GROUND);
-  if (!avail) {
-    Serial.println("No BH1750 sensor found!");
-    while (true) {};
-  }
-  Serial.println("BH1750 sensor found!");
+    // Initialize the sensors.
+    if (!isLuxSensorAvailable()) {
+        Serial.println("Lux sensor not available.");
+        while (true) {};
+    }
 
-  if (! sht31.begin(0x44)) {
-    Serial.println("Couldn't find SHT31");
-    while (1) delay(1);
-  }
-  Serial.println("SHT31 sensor found!");
+    if (!isTempHumiditySensorAvailable()) {
+        Serial.println("Temperature and humidity sensor not available.");
+        while (true) {};
+    }
 }
 
 void loop() {
-  BH1750.start();
-  float lux = BH1750.getLux();
-  Serial.print("Lux: "); Serial.println(lux);
+    // Read the sensor data.
+    mosi.lux = getLuxValue();
+    mosi.temperature = getTemperatureValue();
+    mosi.humidity = getHumidityValue();
 
-  float t = sht31.readTemperature();
-  float h = sht31.readHumidity();
+    // Output the sensor data.
+    Serial.println(mosi_to_string(&mosi));
 
-  if (! isnan(t)) {
-    Serial.print("Temp *C = "); Serial.print(t); Serial.print("\t\t");
-  } else { 
-    Serial.println("Failed to read temperature");
-  }
-
-  if (! isnan(h)) {
-    Serial.print("Hum. % = "); Serial.println(h);
-  } else { 
-    Serial.println("Failed to read humidity");
-  }
-
-  delay(1000);
+    // Delay for 1 second.
+    delay(DELAY_TIME);
 }
