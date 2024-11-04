@@ -18,3 +18,6 @@
 [submodule "auxiliary_sensing/lib/hp_BH1750"]
 	path = auxiliary_sensing/lib/hp_BH1750
 	url = https://github.com/Starmbi/hp_BH1750.git
+[submodule "auxiliary_sensing/lib/Adafruit_SHT31"]
+	path = auxiliary_sensing/lib/Adafruit_SHT31
+	url = https://github.com/adafruit/Adafruit_SHT31.git
