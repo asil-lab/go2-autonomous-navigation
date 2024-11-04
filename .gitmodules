@@ -21,3 +21,6 @@
 [submodule "auxiliary_sensing/lib/Adafruit_SHT31"]
 	path = auxiliary_sensing/lib/Adafruit_SHT31
 	url = https://github.com/adafruit/Adafruit_SHT31.git
+[submodule "auxiliary_sensing/lib/Adafruit_BusIO"]
+	path = auxiliary_sensing/lib/Adafruit_BusIO
+	url = https://github.com/adafruit/Adafruit_BusIO.git
