@@ -43,6 +43,7 @@ void CropBoxFilterNode::initializeCropBox()
   Eigen::Vector4f max_point(max_x, max_y, max_z, 1.0);
   m_crop_box_filter.setMin(min_point);
   m_crop_box_filter.setMax(max_point);
+  m_crop_box_filter.setNegative(true);
 
   RCLCPP_INFO(get_logger(), "Crop box filter has been initialized with min point (%.2f, %.2f, %.2f) m, and max point (%.2f, %.2f, %.2f) m",
     min_x, min_y, min_z, max_x, max_y, max_z);
