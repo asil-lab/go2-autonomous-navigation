@@ -9,6 +9,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
+#include <std_msgs/msg/header.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
@@ -32,19 +33,13 @@ namespace LTM // TODO: Change this to LTM
   protected:
     void pointcloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
     void publishFilteredPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, 
-      const rclcpp::Time& stamp);
+      const std_msgs::msg::Header& header);
 
     virtual void filterPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in,
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out);
 
     void initializeInputPointcloudSubscriber();
     void initializeOutputPointcloudPublisher();
-    void initializeTransformListener();
-
-    std::unique_ptr<tf2_ros::Buffer> m_tf_buffer;
-    std::unique_ptr<tf2_ros::TransformListener> m_tf_listener;
-    std::string m_input_pointcloud_frame_id;
-    std::string m_output_pointcloud_frame_id;
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr m_input_pointcloud_sub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_output_pointcloud_pub;

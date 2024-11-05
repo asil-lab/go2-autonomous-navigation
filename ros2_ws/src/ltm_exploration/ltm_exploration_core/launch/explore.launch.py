@@ -24,15 +24,13 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'input_pointcloud_topic_name': 'point_cloud/raw',
-            'input_pointcloud_topic_frame_id': 'radar',
             'output_pointcloud_topic_name': 'point_cloud/cropped',
-            'output_pointcloud_topic_frame_id': 'radar',
-            'crop_box_min_x': -0.1,
-            'crop_box_max_x': 0.65,
-            'crop_box_min_y': -0.25,
-            'crop_box_max_y': 0.25,
-            'crop_box_min_z': -0.4,
-            'crop_box_max_z': 0.25,
+            'min_x': -0.1,
+            'max_x': 0.65,
+            'min_y': -0.25,
+            'max_y': 0.25,
+            'min_z': -0.4,
+            'max_z': 0.25,
         }],
     )
 
@@ -52,9 +50,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'input_pointcloud_topic_name': 'point_cloud/buffered',
-            'input_pointcloud_topic_frame_id': 'odom',
             'output_pointcloud_topic_name': 'point_cloud/downsampled',
-            'output_pointcloud_topic_frame_id': 'odom',
             'leaf_size_x': 0.01,
             'leaf_size_y': 0.01,
             'leaf_size_z': 0.01,
@@ -69,9 +65,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'input_pointcloud_topic_name': 'point_cloud/downsampled',
-            'input_pointcloud_topic_frame_id': 'odom',
             'output_pointcloud_topic_name': 'point_cloud/plane_segmented',
-            'output_pointcloud_topic_frame_id': 'odom',
             'distance_threshold': 0.1,
             'max_iterations': 1000,
             'probability': 0.9,
