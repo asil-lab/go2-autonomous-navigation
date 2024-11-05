@@ -23,20 +23,20 @@ void CropBoxFilterNode::filterPointCloud(const pcl::PointCloud<pcl::PointXYZ>::P
 
 void CropBoxFilterNode::initializeCropBox()
 {
-  this->declare_parameter("crop_box_min_x", -1.0);
-  this->declare_parameter("crop_box_min_y", -1.0);
-  this->declare_parameter("crop_box_min_z", -1.0);
-  this->declare_parameter("crop_box_max_x", 1.0);
-  this->declare_parameter("crop_box_max_y", 1.0);
-  this->declare_parameter("crop_box_max_z", 1.0);
+  this->declare_parameter("min_x", -1.0);
+  this->declare_parameter("min_y", -1.0);
+  this->declare_parameter("min_z", -1.0);
+  this->declare_parameter("max_x", 1.0);
+  this->declare_parameter("max_y", 1.0);
+  this->declare_parameter("max_z", 1.0);
 
   double min_x, min_y, min_z, max_x, max_y, max_z;
-  min_x = this->get_parameter("crop_box_min_x").as_double();
-  min_y = this->get_parameter("crop_box_min_y").as_double();
-  min_z = this->get_parameter("crop_box_min_z").as_double();
-  max_x = this->get_parameter("crop_box_max_x").as_double();
-  max_y = this->get_parameter("crop_box_max_y").as_double();
-  max_z = this->get_parameter("crop_box_max_z").as_double();
+  min_x = this->get_parameter("min_x").as_double();
+  min_y = this->get_parameter("min_y").as_double();
+  min_z = this->get_parameter("min_z").as_double();
+  max_x = this->get_parameter("max_x").as_double();
+  max_y = this->get_parameter("max_y").as_double();
+  max_z = this->get_parameter("max_z").as_double();
 
   // Set the crop box filter parameters
   Eigen::Vector4f min_point(min_x, min_y, min_z, 1.0);
