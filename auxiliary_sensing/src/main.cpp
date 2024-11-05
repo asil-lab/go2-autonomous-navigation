@@ -4,7 +4,7 @@
 #include "sensors/temp_humidity.h"
 
 #define SERIAL_BAUD_RATE 115200
-#define DELAY_TIME 100
+#define DELAY_TIME 1000
 
 struct MOSI mosi;
 
@@ -18,20 +18,22 @@ void setup() {
         while (true) {};
     }
 
-    if (!isTempHumiditySensorAvailable()) {
-        Serial.println("Temperature and humidity sensor not available.");
-        while (true) {};
-    }
+    // if (!isTempHumiditySensorAvailable()) {
+    //     Serial.println("Temperature and humidity sensor not available.");
+    //     while (true) {};
+    // }
 }
 
 void loop() {
     // Read the sensor data.
     mosi.lux = getLuxValue();
-    mosi.temperature = getTemperatureValue();
-    mosi.humidity = getHumidityValue();
+    // mosi.temperature = getTemperatureValue();
+    // mosi.humidity = getHumidityValue();
+
+    Serial.println("Lux: " + String(mosi.lux));
 
     // Output the sensor data.
-    Serial.println(mosi_to_string(&mosi));
+    // Serial.println(mosi_to_string(&mosi));
 
     // Delay for 1 second.
     delay(DELAY_TIME);

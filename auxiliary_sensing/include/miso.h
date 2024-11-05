@@ -13,6 +13,16 @@
 
 #define FLOAT_SIZE 32
 #define MISO_BUFFER_SIZE FLOAT_SIZE * 3
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+  ((byte) & 0x80 ? '1' : '0'), \
+  ((byte) & 0x40 ? '1' : '0'), \
+  ((byte) & 0x20 ? '1' : '0'), \
+  ((byte) & 0x10 ? '1' : '0'), \
+  ((byte) & 0x08 ? '1' : '0'), \
+  ((byte) & 0x04 ? '1' : '0'), \
+  ((byte) & 0x02 ? '1' : '0'), \
+  ((byte) & 0x01 ? '1' : '0') 
 
 // Function prototypes
 void float_to_uint32(float f, uint32_t *i);
@@ -24,7 +34,7 @@ struct MOSI {
     float lux;
 };
 
-// Function to convert float to uint32_t for transmission.
+// Function to convert float to uint32_t according to IEEE 754 standard.
 void float_to_uint32(float f, uint32_t *i) {
     memcpy(i, &f, sizeof(f));
 }
@@ -34,10 +44,10 @@ char * uint32_to_string(uint32_t i) {
     static char buffer[FLOAT_SIZE + 1];
     buffer[FLOAT_SIZE] = '\0';
 
-    // Order the bits from MSB to LSB.
-    for (int j = FLOAT_SIZE - 1; j >= 0; j--) {
-        buffer[j] = (i & 1) + '0';
-        i >>= 1;
+    // Order the bits according to the IEEE 754 standard.
+    for (int j = 0; j < FLOAT_SIZE; j++) {
+        buffer[FLOAT_SIZE - j - 1] = 0;
+    //     buffer[FLOAT_SIZE - j - 1] = (i & (1 << j)) ? '1' : '0';
     }
 
     return buffer;
@@ -59,7 +69,7 @@ char * mosi_to_string(struct MOSI *mosi) {
     char *lux_str = uint32_to_string(lux);
 
     // Concatenate the strings.
-    snprintf(buffer, MISO_BUFFER_SIZE, "%s %s %s", temperature_str, humidity_str, lux_str);
+    snprintf(buffer, MISO_BUFFER_SIZE, "%s %s %s", temperature, humidity, lux);
 
     return buffer;
 }
