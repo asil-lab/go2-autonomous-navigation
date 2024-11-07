@@ -93,6 +93,21 @@ def generate_launch_description():
         }],
     )
 
+    # Online synchronous SLAM node
+    online_sync_slam_config_filename = 'mapper_params_online_sync.yaml'
+    online_sync_slam_config_filepath = os.path.join(
+        get_package_share_directory('ltm_exploration_core'), 'config', online_sync_slam_config_filename)
+    online_sync_slam_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('slam_toolbox'), 'launch', 'online_sync_launch.py')
+        ),
+        launch_arguments=[
+            ('use_sim_time', 'false'),
+            ('params_file', online_sync_slam_config_filepath),
+            # ('use_map_saver', LaunchConfiguration('use_map_saver')),
+        ],
+    )
+
     # Return launch description
     return LaunchDescription([
         crop_box_filter_node,
@@ -100,4 +115,5 @@ def generate_launch_description():
         voxel_grid_filter_node,
         ground_plane_segmentation_node,
         pointcloud_to_laserscan_node,
+        online_sync_slam_node,
     ])
