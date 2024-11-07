@@ -72,10 +72,32 @@ def generate_launch_description():
         }],
     )
 
+    # Pointcloud to laserscan node
+    pointcloud_to_laserscan_node = Node(
+        package='pointcloud_to_laserscan',
+        executable='pointcloud_to_laserscan_node',
+        name='pointcloud_to_laserscan_node',
+        output='screen',
+        remappings=[('cloud_in', 'point_cloud/plane_segmented')],
+        parameters=[{
+            'min_height': 0.0,
+            'max_height': 0.3,
+            'angle_increment': np.pi / 720.0,
+            'queue_size': 1,
+            'scan_time': 0.01,
+            'range_min': 0.0,
+            'range_max': 5.0,
+            'target_frame': 'base_footprint',
+            'transform_tolerance': 0.01,
+            'use_inf': True,
+        }],
+    )
+
     # Return launch description
     return LaunchDescription([
         crop_box_filter_node,
         pointcloud_buffer_node,
         voxel_grid_filter_node,
         ground_plane_segmentation_node,
+        pointcloud_to_laserscan_node,
     ])

@@ -113,15 +113,15 @@ void OdomProcessing::updateBaseFootprint(
   m_base_footprint_msg->transform.translation.z = rotated_translation.z();
 
   // Get the yaw angle from the orientation quaternion
-  double yaw = atan2(2 * (q.x() * q.y() + q.w() * q.z()), q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());
-  Eigen::Quaterniond q_reduced(cos(yaw / 2), 0, 0, sin(yaw / 2));
-  Eigen::Quaterniond q_rotated = q_reduced * q_inverse;
+  // double yaw = atan2(2 * (q.x() * q.y() + q.w() * q.z()), q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());
+  // Eigen::Quaterniond q_reduced(cos(yaw / 2), 0, 0, sin(yaw / 2));
+  // Eigen::Quaterniond q_rotated = q_reduced * q_inverse;
 
   // Update the base_footprint frame orientation given the rotated quaternion.
-  m_base_footprint_msg->transform.rotation.x = q_rotated.x();
-  m_base_footprint_msg->transform.rotation.y = q_rotated.y();
-  m_base_footprint_msg->transform.rotation.z = q_rotated.z();
-  m_base_footprint_msg->transform.rotation.w = q_rotated.w();
+  m_base_footprint_msg->transform.rotation.x = q_inverse.x();
+  m_base_footprint_msg->transform.rotation.y = q_inverse.y();
+  m_base_footprint_msg->transform.rotation.z = q_inverse.z();
+  m_base_footprint_msg->transform.rotation.w = q_inverse.w();
 }
 
 void OdomProcessing::initializeROS()
