@@ -47,7 +47,7 @@ namespace LTM
 
     const double BATTERY_STATE_UPDATE_PERIOD = 1.0;
     const QColor COLOR_GREEN = QColor(0, 128, 0);
-    const QColor COLOR_ORANGE = QColor(255, 69, 0);
+    const QColor COLOR_ORANGE = QColor(254, 138, 24);
     const QColor COLOR_RED = QColor(255, 0, 0);
 
     rclcpp::Node::SharedPtr m_node;

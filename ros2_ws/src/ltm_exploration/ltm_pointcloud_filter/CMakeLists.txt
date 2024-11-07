@@ -17,60 +17,110 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(visualization_msgs REQUIRED)
-find_package(vision_msgs)
-find_package(geometry_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2 REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
-find_package(tf2_eigen REQUIRED)
-find_package(urdf REQUIRED)
-find_package(assimp REQUIRED)
 find_package(PCL REQUIRED)
 include_directories(include)
 
-# Create pointcloud_filter_node executable
-add_executable(pointcloud_filter_node 
+# Create voxel_grid_filter_node executable
+add_executable(voxel_grid_filter_node 
+  src/voxel_grid_filter_node.cpp
   src/pointcloud_filter_node.cpp
-  src/ground_plane_segmentation.cpp
-  src/robot_cluster_removal.cpp
-  src/statistical_outlier_removal.cpp
-  src/voxel_grid_filter.cpp
 )
 
-target_include_directories(pointcloud_filter_node PUBLIC
+target_include_directories(voxel_grid_filter_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-ament_target_dependencies(pointcloud_filter_node
+ament_target_dependencies(voxel_grid_filter_node
   rclcpp
-  ament_index_cpp
-  tf2_ros
-  tf2
-  tf2_eigen
-  tf2_geometry_msgs
+  std_msgs
   sensor_msgs
-  visualization_msgs
-  vision_msgs
-  geometry_msgs
   pcl_ros
-  urdf
-  assimp
 )
 
-target_link_libraries(pointcloud_filter_node
+target_link_libraries(voxel_grid_filter_node
+  ${PCL_LIBRARIES}
+  ${ASSIMP_LIBRARIES}
+)
+
+# Create ground_plane_segmentation_node executable
+add_executable(ground_plane_segmentation_node 
+  src/ground_plane_segmentation_node.cpp
+  src/pointcloud_filter_node.cpp
+)
+
+target_include_directories(ground_plane_segmentation_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(ground_plane_segmentation_node
+  rclcpp
+  std_msgs
+  sensor_msgs
+  pcl_ros
+)
+
+target_link_libraries(ground_plane_segmentation_node
+  ${PCL_LIBRARIES}
+  ${ASSIMP_LIBRARIES}
+)
+
+# Create statistical_outlier_removal_node executable
+add_executable(statistical_outlier_removal_node 
+  src/statistical_outlier_removal_node.cpp
+  src/pointcloud_filter_node.cpp
+)
+
+target_include_directories(statistical_outlier_removal_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(statistical_outlier_removal_node
+  rclcpp
+  std_msgs
+  sensor_msgs
+  pcl_ros
+)
+
+target_link_libraries(statistical_outlier_removal_node
+  ${PC_LIBRARIES}
+  ${ASSIMP_LIBRARIES}
+)
+
+# Create crop_box_filter_node executable
+add_executable(crop_box_filter_node 
+  src/crop_box_filter_node.cpp
+  src/pointcloud_filter_node.cpp
+)
+
+target_include_directories(crop_box_filter_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(crop_box_filter_node
+  rclcpp
+  std_msgs
+  sensor_msgs
+  pcl_ros
+)
+
+target_link_libraries(crop_box_filter_node
   ${PCL_LIBRARIES}
   ${ASSIMP_LIBRARIES}
 )
 
 # Install executables
-install(TARGETS pointcloud_filter_node
-  DESTINATION lib/${PROJECT_NAME})
+install(TARGETS
+  crop_box_filter_node
+  ground_plane_segmentation_node
+  statistical_outlier_removal_node
+  voxel_grid_filter_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 # Install launch files.
 install(DIRECTORY
@@ -81,18 +131,6 @@ install(DIRECTORY
 # Install config files.
 install(DIRECTORY
   config
-  DESTINATION share/${PROJECT_NAME}/
-)
-
-# Install urdf files.
-install(DIRECTORY
-  urdf
-  DESTINATION share/${PROJECT_NAME}/
-)
-
-# Install mesh files.
-install(DIRECTORY
-  meshes
   DESTINATION share/${PROJECT_NAME}/
 )
 

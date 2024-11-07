@@ -1,13 +1,13 @@
 pointcloud_buffer_node:
   ros__parameters:
-    buffer_time: 1.0 # time unit in seconds
+    buffer_time: 0.5 # time unit in seconds
     
     source_frame: "radar"
     target_frame: "odom"
     
     topics:
-      raw_pointcloud_topic: "/point_cloud/raw"
-      buffered_pointcloud_topic: "/point_cloud/buffer"
+      raw_pointcloud_topic: "/point_cloud/cropped"
+      buffered_pointcloud_topic: "/point_cloud/buffered"
 
     services:
       get_pointcloud_service: "/get_pointcloud"
