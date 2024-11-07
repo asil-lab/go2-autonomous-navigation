@@ -7,6 +7,8 @@
 #include <ltm_go2_rviz_plugins/battery_management_display.hpp>
 #include <rviz_common/logging.hpp>
 
+#include <QColor>
+
 namespace LTM
 {
   BatteryManagementDisplay::BatteryManagementDisplay(QWidget * parent)
@@ -14,14 +16,14 @@ namespace LTM
   {
     m_battery_percentage_label = new QLabel("Battery Percentage: ");
     m_battery_percentage_label->setAlignment(Qt::AlignCenter);
-    m_battery_percentage_label->setStyleSheet("font-size: 20px; font-weight: bold;");
+    m_battery_percentage_label->setStyleSheet("font-size: 36px; font-weight: bold;");
 
     m_battery_percentage_value_palette.setColor(QPalette::WindowText, Qt::gray);
 
     m_battery_percentage_value = new QLabel("N/A");
     m_battery_percentage_value->setAlignment(Qt::AlignCenter);
     m_battery_percentage_value->setPalette(m_battery_percentage_value_palette);
-    m_battery_percentage_value->setStyleSheet("font-size: 20px; font-weight: bold;");
+    m_battery_percentage_value->setStyleSheet("font-size: 36px; font-weight: bold;");
 
     QHBoxLayout * layout = new QHBoxLayout;
     layout->addWidget(m_battery_percentage_label);
@@ -31,6 +33,7 @@ namespace LTM
     m_node = rclcpp::Node::make_shared("battery_management_display");
     m_battery_state_sub = m_node->create_subscription<ltm_shared_msgs::msg::BatteryState>(
       "/battery_state", 10, std::bind(&BatteryManagementDisplay::batteryStateCallback, this, std::placeholders::_1));
+    m_last_battery_state_time = m_node->now();
 
     // Start a thread to update the battery state
     m_thread = std::make_shared<std::thread>([this]() {
@@ -53,18 +56,11 @@ namespace LTM
   void BatteryManagementDisplay::save(rviz_common::Config config) const
   {
     rviz_common::Panel::save(config);
-    // config.mapSetValue("BatteryPercentage", QString::number(m_battery_percentage));
   }
 
   void BatteryManagementDisplay::load(const rviz_common::Config & config)
   {
     rviz_common::Panel::load(config);
-    // QString battery_percentage;
-    // if (config.mapGetString("BatteryPercentage", &battery_percentage))
-    // {
-    //   m_battery_percentage = battery_percentage.toUInt();
-    //   updateBatteryState();
-    // }
   }
 
   void BatteryManagementDisplay::batteryStateCallback(const ltm_shared_msgs::msg::BatteryState::ConstSharedPtr msg)
@@ -75,21 +71,24 @@ namespace LTM
 
   void BatteryManagementDisplay::updateBatteryState()
   {
-    // m_battery_percentage_label->setText("Battery Percentage: " + QString::number(m_battery_percentage) + "%");
+    // Check if the time since the last battery state message is greater than 5 seconds
+    // If so, do not update the battery percentage value
+    if ((m_node->now() - m_last_battery_state_time).seconds() < BATTERY_STATE_UPDATE_PERIOD) {
+      return;
+    }
+
+    // Update the battery percentage value by setting the text and color
     m_battery_percentage_value->setText(QString::number(m_battery_percentage) + "%");
-    if (m_battery_percentage <= 25)
-    {
-      m_battery_percentage_value_palette.setColor(QPalette::WindowText, Qt::red);
+    if (m_battery_percentage <= 25) {
+      m_battery_percentage_value_palette.setColor(QPalette::WindowText, COLOR_RED);
+    } else if (m_battery_percentage <= 50) {
+      m_battery_percentage_value_palette.setColor(QPalette::WindowText, COLOR_ORANGE);
+    } else {
+      m_battery_percentage_value_palette.setColor(QPalette::WindowText, COLOR_GREEN);
     }
-    else if (m_battery_percentage <= 50)
-    {
-      m_battery_percentage_value_palette.setColor(QPalette::WindowText, Qt::yellow);
-    }
-    else
-    {
-      m_battery_percentage_value_palette.setColor(QPalette::WindowText, Qt::green);
-    }
+
     m_battery_percentage_value->setPalette(m_battery_percentage_value_palette);
+    m_last_battery_state_time = m_node->now();
   }
 }
 

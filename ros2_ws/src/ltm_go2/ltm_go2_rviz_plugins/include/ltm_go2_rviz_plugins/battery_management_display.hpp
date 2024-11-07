@@ -14,6 +14,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPalette>
+#include <QColor>
 #include <rviz_common/panel.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <thread>
@@ -42,6 +43,12 @@ namespace LTM
     QLabel * m_battery_percentage_value;
     QPalette m_battery_percentage_value_palette;
     uint8_t m_battery_percentage;
+    rclcpp::Time m_last_battery_state_time;
+
+    const double BATTERY_STATE_UPDATE_PERIOD = 1.0;
+    const QColor COLOR_GREEN = QColor(0, 128, 0);
+    const QColor COLOR_ORANGE = QColor(255, 69, 0);
+    const QColor COLOR_RED = QColor(255, 0, 0);
 
     rclcpp::Node::SharedPtr m_node;
     rclcpp::Subscription<ltm_shared_msgs::msg::BatteryState>::SharedPtr m_battery_state_sub;
