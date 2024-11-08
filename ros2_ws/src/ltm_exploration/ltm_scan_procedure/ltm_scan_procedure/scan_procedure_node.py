@@ -13,6 +13,8 @@ from tf2_ros import Buffer, TransformListener
 from geometry_msgs.msg import Point, Quaternion
 from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Empty, String
+
+from std_srvs.srv import Trigger
 from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose, ScanEnvironment
 
 import os
@@ -45,6 +47,7 @@ class ScanProcedureNode(Node):
 
         # Configure ROS2 entities'
         self.configure_gesture_pub()
+        self.configure_trigger_service()
         self.configure_record_environment_service()
         self.configure_navigate_to_pose_client()
         self.configure_get_image_client()
@@ -52,6 +55,12 @@ class ScanProcedureNode(Node):
         self.configure_tf_listener()
 
         self.get_logger().info('Scan procedure node has been initialized.')
+
+    def trigger_callback(self, request, response) -> Trigger.Response:
+        self.get_logger().info('Trigger service has been called.')
+        self.perform_scan()
+        response.success = True
+        return response
 
     def record_environment_callback(self, request, response) -> ScanEnvironment.Response:
         self.get_logger().info('Record environment service has been called.')
@@ -92,17 +101,16 @@ class ScanProcedureNode(Node):
         navigate_to_pose_request.goal.pose.orientation = orientation
 
         navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
-        # self.executor.spin_until_future_complete(navigate_to_pose_future)
-        # self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
-        # return navigate_to_pose_future.result().success
-        sleep(5.0)
-        return True
+        self.executor.spin_until_future_complete(navigate_to_pose_future)
+        self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
+        return navigate_to_pose_future.result().success
+        # sleep(5.0)
+        # return True
 
     def request_image(self) -> Image:
         """Requests an image from the /get_image service."""
         get_image_request = GetImage.Request()
         get_image_future = self.get_image_client.call_async(get_image_request)
-        # rclpy.spin_until_future_complete(self, get_image_future)
         self.executor.spin_until_future_complete(get_image_future)
         return get_image_future.result().image
     
@@ -110,7 +118,6 @@ class ScanProcedureNode(Node):
         """Requests a point cloud from the /get_pointcloud service."""
         get_pointcloud_request = GetPointCloud.Request()
         get_pointcloud_future = self.get_pointcloud_client.call_async(get_pointcloud_request)
-        # rclpy.spin_until_future_complete(self, get_pointcloud_future)
         self.executor.spin_until_future_complete(get_pointcloud_future)
         return get_pointcloud_future.result().point_cloud
 
@@ -352,6 +359,15 @@ class ScanProcedureNode(Node):
         self.record_environment_service = self.create_service(
             ScanEnvironment, self.get_parameter('record_environment_service_name').value, 
             self.record_environment_callback, callback_group=self.record_environment_callback_group)
+
+    def configure_trigger_service(self) -> None:
+        """Configures the client to the trigger service."""
+        self.declare_parameter('trigger_service_name', 'trigger')
+
+        self.trigger_callback_group = MutuallyExclusiveCallbackGroup()
+        self.trigger_service = self.create_service(
+            Trigger, self.get_parameter('trigger_service_name').value, 
+            self.trigger_callback, callback_group=self.trigger_callback_group)
 
     def configure_tf_listener(self) -> None:
         """Configures the tf listener for the node."""
