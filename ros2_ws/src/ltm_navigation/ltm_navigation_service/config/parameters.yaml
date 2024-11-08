@@ -11,7 +11,7 @@ navigation_service_node:
     navigate_to_pose_orientation_tolerance: 0.1 # radians
 
     goal_pose_topic_name: "goal_pose"
-    goal_pose_topic_queue_size: 10
+    goal_pose_topic_queue_size: 1
 
-    robot_source_frame_name: "base_footprint"
+    robot_source_frame_name: "base"
     robot_target_frame_name: "map"

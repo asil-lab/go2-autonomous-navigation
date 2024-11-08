@@ -7,6 +7,9 @@
 #include "ltm_navigation_service/navigation_service_node.hpp"
 
 #include <memory>
+#include <math.h>
+
+#include <geometry_msgs/msg/pose.hpp>
 
 using namespace lTM;
 
@@ -59,8 +62,10 @@ void NavigationServiceNode::navigateToPoseCallback(
       continue;
 
     // Get the current robot pose and calculate the translation and orientation errors
-    double position_error = computeTranslationError(request->goal.pose.position, getCurrentRobotPose().pose.position);
-    double orientation_error = computeOrientationError(request->goal.pose.orientation, getCurrentRobotPose().pose.orientation);
+    geometry_msgs::msg::Pose current_robot_pose = getCurrentRobotPose().pose;
+
+    double position_error = computeTranslationError(request->goal.pose.position, current_robot_pose.position);
+    double orientation_error = computeOrientationError(request->goal.pose.orientation, current_robot_pose.orientation);
     RCLCPP_WARN(this->get_logger(), "Current position error: %f, orientation error: %f", position_error, orientation_error);
 
     // Interrupt the service if the timeout has been reached
@@ -130,8 +135,9 @@ Eigen::VectorXd NavigationServiceNode::convertPoseToEigen(geometry_msgs::msg::Po
 double NavigationServiceNode::computeTranslationError(
   const geometry_msgs::msg::Point& p1, const geometry_msgs::msg::Point& p2)
 {
-  Eigen::Vector3d p1_eigen(p1.x, p1.y, p1.z);
-  Eigen::Vector3d p2_eigen(p2.x, p2.y, p2.z);
+  // Only take the ground plane translation.
+  Eigen::Vector2d p1_eigen(p1.x, p1.y);
+  Eigen::Vector2d p2_eigen(p2.x, p2.y);
   return (p1_eigen - p2_eigen).norm();
 }
 
@@ -141,10 +147,18 @@ double NavigationServiceNode::computeOrientationError(
   Eigen::Quaterniond q1_eigen(q1.w, q1.x, q1.y, q1.z);
   Eigen::Quaterniond q2_eigen(q2.w, q2.x, q2.y, q2.z);
 
-  // Compute the error quaternion and return the yaw angle
-  Eigen::Quaterniond q_error = q1_eigen.inverse() * q2_eigen;
-  Eigen::Vector3d eulers = q_error.toRotationMatrix().eulerAngles(2, 1, 0);
-  return eulers[2];
+  // Normalize the quaternions
+  q1_eigen.normalize();
+  q2_eigen.normalize();
+
+  // Get the difference between the quaternions
+  Eigen::Quaterniond q_diff = q1_eigen * q2_eigen.inverse();
+
+  // Return the yaw angle difference
+  return abs(atan2(
+    2 * (q_diff.w() * q_diff.z() + q_diff.x() * q_diff.y()), 
+    1 - 2 * (q_diff.y() * q_diff.y() + q_diff.z() * q_diff.z())
+  ));
 }
 
 void NavigationServiceNode::initializeService()
