@@ -140,7 +140,11 @@ double NavigationServiceNode::computeOrientationError(
 {
   Eigen::Quaterniond q1_eigen(q1.w, q1.x, q1.y, q1.z);
   Eigen::Quaterniond q2_eigen(q2.w, q2.x, q2.y, q2.z);
-  return q1_eigen.angularDistance(q2_eigen);
+
+  // Compute the error quaternion and return the yaw angle
+  Eigen::Quaterniond q_error = q1_eigen.inverse() * q2_eigen;
+  Eigen::Vector3d eulers = q_error.toRotationMatrix().eulerAngles(2, 1, 0);
+  return eulers[2];
 }
 
 void NavigationServiceNode::initializeService()
