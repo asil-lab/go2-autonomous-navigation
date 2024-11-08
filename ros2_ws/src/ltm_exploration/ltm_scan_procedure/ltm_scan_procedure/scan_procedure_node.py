@@ -104,8 +104,6 @@ class ScanProcedureNode(Node):
         self.executor.spin_until_future_complete(navigate_to_pose_future)
         self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
         return navigate_to_pose_future.result().success
-        # sleep(5.0)
-        # return True
 
     def request_image(self) -> Image:
         """Requests an image from the /get_image service."""
@@ -199,8 +197,7 @@ class ScanProcedureNode(Node):
                                                      yaw_to_quaternion(self.current_robot_yaw))
             self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
-        is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-            yaw_to_quaternion(self.current_robot_yaw))
+        sleep(self.orientation_delay) # Small delay to stabilize the robot
         self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
     def perform_gesture(self, gesture: str) -> None:
@@ -300,6 +297,7 @@ class ScanProcedureNode(Node):
         # Sequence of gestures to scan the environment
         self.declare_parameter('scan_gesture_sequence', ['stand', 'recover'])
         self.gesture_sequence = self.get_parameter('scan_gesture_sequence').value
+        self.gesture_sequence.append('recover') # Add recover gesture to the end of the sequence
         self.get_logger().info('Gesture sequence: %s' % (str(self.gesture_sequence)))
 
         # Time delay after each gesture
