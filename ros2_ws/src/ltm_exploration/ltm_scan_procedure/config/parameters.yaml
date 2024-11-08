@@ -12,7 +12,7 @@ scan_procedure_node:
     record_environment_service_name: "state_machine/scan_environment"
 
     scan_number_of_orientations: 4            # Number of orientations to scan at each waypoint
-    scan_delay_between_orientations: 0.1      # Delay between each orientation in seconds
+    scan_delay_between_orientations: 0.05    # Delay between each orientation in seconds
     scan_pointcloud_buffer_time: 5.0         # Time to buffer pointclouds in seconds
     scan_gesture_sequence:                    # Sequence of gestures to perform during scan
     - "stand_up"

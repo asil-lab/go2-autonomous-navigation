@@ -139,7 +139,7 @@ class ScanProcedureNode(Node):
         self.data_storage.create_storage_subdirectory(self.current_subdirectory)
 
         # Perform scan procedure at each orientation
-        for _ in range(self.number_of_orientations):
+        for orientation in range(self.number_of_orientations):
             # Perform gestures at each orientation
             for gesture in self.gesture_sequence:
                 self.perform_gesture(gesture)
@@ -156,6 +156,9 @@ class ScanProcedureNode(Node):
                 self.collect_image_data()
                 self.save_image_data()
             
+            # Skip if last orientation, otherwise rotate to next orientation
+            if orientation == self.number_of_orientations - 1:
+                break
             self.get_logger().info("Moving to next orientation...")
             self.rotate_robot()
 

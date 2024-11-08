@@ -6,7 +6,7 @@ amcl:
     alpha3: 0.2
     alpha4: 0.2
     alpha5: 0.2
-    base_frame_id: "base_footprint"
+    base_frame_id: "base"
     beam_skip_distance: 0.5
     beam_skip_error_threshold: 0.9
     beam_skip_threshold: 0.3
@@ -112,13 +112,13 @@ controller_server:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
       min_vel_x: 0.0
-      min_vel_y: 0.0
+      min_vel_y: 0.05
       max_vel_x: 0.5
       max_vel_y: 0.0
       max_vel_theta: 0.5
       min_speed_xy: 0.0
       max_speed_xy: 0.26
-      min_speed_theta: 0.0
+      min_speed_theta: 0.05
       # Add high threshold velocity for turtlebot 3 issue.
       # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
       acc_lim_x: 3.0
@@ -165,7 +165,7 @@ local_costmap:
       rolling_window: true
       width: 3
       height: 3
-      resolution: 0.025
+      resolution: 0.01
       robot_radius: 0.22
       plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
@@ -177,7 +177,7 @@ local_costmap:
         enabled: True
         publish_voxel_map: True
         origin_z: 0.0
-        z_resolution: 0.025
+        z_resolution: 0.01
         z_voxels: 16
         max_obstacle_height: 2.0
         mark_threshold: 0
@@ -206,8 +206,8 @@ global_costmap:
       global_frame: map
       robot_base_frame: base
       use_sim_time: false
-      robot_radius: 0.22
-      resolution: 0.025
+      robot_radius: 0.42
+      resolution: 0.01
       track_unknown_space: true
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       obstacle_layer:
@@ -216,7 +216,7 @@ global_costmap:
         observation_sources: scan
         scan:
           topic: /scan
-          max_obstacle_height: 2.0
+          max_obstacle_height: 0.5
           clearing: True
           marking: True
           data_type: "LaserScan"
@@ -255,7 +255,7 @@ planner_server:
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
-      tolerance: 0.25
+      tolerance: 0.05
       use_astar: false
       allow_unknown: true
 
@@ -275,11 +275,11 @@ recoveries_server:
       plugin: "nav2_recoveries/BackUp"
     wait:
       plugin: "nav2_recoveries/Wait"
-    global_frame: odom
+    global_frame: map
     robot_base_frame: base
     transform_timeout: 0.1
     use_sim_time: false
-    simulate_ahead_time: 2.0
+    simulate_ahead_time: 10.0
     max_rotational_vel: 1.0
     min_rotational_vel: 0.4
     rotational_acc_lim: 3.2
