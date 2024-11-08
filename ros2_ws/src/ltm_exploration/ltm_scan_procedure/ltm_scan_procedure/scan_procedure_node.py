@@ -130,8 +130,11 @@ class ScanProcedureNode(Node):
             6. Rotate robot by 360/number of orientations
         7. Save the 2D images and 3D point cloud data
         """
+
+        # Get the current robot position and yaw
         self.get_current_robot_pose()
 
+        # Create a new subdirectory to store the data
         self.current_subdirectory = self.get_robot_state_stamp()
         self.data_storage.create_storage_subdirectory(self.current_subdirectory)
 
@@ -154,10 +157,9 @@ class ScanProcedureNode(Node):
                 self.save_image_data()
             
             self.get_logger().info("Moving to next orientation...")
-            self.rotate_robot(2 * np.pi / self.number_of_orientations)
+            self.rotate_robot()
 
-        self.get_logger().info('Scan procedure at x: %f, y: %f, yaw: %f' % 
-            (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
+        self.get_logger().info('Scan procedure at x: %f, y: %f' % (self.current_robot_position.x, self.current_robot_position.y))
 
     def get_current_robot_pose(self) -> None:
         """Gets the current pose representation of the robot in the map frame.
@@ -166,35 +168,33 @@ class ScanProcedureNode(Node):
         """
         try:
             # Get the current robot pose
-            current_robot_pose = self.tf_buffer.lookup_transform('map', 'base_footprint', rclpy.time.Time()).transform
+            current_robot_pose = self.tf_buffer.lookup_transform('map', 'base', rclpy.time.Time()).transform
 
             # Store the current robot position and yaw
             self.current_robot_position.x = current_robot_pose.translation.x
             self.current_robot_position.y = current_robot_pose.translation.y
-            self.current_robot_position.z = current_robot_pose.translation.z
+            self.current_robot_position.z = 0.0
             self.current_robot_yaw = quaternion_to_yaw(current_robot_pose.rotation)
             
         except Exception as e:
             self.get_logger().error('Failed to get current robot position: %s' % str(e))
             self.current_robot_position = None
 
-    def rotate_robot(self, angle: float) -> None:
-        """Rotates the robot by the specified angle.
-        
-        Args:
-            angle (float): The angle to rotate the robot by.
+    def rotate_robot(self) -> None:
+        """Rotates the robot by some specified discrete number of orientations
         """
         if self.current_robot_position is None:
             self.get_logger().error('The robot position is None. Ignoring...')
             return
         
-        self.current_robot_yaw = normalize_yaw(self.current_robot_yaw + angle)
+        angle_difference = 2 * np.pi / self.number_of_orientations
+        self.current_robot_yaw = normalize_yaw(self.current_robot_yaw + angle_difference)
+        
         is_goal_reached = False
-
         while not is_goal_reached:
             self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
-            is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-                                                     yaw_to_quaternion(self.current_robot_yaw))
+            is_goal_reached = self.request_goal_pose(
+                self.current_robot_position, yaw_to_quaternion(self.current_robot_yaw))
             self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
         sleep(self.orientation_delay) # Small delay to stabilize the robot

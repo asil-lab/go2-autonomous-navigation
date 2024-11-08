@@ -39,7 +39,7 @@ def quaternion_to_yaw(quaternion: Quaternion) -> float:
     """
     assert isinstance(quaternion, Quaternion), "Input to argument quaternion is not of type Quaternion."
 
-    return R.from_quat([quaternion.x, quaternion.y, quaternion.z, quaternion.w]).as_euler('zyx')[0]
+    return normalize_yaw(R.from_quat([quaternion.x, quaternion.y, quaternion.z, quaternion.w]).as_euler('zyx')[0])
 
 def normalize_yaw(yaw: float) -> float:
     """Normalizes a yaw angle to be within the range [-pi, pi].
@@ -52,6 +52,15 @@ def normalize_yaw(yaw: float) -> float:
     assert isinstance(yaw, float), "Input to argument yaw is not of type float."
 
     return (yaw + np.pi) % (2 * np.pi) - np.pi
+    # # normalized_yaw = yaw % (2 * np.pi)
+    # # if normalized_yaw > np.pi:
+    # #     normalized_yaw -= 2 * np.pi
+    # # elif normalized_yaw < -np.pi:
+    # #     normalized_yaw += 2 * np.pi
+    
+    # # return normalized_yaw
+
+    # return yaw % (2 * np.pi)
 
 def image_msg_to_numpy(image_msg: Image) -> np.ndarray:
     """Converts an Image message to a numpy array.
