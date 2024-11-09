@@ -12,6 +12,16 @@ from ltm_shared_msgs.msg import AuxiliarySensorState
 from serial import Serial, SerialException
 import threading
 import struct
+from enum import Enum
+
+BYTE_SIZE   = 8     # bits
+FLOAT_SIZE  = 4     # bytes
+NUM_SENSORS = 3     # temperature, humidity, light
+
+class MISO(Enum):
+    TEMPERATURE_OFFSET  = 0
+    HUMIDITY_OFFSET     = 4 * BYTE_SIZE
+    PRESSURE_OFFSET     = 8 * BYTE_SIZE
 
 class AuxiliarySensorsNode(Node):
 
@@ -33,25 +43,10 @@ class AuxiliarySensorsNode(Node):
                 line = self.serial_port.readline().decode('utf-8').strip()
                 self.get_logger().info(f'Received line: {line}')
 
-                # Split the lines given the delimiter " "
-                data = line.split(' ')
-
-                # Check if the line is valid
-                if len(data) != 3:
-                    self.get_logger().error('Invalid line format')
-                    continue
-
-                # Convert each data to uint32 in their IEEE 754 floating point representation
-                # for i in range(3):
-                #     data[i] = struct.unpack('f', struct.pack('I', int(data[i], 32)))[0]
-
-                # Publish the message
-                msg = AuxiliarySensorState()
-                msg.header.stamp = self.get_clock().now().to_msg()
-                msg.temperature = data[0]
-                msg.humidity = data[1]
-                msg.luminosity = data[2]
-                self.auxiliary_sensor_state_publisher.publish(msg)
+                # Split the line into a list of strings per 4 bytes
+                data = [line[offset.value:offset.value+(FLOAT_SIZE*BYTE_SIZE)] for offset in MISO]
+                for value in data:
+                    self.get_logger().info(f'Value: {value}')
 
             except UnicodeDecodeError as e:
                 self.get_logger().error('Failed to decode serial line: %s', str(e))
