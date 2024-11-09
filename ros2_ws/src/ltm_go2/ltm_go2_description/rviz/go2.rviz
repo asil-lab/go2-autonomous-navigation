@@ -233,6 +233,10 @@ Visualization Manager:
           Value: true
         FL_foot:
           Value: true
+        FL_hip:
+          Value: true
+        FL_thigh:
+          Value: true
         FR_calf:
           Value: true
         FR_calflower:
@@ -240,6 +244,10 @@ Visualization Manager:
         FR_calflower1:
           Value: true
         FR_foot:
+          Value: true
+        FR_hip:
+          Value: true
+        FR_thigh:
           Value: true
         Head_lower:
           Value: true
@@ -253,6 +261,10 @@ Visualization Manager:
           Value: true
         RL_foot:
           Value: true
+        RL_hip:
+          Value: true
+        RL_thigh:
+          Value: true
         RR_calf:
           Value: true
         RR_calflower:
@@ -261,11 +273,21 @@ Visualization Manager:
           Value: true
         RR_foot:
           Value: true
+        RR_hip:
+          Value: true
+        RR_thigh:
+          Value: true
         base:
+          Value: true
+        base_footprint:
           Value: true
         d435i_camera_link:
           Value: true
         imu:
+          Value: true
+        map:
+          Value: true
+        odom:
           Value: true
         radar:
           Value: true
@@ -275,7 +297,53 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        map:
+          {}
+        odom:
+          base:
+            FL_hip:
+              FL_thigh:
+                FL_calf:
+                  FL_calflower:
+                    FL_calflower1:
+                      {}
+                  FL_foot:
+                    {}
+            FR_hip:
+              FR_thigh:
+                FR_calf:
+                  FR_calflower:
+                    FR_calflower1:
+                      {}
+                  FR_foot:
+                    {}
+            Head_upper:
+              Head_lower:
+                {}
+            RL_hip:
+              RL_thigh:
+                RL_calf:
+                  RL_calflower:
+                    RL_calflower1:
+                      {}
+                  RL_foot:
+                    {}
+            RR_hip:
+              RR_thigh:
+                RR_calf:
+                  RR_calflower:
+                    RR_calflower1:
+                      {}
+                  RR_foot:
+                    {}
+            base_footprint:
+              {}
+            d435i_camera_link:
+              {}
+            imu:
+              {}
+            radar:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -593,7 +661,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:

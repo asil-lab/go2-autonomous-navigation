@@ -7,11 +7,11 @@ navigation_service_node:
     navigate_to_pose_service_name: "send_robot"
     navigate_to_pose_timeout: 30.0 # seconds
     navigate_to_pose_update_rate: 10.0 # Hz
-    navigate_to_pose_position_tolerance: 0.25 # meters
-    navigate_to_pose_orientation_tolerance: 0.25 # radians
+    navigate_to_pose_position_tolerance: 0.05 # meters
+    navigate_to_pose_orientation_tolerance: 0.08 # radians
 
     goal_pose_topic_name: "goal_pose"
-    goal_pose_topic_queue_size: 10
+    goal_pose_topic_queue_size: 1
 
-    robot_source_frame_name: "base_footprint"
+    robot_source_frame_name: "base"
     robot_target_frame_name: "map"
