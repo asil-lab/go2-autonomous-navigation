@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "miso.h"
-#include "sensors/lux.h"
+#include "sensors/light.h"
 #include "sensors/temp_humidity.h"
 
 #define SERIAL_BAUD_RATE 115200
@@ -13,10 +13,10 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
     // Initialize the sensors.
-    if (!isLuxSensorAvailable()) {
+    if (!isLightSensorAvailable()) {
         Serial.println("Lux sensor not available.");
         while (true) {
-            Serial.println("Could not find lux sensor!");
+            Serial.println("Could not find light sensor!");
             delay(1000);
         };
     }
@@ -32,11 +32,11 @@ void setup() {
 
 void loop() {
     // Read the sensor data.
-    mosi.lux = getLuxValue();
+    mosi.light = getLightValue();
     mosi.temperature = getTemperatureValue();
     mosi.humidity = getHumidityValue();
 
-    Serial.println("Lux: " + String(mosi.lux));
+    Serial.println("Light: " + String(mosi.light));
     Serial.println("Temperature: " + String(mosi.temperature));
     Serial.println("Humidity: " + String(mosi.humidity));
 

@@ -31,7 +31,7 @@ char * mosi_to_string(struct MOSI *mosi);
 struct MOSI {
     float temperature;
     float humidity;
-    float lux;
+    float light;
 };
 
 // Function to convert float to uint32_t according to IEEE 754 standard.
@@ -58,18 +58,18 @@ char * mosi_to_string(struct MOSI *mosi) {
     static char buffer[MISO_BUFFER_SIZE];
 
     // Convert the float values to uint32_t.
-    uint32_t temperature, humidity, lux;
+    uint32_t temperature, humidity, light;
     float_to_uint32(mosi->temperature, &temperature);
     float_to_uint32(mosi->humidity, &humidity);
-    float_to_uint32(mosi->lux, &lux);
+    float_to_uint32(mosi->light, &light);
 
     // Convert the uint32_t values to string of bits.
     char *temperature_str = uint32_to_string(temperature);
     char *humidity_str = uint32_to_string(humidity);
-    char *lux_str = uint32_to_string(lux);
+    char *light_str = uint32_to_string(light);
 
     // Concatenate the strings.
-    snprintf(buffer, MISO_BUFFER_SIZE, "%s %s %s", temperature, humidity, lux);
+    snprintf(buffer, MISO_BUFFER_SIZE, "%s %s %s", temperature, humidity, light);
 
     return buffer;
 }
