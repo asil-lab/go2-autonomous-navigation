@@ -5,6 +5,7 @@ Date: 11-09-2024
 """
 
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 from geometry_msgs.msg import Quaternion
 from sensor_msgs.msg import Image
 
@@ -18,10 +19,15 @@ def yaw_to_quaternion(yaw: float) -> Quaternion:
     """
     assert isinstance(yaw, float), "Input to argument yaw is not of type float."
 
-    quaternion = Quaternion()
-    quaternion.z = np.sin(yaw / 2)
-    quaternion.w = np.cos(yaw / 2)
-    return quaternion
+    quat_R = R.from_euler('zyx', [yaw, 0, 0]).as_quat()
+
+    quaternion_msg = Quaternion()
+    quaternion_msg.x = quat_R[0]
+    quaternion_msg.y = quat_R[1]
+    quaternion_msg.z = quat_R[2]
+    quaternion_msg.w = quat_R[3]
+
+    return quaternion_msg
 
 def quaternion_to_yaw(quaternion: Quaternion) -> float:
     """Converts a quaternion to a yaw angle.
@@ -33,10 +39,7 @@ def quaternion_to_yaw(quaternion: Quaternion) -> float:
     """
     assert isinstance(quaternion, Quaternion), "Input to argument quaternion is not of type Quaternion."
 
-    return np.arctan2(
-        2 * (quaternion.w * quaternion.z + quaternion.x * quaternion.y), 
-        1 - 2 * (quaternion.y**2 + quaternion.z**2)
-    )
+    return normalize_yaw(R.from_quat([quaternion.x, quaternion.y, quaternion.z, quaternion.w]).as_euler('zyx')[0])
 
 def normalize_yaw(yaw: float) -> float:
     """Normalizes a yaw angle to be within the range [-pi, pi].
@@ -46,7 +49,18 @@ def normalize_yaw(yaw: float) -> float:
     Returns:
         float: The normalized yaw angle.
     """
-    return yaw % (2 * np.pi)
+    assert isinstance(yaw, float), "Input to argument yaw is not of type float."
+
+    return (yaw + np.pi) % (2 * np.pi) - np.pi
+    # # normalized_yaw = yaw % (2 * np.pi)
+    # # if normalized_yaw > np.pi:
+    # #     normalized_yaw -= 2 * np.pi
+    # # elif normalized_yaw < -np.pi:
+    # #     normalized_yaw += 2 * np.pi
+    
+    # # return normalized_yaw
+
+    # return yaw % (2 * np.pi)
 
 def image_msg_to_numpy(image_msg: Image) -> np.ndarray:
     """Converts an Image message to a numpy array.

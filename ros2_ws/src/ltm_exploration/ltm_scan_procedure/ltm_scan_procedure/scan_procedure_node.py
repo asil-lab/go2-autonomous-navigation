@@ -13,6 +13,8 @@ from tf2_ros import Buffer, TransformListener
 from geometry_msgs.msg import Point, Quaternion
 from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Empty, String
+
+from std_srvs.srv import Trigger
 from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose, ScanEnvironment
 
 import os
@@ -45,6 +47,7 @@ class ScanProcedureNode(Node):
 
         # Configure ROS2 entities'
         self.configure_gesture_pub()
+        self.configure_trigger_service()
         self.configure_record_environment_service()
         self.configure_navigate_to_pose_client()
         self.configure_get_image_client()
@@ -52,6 +55,12 @@ class ScanProcedureNode(Node):
         self.configure_tf_listener()
 
         self.get_logger().info('Scan procedure node has been initialized.')
+
+    def trigger_callback(self, request, response) -> Trigger.Response:
+        self.get_logger().info('Trigger service has been called.')
+        self.perform_scan()
+        response.success = True
+        return response
 
     def record_environment_callback(self, request, response) -> ScanEnvironment.Response:
         self.get_logger().info('Record environment service has been called.')
@@ -92,17 +101,14 @@ class ScanProcedureNode(Node):
         navigate_to_pose_request.goal.pose.orientation = orientation
 
         navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
-        # self.executor.spin_until_future_complete(navigate_to_pose_future)
-        # self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
-        # return navigate_to_pose_future.result().success
-        sleep(5.0)
-        return True
+        self.executor.spin_until_future_complete(navigate_to_pose_future)
+        self.get_logger().info('Success: %s' % (navigate_to_pose_future.result().success))
+        return navigate_to_pose_future.result().success
 
     def request_image(self) -> Image:
         """Requests an image from the /get_image service."""
         get_image_request = GetImage.Request()
         get_image_future = self.get_image_client.call_async(get_image_request)
-        # rclpy.spin_until_future_complete(self, get_image_future)
         self.executor.spin_until_future_complete(get_image_future)
         return get_image_future.result().image
     
@@ -110,7 +116,6 @@ class ScanProcedureNode(Node):
         """Requests a point cloud from the /get_pointcloud service."""
         get_pointcloud_request = GetPointCloud.Request()
         get_pointcloud_future = self.get_pointcloud_client.call_async(get_pointcloud_request)
-        # rclpy.spin_until_future_complete(self, get_pointcloud_future)
         self.executor.spin_until_future_complete(get_pointcloud_future)
         return get_pointcloud_future.result().point_cloud
 
@@ -125,13 +130,16 @@ class ScanProcedureNode(Node):
             6. Rotate robot by 360/number of orientations
         7. Save the 2D images and 3D point cloud data
         """
+
+        # Get the current robot position and yaw
         self.get_current_robot_pose()
 
+        # Create a new subdirectory to store the data
         self.current_subdirectory = self.get_robot_state_stamp()
         self.data_storage.create_storage_subdirectory(self.current_subdirectory)
 
         # Perform scan procedure at each orientation
-        for _ in range(self.number_of_orientations):
+        for orientation in range(self.number_of_orientations):
             # Perform gestures at each orientation
             for gesture in self.gesture_sequence:
                 self.perform_gesture(gesture)
@@ -148,11 +156,13 @@ class ScanProcedureNode(Node):
                 self.collect_image_data()
                 self.save_image_data()
             
+            # Skip if last orientation, otherwise rotate to next orientation
+            if orientation == self.number_of_orientations - 1:
+                break
             self.get_logger().info("Moving to next orientation...")
-            self.rotate_robot(2 * np.pi / self.number_of_orientations)
+            self.rotate_robot()
 
-        self.get_logger().info('Scan procedure at x: %f, y: %f, yaw: %f' % 
-            (self.current_robot_position.x, self.current_robot_position.y, self.current_robot_yaw))
+        self.get_logger().info('Scan procedure at x: %f, y: %f' % (self.current_robot_position.x, self.current_robot_position.y))
 
     def get_current_robot_pose(self) -> None:
         """Gets the current pose representation of the robot in the map frame.
@@ -161,39 +171,36 @@ class ScanProcedureNode(Node):
         """
         try:
             # Get the current robot pose
-            current_robot_pose = self.tf_buffer.lookup_transform('map', 'base_footprint', rclpy.time.Time()).transform
+            current_robot_pose = self.tf_buffer.lookup_transform('map', 'base', rclpy.time.Time()).transform
 
             # Store the current robot position and yaw
             self.current_robot_position.x = current_robot_pose.translation.x
             self.current_robot_position.y = current_robot_pose.translation.y
-            self.current_robot_position.z = current_robot_pose.translation.z
+            self.current_robot_position.z = 0.0
             self.current_robot_yaw = quaternion_to_yaw(current_robot_pose.rotation)
             
         except Exception as e:
             self.get_logger().error('Failed to get current robot position: %s' % str(e))
             self.current_robot_position = None
 
-    def rotate_robot(self, angle: float) -> None:
-        """Rotates the robot by the specified angle.
-        
-        Args:
-            angle (float): The angle to rotate the robot by.
+    def rotate_robot(self) -> None:
+        """Rotates the robot by some specified discrete number of orientations
         """
         if self.current_robot_position is None:
             self.get_logger().error('The robot position is None. Ignoring...')
             return
         
-        self.current_robot_yaw = normalize_yaw(self.current_robot_yaw + angle)
+        angle_difference = 2 * np.pi / self.number_of_orientations
+        self.current_robot_yaw = normalize_yaw(self.current_robot_yaw + angle_difference)
+        
         is_goal_reached = False
-
         while not is_goal_reached:
             self.get_logger().info('Moving robot to yaw: %f' % self.current_robot_yaw)
-            is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-                                                     yaw_to_quaternion(self.current_robot_yaw))
+            is_goal_reached = self.request_goal_pose(
+                self.current_robot_position, yaw_to_quaternion(self.current_robot_yaw))
             self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
-        is_goal_reached = self.request_goal_pose(self.current_robot_position, 
-            yaw_to_quaternion(self.current_robot_yaw))
+        sleep(self.orientation_delay) # Small delay to stabilize the robot
         self.get_logger().info('Robot reached goal: %s' % str(is_goal_reached))
 
     def perform_gesture(self, gesture: str) -> None:
@@ -293,6 +300,7 @@ class ScanProcedureNode(Node):
         # Sequence of gestures to scan the environment
         self.declare_parameter('scan_gesture_sequence', ['stand', 'recover'])
         self.gesture_sequence = self.get_parameter('scan_gesture_sequence').value
+        self.gesture_sequence.append('recover') # Add recover gesture to the end of the sequence
         self.get_logger().info('Gesture sequence: %s' % (str(self.gesture_sequence)))
 
         # Time delay after each gesture
@@ -352,6 +360,15 @@ class ScanProcedureNode(Node):
         self.record_environment_service = self.create_service(
             ScanEnvironment, self.get_parameter('record_environment_service_name').value, 
             self.record_environment_callback, callback_group=self.record_environment_callback_group)
+
+    def configure_trigger_service(self) -> None:
+        """Configures the client to the trigger service."""
+        self.declare_parameter('trigger_service_name', 'trigger')
+
+        self.trigger_callback_group = MutuallyExclusiveCallbackGroup()
+        self.trigger_service = self.create_service(
+            Trigger, self.get_parameter('trigger_service_name').value, 
+            self.trigger_callback, callback_group=self.trigger_callback_group)
 
     def configure_tf_listener(self) -> None:
         """Configures the tf listener for the node."""
