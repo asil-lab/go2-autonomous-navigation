@@ -12,6 +12,7 @@ from ltm_shared_msgs.msg import AuxiliarySensorState
 from serial import Serial, SerialException
 import threading
 import struct
+from codecs import decode
 from enum import Enum
 
 BYTE_SIZE   = 8     # bits
@@ -21,7 +22,7 @@ NUM_SENSORS = 3     # temperature, humidity, light
 class MISO(Enum):
     TEMPERATURE_OFFSET  = 0
     HUMIDITY_OFFSET     = 4 * BYTE_SIZE
-    PRESSURE_OFFSET     = 8 * BYTE_SIZE
+    LIGHT_OFFSET        = 8 * BYTE_SIZE
 
 class AuxiliarySensorsNode(Node):
 
@@ -48,9 +49,27 @@ class AuxiliarySensorsNode(Node):
                 for value in data:
                     self.get_logger().info(f'Value: {value}')
 
+                # Reverse the bits of each sensor value in the list
+                for i in range(NUM_SENSORS):
+                    data[i] = data[i][::-1]
+                    self.get_logger().info(f'Reversed value: {data[i]}')
+
+                # Convert the binary string to a float
+                for i in range(NUM_SENSORS):
+                    data[i] = self.bin_to_float(data[i])
+                    self.get_logger().info(f'Float value: {data[i]}')
+
             except UnicodeDecodeError as e:
                 self.get_logger().error('Failed to decode serial line: %s', str(e))
                 continue
+
+    def bin_to_float(self, b):
+        # Credits: https://stackoverflow.com/questions/8751653/how-to-convert-a-binary-string-into-a-float-value
+        bf = self.int_to_bytes(int(b, 2), FLOAT_SIZE) # 4 bytes needed for float
+        return struct.unpack('>f', bf)[0]
+
+    def int_to_bytes(self, n, length):
+        return decode('%%0%dx' % (length << 1) % n, 'hex')[-length:]
 
     def initialize_serial_port(self):
         try:
