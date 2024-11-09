@@ -36,12 +36,8 @@ void loop() {
     mosi.temperature = getTemperatureValue();
     mosi.humidity = getHumidityValue();
 
-    Serial.println("Light: " + String(mosi.light));
-    Serial.println("Temperature: " + String(mosi.temperature));
-    Serial.println("Humidity: " + String(mosi.humidity));
-
     // Output the sensor data.
-    // Serial.println(mosi_to_string(&mosi));
+    Serial.println(mosi_to_string(&mosi));
 
     // Delay for 1 second.
     delay(DELAY_TIME);
