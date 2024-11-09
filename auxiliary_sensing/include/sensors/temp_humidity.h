@@ -26,12 +26,12 @@ bool isTempHumiditySensorAvailable() {
 
 // Function to get the temperature value
 float getTemperatureValue() {
-    return temp_humidity_sensor.readTemperature();
+    return temp_humidity_sensor.readTemperature(); // in degrees Celsius
 }
 
 // Function to get the humidity value
 float getHumidityValue() {
-    return temp_humidity_sensor.readHumidity();
+    return temp_humidity_sensor.readHumidity(); // in percentage
 }
 
 #endif //AUXILIARY_SENSING__TEMP_HUMIDITY_H

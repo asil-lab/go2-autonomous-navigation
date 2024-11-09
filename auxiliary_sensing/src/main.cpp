@@ -15,22 +15,30 @@ void setup() {
     // Initialize the sensors.
     if (!isLuxSensorAvailable()) {
         Serial.println("Lux sensor not available.");
-        while (true) {};
+        while (true) {
+            Serial.println("Could not find lux sensor!");
+            delay(1000);
+        };
     }
 
-    // if (!isTempHumiditySensorAvailable()) {
-    //     Serial.println("Temperature and humidity sensor not available.");
-    //     while (true) {};
-    // }
+    if (!isTempHumiditySensorAvailable()) {
+        Serial.println("Temperature and humidity sensor not available.");
+        while (true) {
+            Serial.println("Could not find temperature and humidity sensor!");
+            delay(1000);
+        };
+    }
 }
 
 void loop() {
     // Read the sensor data.
     mosi.lux = getLuxValue();
-    // mosi.temperature = getTemperatureValue();
-    // mosi.humidity = getHumidityValue();
+    mosi.temperature = getTemperatureValue();
+    mosi.humidity = getHumidityValue();
 
     Serial.println("Lux: " + String(mosi.lux));
+    Serial.println("Temperature: " + String(mosi.temperature));
+    Serial.println("Humidity: " + String(mosi.humidity));
 
     // Output the sensor data.
     // Serial.println(mosi_to_string(&mosi));

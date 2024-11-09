@@ -24,7 +24,7 @@ bool isLuxSensorAvailable() {
 // Function to get the lux value
 float getLuxValue() {
     lux_sensor.start();
-    return lux_sensor.getLux();
+    return lux_sensor.getLux(); // 16-bit light intensity value in lux (SI unit)
 }
 
 #endif //AUXILIARY_SENSING__LUX_H
