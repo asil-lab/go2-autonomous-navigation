@@ -27,7 +27,7 @@ slam_toolbox:
     throttle_scans: 1
     transform_publish_period: 0.02 #if 0 never publishes odometry
     map_update_interval: 0.1
-    resolution: 0.25
+    resolution: 0.12
     max_laser_range: 10.0 #for rastering images
     minimum_time_interval: 0.1
     transform_timeout: 0.01
@@ -40,7 +40,7 @@ slam_toolbox:
     use_scan_barycenter: true
     minimum_travel_distance: 0.1
     minimum_travel_heading: 0.1
-    scan_buffer_size: 10
+    scan_buffer_size: 25
     scan_buffer_maximum_scan_distance: 10.0
     link_match_minimum_response_fine: 0.1  
     link_scan_maximum_distance: 1.5
@@ -54,7 +54,7 @@ slam_toolbox:
     # Correlation Parameters - Correlation Parameters
     correlation_search_space_dimension: 0.5
     correlation_search_space_resolution: 0.01
-    correlation_search_space_smear_deviation: 0.1 
+    correlation_search_space_smear_deviation: 0.1
 
     # Correlation Parameters - Loop Closure Parameters
     loop_search_space_dimension: 1.0
@@ -62,12 +62,12 @@ slam_toolbox:
     loop_search_space_smear_deviation: 0.005
 
     # Scan Matcher Parameters
-    distance_variance_penalty: 0.01      
-    angle_variance_penalty: 0.01 
+    distance_variance_penalty: 0.05
+    angle_variance_penalty: 0.05
 
-    fine_search_angle_offset: 0.0005     
-    coarse_search_angle_offset: 0.01   
-    coarse_angle_resolution: 0.01        
+    fine_search_angle_offset: 0.0005
+    coarse_search_angle_offset: 0.01
+    coarse_angle_resolution: 0.01
     minimum_angle_penalty: 0.1
     minimum_distance_penalty: 0.1
     use_response_expansion: true

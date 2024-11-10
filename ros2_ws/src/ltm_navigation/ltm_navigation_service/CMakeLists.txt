@@ -44,8 +44,26 @@ ament_target_dependencies(navigation_service_node
   Eigen3
 )
 
+# Add the navigation_client_node executable.
+add_executable(navigation_client_node
+  src/navigation_client_node.cpp
+)
+
+target_include_directories(navigation_client_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+ament_target_dependencies(navigation_client_node
+  rclcpp
+  geometry_msgs
+  ltm_shared_msgs
+  Eigen3
+)
+
 # Install executables.
-install(TARGETS navigation_service_node
+install(TARGETS 
+  navigation_service_node
+  navigation_client_node
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files.
