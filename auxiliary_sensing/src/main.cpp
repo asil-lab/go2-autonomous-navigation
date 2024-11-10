@@ -13,21 +13,8 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
     // Initialize the sensors.
-    if (!isLightSensorAvailable()) {
-        Serial.println("Lux sensor not available.");
-        while (true) {
-            Serial.println("Could not find light sensor!");
-            delay(1000);
-        };
-    }
-
-    if (!isTempHumiditySensorAvailable()) {
-        Serial.println("Temperature and humidity sensor not available.");
-        while (true) {
-            Serial.println("Could not find temperature and humidity sensor!");
-            delay(1000);
-        };
-    }
+    startLightSensor();
+    startTempHumiditySensor();
 }
 
 void loop() {
