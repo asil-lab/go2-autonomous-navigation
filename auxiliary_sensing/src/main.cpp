@@ -4,7 +4,7 @@
 #include "sensors/temp_humidity.h"
 
 #define SERIAL_BAUD_RATE 115200
-#define DELAY_TIME 1000
+#define SENSOR_UPDATE_PERIOD 200 // milliseconds
 
 struct MOSI mosi;
 
@@ -27,5 +27,5 @@ void loop() {
     Serial.println(mosi_to_string(&mosi));
 
     // Delay for 1 second.
-    delay(DELAY_TIME);
+    delay(SENSOR_UPDATE_PERIOD);
 }
