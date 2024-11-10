@@ -24,6 +24,11 @@ class MISO(Enum):
     HUMIDITY_OFFSET     = 4 * BYTE_SIZE
     LIGHT_OFFSET        = 8 * BYTE_SIZE
 
+class SensorData(Enum):
+    TEMPERATURE = 0
+    HUMIDITY    = 1
+    LUMINOSITY  = 2
+
 class AuxiliarySensorsNode(Node):
 
     def __init__(self):
@@ -37,31 +42,42 @@ class AuxiliarySensorsNode(Node):
 
     def read_serial_port(self):
         while rclpy.ok():
+            # If no data is available, continue to next iteration
             if self.serial_port.in_waiting == 0:
                 continue
             
             try:
                 line = self.serial_port.readline().decode('utf-8').strip()
-                self.get_logger().info(f'Received line: {line}')
-
-                # Split the line into a list of strings per 4 bytes
-                data = [line[offset.value:offset.value+(FLOAT_SIZE*BYTE_SIZE)] for offset in MISO]
-                for value in data:
-                    self.get_logger().info(f'Value: {value}')
-
-                # Reverse the bits of each sensor value in the list
-                for i in range(NUM_SENSORS):
-                    data[i] = data[i][::-1]
-                    self.get_logger().info(f'Reversed value: {data[i]}')
-
-                # Convert the binary string to a float
-                for i in range(NUM_SENSORS):
-                    data[i] = self.bin_to_float(data[i])
-                    self.get_logger().info(f'Float value: {data[i]}')
+                self.get_logger().debug(f'Received line: {line}')
+                data = self.process_stream(line)
+                self.publish_auxiliary_sensor_state(data)
 
             except UnicodeDecodeError as e:
                 self.get_logger().error('Failed to decode serial line: %s', str(e))
                 continue
+
+    def publish_auxiliary_sensor_state(self, data):
+        msg = AuxiliarySensorState()
+        msg.header.stamp = self.get_clock().now().to_msg()
+
+        msg.temperature = data[SensorData.TEMPERATURE.value]
+        msg.humidity = data[SensorData.HUMIDITY.value]
+        msg.luminosity = data[SensorData.LUMINOSITY.value]
+
+        self.auxiliary_sensor_state_publisher.publish(msg)
+
+    def process_stream(self, line):
+        data = self.split_line(line)
+        return self.convert_data(data)
+
+    def split_line(self, line):
+        return [line[offset.value:offset.value+(FLOAT_SIZE*BYTE_SIZE)] for offset in MISO]
+
+    def convert_data(self, data):
+        return [self.bin_to_float(self.reverse_bits(data[i])) for i in range(NUM_SENSORS)]
+
+    def reverse_bits(self, b):
+        return b[::-1]
 
     def bin_to_float(self, b):
         # Credits: https://stackoverflow.com/questions/8751653/how-to-convert-a-binary-string-into-a-float-value
@@ -81,7 +97,7 @@ class AuxiliarySensorsNode(Node):
 
     def initialize_auxiliary_sensor_state_publisher(self):
         self.auxiliary_sensor_state_publisher = self.create_publisher(
-            AuxiliarySensorState, 'auxiliary_sensor_state', 10)
+            AuxiliarySensorState, 'ambient_state', 10)
         
     def initialize_thread(self):
         self.thread = threading.Thread(target=self.read_serial_port)
