@@ -41,6 +41,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetStateTransitionHistory.srv"
   "srv/PerformState.srv"
   "srv/ScanEnvironment.srv"
+  "srv/DisplayScanEnvironment.srv"
 
   DEPENDENCIES builtin_interfaces std_msgs sensor_msgs geometry_msgs
 )
