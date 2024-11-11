@@ -16,11 +16,12 @@ def generate_launch_description():
     go2_flag_argument = DeclareLaunchArgument(
         'go2',
         default_value='false',
-        description='Flag to indicate if the script is running on the Go2'
+        description='Flag to indicate if the script is running on the Go2',
+        choices=['true', 'false'],
     )
 
     # Get the parameters
-    if LaunchConfiguration('go2') == 'true':
+    if LaunchConfiguration('go2').perform(None).lower() == 'true':
         multicast_iface_address = 'eth0'
     else:
         multicast_iface_address = 'wlp2s0'
