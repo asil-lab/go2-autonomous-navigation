@@ -33,41 +33,25 @@ include_directories(
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
+
 qt5_wrap_cpp(MOC_FILES
   include/ltm_go2_rviz_plugins/battery_management_display.hpp
+  include/ltm_go2_rviz_plugins/scan_procedure_display.hpp
 )
 
-# Create battery_management_display library
-add_library(battery_management_display
+# Create custom RViz library
+add_library(ltm_go2_rviz_displays
   src/battery_management_display.cpp
-  ${MOC_FILES}
-)
-
-target_include_directories(battery_management_display PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-
-ament_target_dependencies(battery_management_display
-  rclcpp
-  pluginlib
-  rviz_common
-  rviz_default_plugins
-  ltm_shared_msgs
-)
-
-# Create scan_procedure_display library
-add_library(scan_procedure_display
   src/scan_procedure_display.cpp
   ${MOC_FILES}
 )
 
-target_include_directories(scan_procedure_display PUBLIC
+target_include_directories(ltm_go2_rviz_displays PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 
-ament_target_dependencies(scan_procedure_display
+ament_target_dependencies(ltm_go2_rviz_displays
   rclcpp
   pluginlib
   rviz_common
@@ -75,13 +59,38 @@ ament_target_dependencies(scan_procedure_display
   ltm_shared_msgs
 )
 
-# Install the plugin description
-install(TARGETS battery_management_display scan_procedure_display
+install(TARGETS ltm_go2_rviz_displays
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+# # Create scan_procedure_display library
+# add_library(scan_procedure_display
+#   src/scan_procedure_display.cpp
+#   ${MOC_FILES}
+# )
+
+# target_include_directories(scan_procedure_display PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>
+# )
+
+# ament_target_dependencies(scan_procedure_display
+#   rclcpp
+#   pluginlib
+#   rviz_common
+#   rviz_default_plugins
+#   ltm_shared_msgs
+# )
+
+# install(TARGETS scan_procedure_display
+#   EXPORT export_${PROJECT_NAME}
+#   ARCHIVE DESTINATION lib
+#   LIBRARY DESTINATION lib
+#   RUNTIME DESTINATION bin
+# )
 
 install(DIRECTORY include/
   DESTINATION include
