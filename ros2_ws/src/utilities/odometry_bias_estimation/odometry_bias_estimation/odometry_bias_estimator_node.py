@@ -9,6 +9,7 @@ from rclpy.node import Node
 from unitree_go.msg import SportModeState
 from geometry_msgs.msg import TwistStamped
 
+import numpy as np
 from collections import deque
 from scipy import stats
 from scipy.spatial.transform import Rotation as R
@@ -40,13 +41,16 @@ class OdometryBiasEstimatorNode(Node):
             return
         
         # Calculate the bias
-        time_stamps = list(self.time_stamps)
+        # time_stamps = list(self.time_stamps)
+        time_stamps = np.linspace(0, 1, len(self.time_stamps)).tolist()
         linear_translation = [list(v) for v in self.linear_translation]
         angular_orientation = [list(v) for v in self.angular_orientation]
 
         # Calculate the slopes of the linear and angular velocities
         linear_velocities = [stats.linregress(time_stamps, linear_translation[i])[0] for i in range(3)]
         angular_velocities = [stats.linregress(time_stamps, angular_orientation[i])[0] for i in range(3)]
+        # linear_velocities = [np.polyfit(time_stamps, linear_translation[i], 1)[0] for i in range(3)]
+        # angular_velocities = [np.polyfit(time_stamps, angular_orientation[i], 1)[0] for i in range(3)]
 
         # Create the message
         msg = TwistStamped()
@@ -61,7 +65,7 @@ class OdometryBiasEstimatorNode(Node):
         # Publish the message
         self.bias_publisher.publish(msg)
 
-    def initialize_queues(self, queue_size=1000):
+    def initialize_queues(self, queue_size=5000):
         self.time_stamps = deque(maxlen=queue_size)
         self.linear_translation = [deque(maxlen=queue_size) for _ in range(3)]
         self.angular_orientation = [deque(maxlen=queue_size) for _ in range(3)]
