@@ -82,8 +82,8 @@ void Go2CameraNode::initializeCamera()
   camera_address_stream << "udpsrc address=" << 
     this->get_parameter("camera_stream.address").as_string() << 
     " port=" << this->get_parameter("camera_stream.port").as_int() << 
-    " multicast-iface=" << this->get_parameter("camera_stream.multicast_iface").as_string() 
-    << " ! application/x-rtp, media=video, encoding-name=H264 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! video/x-raw,width=1280,height=720,format=BGR ! appsink drop=1";
+    " multicast-iface=" << this->get_parameter("camera_stream.multicast_iface").as_string() << 
+    " ! application/x-rtp, media=video, encoding-name=H264 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! video/x-raw,width=1280,height=720,format=BGR ! appsink drop=1";
 
   // Open camera stream.
   m_camera_address = camera_address_stream.str();

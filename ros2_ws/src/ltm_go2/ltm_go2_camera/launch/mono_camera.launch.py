@@ -8,6 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
 
 def generate_launch_description():
@@ -15,18 +16,16 @@ def generate_launch_description():
     go2_flag_argument = DeclareLaunchArgument(
         'go2',
         default_value='false',
-        description='Flag to indicate if the script is running on the Go2',
+        description='Flag to indicate if the script is running on the Go2'
     )
 
     # Get the parameters
-    if LaunchConfiguration('go2'):
-        parameters_filename = 'monocamera_go2_params.yaml'
+    if LaunchConfiguration('go2') == 'true':
+        multicast_iface_address = 'eth0'
     else:
-        parameters_filename = 'monocamera_ext_params.yaml'
-
-    config_directory = os.path.join(
-        get_package_share_directory('ltm_go2_camera'), 'config')
-    config_filepath = os.path.join(config_directory, parameters_filename)
+        multicast_iface_address = 'wlp2s0'
+    config_directory = os.path.join(get_package_share_directory('ltm_go2_camera'), 'config')
+    config_filepath = os.path.join(config_directory, 'monocamera_params.yaml')
 
     # Go2 Camera node
     ltm_go2_camera_node = Node(
@@ -34,7 +33,7 @@ def generate_launch_description():
         executable='go2_camera_node',
         name='go2_camera_node',
         output='screen',
-        parameters=[config_filepath]
+        parameters=[config_filepath, {'camera_stream.multicast_iface': multicast_iface_address}]
     )
 
     return LaunchDescription([
