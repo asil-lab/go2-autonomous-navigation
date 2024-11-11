@@ -60,21 +60,26 @@ namespace LTM
     const std::shared_ptr<ltm_shared_msgs::srv::DisplayScanEnvironment::Request> request,
     std::shared_ptr<ltm_shared_msgs::srv::DisplayScanEnvironment::Response> response)
   {
-    updateScanEnvironment(request->is_scanning);
+    updateScanEnvironment(request->is_scanning, request->is_moving);
     (void) response;
   }
 
-  void ScanProcedureDisplay::updateScanEnvironment(bool is_scanning)
+  void ScanProcedureDisplay::updateScanEnvironment(bool is_scanning, bool is_moving)
   {
     if (is_scanning)
     {
       m_scan_environment = "Scanning...";
       m_scan_environment_value_palette.setColor(QPalette::WindowText, COLOR_RED);
     }
+    else if (is_moving)
+    {
+      m_scan_environment = "Moving...";
+      m_scan_environment_value_palette.setColor(QPalette::WindowText, COLOR_BLUE);
+    }
     else
     {
-      m_scan_environment = "Not Scanning";
-      m_scan_environment_value_palette.setColor(QPalette::WindowText, COLOR_GRAY);
+      m_scan_environment = "Scan complete";
+      m_scan_environment_value_palette.setColor(QPalette::WindowText, COLOR_GREEN);
     }
 
     m_scan_environment_label->setText(QString::fromStdString(m_scan_environment));

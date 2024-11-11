@@ -37,7 +37,7 @@ namespace LTM
     void displayScanEnvironmentCallback(
       const std::shared_ptr<ltm_shared_msgs::srv::DisplayScanEnvironment::Request> request,
       std::shared_ptr<ltm_shared_msgs::srv::DisplayScanEnvironment::Response> response);
-    void updateScanEnvironment(bool is_scanning);
+    void updateScanEnvironment(bool is_scanning, bool is_moving);
 
   protected:
     QLabel * m_scan_environment_label;
@@ -47,6 +47,8 @@ namespace LTM
     const double SCAN_ENVIRONMENT_UPDATE_PERIOD = 1.0;
     const QColor COLOR_GRAY = QColor(128, 128, 128);
     const QColor COLOR_RED = QColor(255, 0, 0);
+    const QColor COLOR_GREEN = QColor(0, 128, 0);
+    const QColor COLOR_BLUE = QColor(30, 144, 255);
 
     rclcpp::Node::SharedPtr m_node;
     rclcpp::Service<ltm_shared_msgs::srv::DisplayScanEnvironment>::SharedPtr m_scan_environment_service;
