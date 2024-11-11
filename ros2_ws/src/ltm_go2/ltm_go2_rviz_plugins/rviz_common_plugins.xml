@@ -1,4 +1,4 @@
-<library path="battery_management_display">
+<library path="ltm_go2_rviz_displays">
     <class type="LTM::BatteryManagementDisplay" base_class_type="rviz_common::Panel">
       <description>This is a panel for displaying the battery state of the robot.</description>
     </class>

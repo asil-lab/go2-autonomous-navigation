@@ -66,32 +66,6 @@ install(TARGETS ltm_go2_rviz_displays
   RUNTIME DESTINATION bin
 )
 
-# # Create scan_procedure_display library
-# add_library(scan_procedure_display
-#   src/scan_procedure_display.cpp
-#   ${MOC_FILES}
-# )
-
-# target_include_directories(scan_procedure_display PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>
-# )
-
-# ament_target_dependencies(scan_procedure_display
-#   rclcpp
-#   pluginlib
-#   rviz_common
-#   rviz_default_plugins
-#   ltm_shared_msgs
-# )
-
-# install(TARGETS scan_procedure_display
-#   EXPORT export_${PROJECT_NAME}
-#   ARCHIVE DESTINATION lib
-#   LIBRARY DESTINATION lib
-#   RUNTIME DESTINATION bin
-# )
-
 install(DIRECTORY include/
   DESTINATION include
 )
