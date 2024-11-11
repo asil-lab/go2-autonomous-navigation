@@ -115,6 +115,10 @@ class AuxiliarySensorsNode(Node):
         self.thread.start()
         
     def create_csv(self):
+        # Create directory if it does not exist
+        if not os.path.exists(LTM_RECORDINGS_AMBIENCE_DIRECTORY):
+            os.makedirs(LTM_RECORDINGS_AMBIENCE_DIRECTORY)
+
         # Create a CSV in LTM_RECORDINGS_AMBIENCE_DIRECTORY with the following headers:
         # timestamp, temperature, humidity, light
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
