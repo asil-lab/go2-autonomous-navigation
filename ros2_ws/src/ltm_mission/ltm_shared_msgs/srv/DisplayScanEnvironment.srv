@@ -1,0 +1,3 @@
+bool is_scanning
+bool is_moving
+---
