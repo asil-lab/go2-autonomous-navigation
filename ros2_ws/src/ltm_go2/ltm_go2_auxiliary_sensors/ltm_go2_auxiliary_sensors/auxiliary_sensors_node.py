@@ -9,6 +9,9 @@ from rclpy.node import Node
 
 from ltm_shared_msgs.msg import AuxiliarySensorState
 
+import os
+import csv
+from datetime import datetime
 from serial import Serial, SerialException
 import threading
 import struct
@@ -18,6 +21,8 @@ from enum import Enum
 BYTE_SIZE   = 8     # bits
 FLOAT_SIZE  = 4     # bytes
 NUM_SENSORS = 3     # temperature, humidity, light
+
+LTM_RECORDINGS_AMBIENCE_DIRECTORY = os.environ.get('LTM_RECORDINGS_AMBIENCE_DIRECTORY')
 
 class MISO(Enum):
     TEMPERATURE_OFFSET  = 0
@@ -34,6 +39,7 @@ class AuxiliarySensorsNode(Node):
     def __init__(self):
         super().__init__('auxiliary_sensors_node')
 
+        self.create_csv()
         self.initialize_serial_port()
         self.initialize_auxiliary_sensor_state_publisher()
         self.initialize_thread()
@@ -57,14 +63,18 @@ class AuxiliarySensorsNode(Node):
                 continue
 
     def publish_auxiliary_sensor_state(self, data):
+        # Create an AuxiliarySensorState message
         msg = AuxiliarySensorState()
         msg.header.stamp = self.get_clock().now().to_msg()
-
         msg.temperature = data[SensorData.TEMPERATURE.value]
         msg.humidity = data[SensorData.HUMIDITY.value]
         msg.luminosity = data[SensorData.LUMINOSITY.value]
 
+        # Publish the data as an AuxiliarySensorState message
         self.auxiliary_sensor_state_publisher.publish(msg)
+
+        # Write the data to the CSV
+        self.write_csv(msg)
 
     def process_stream(self, line):
         data = self.split_line(line)
@@ -104,6 +114,30 @@ class AuxiliarySensorsNode(Node):
         self.thread.daemon = True
         self.thread.start()
         
+    def create_csv(self):
+        # Create directory if it does not exist
+        if not os.path.exists(LTM_RECORDINGS_AMBIENCE_DIRECTORY):
+            os.makedirs(LTM_RECORDINGS_AMBIENCE_DIRECTORY)
+
+        # Create a CSV in LTM_RECORDINGS_AMBIENCE_DIRECTORY with the following headers:
+        # timestamp, temperature, humidity, light
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        self.filepath = f'{LTM_RECORDINGS_AMBIENCE_DIRECTORY}/ambient_data_{timestamp}.csv'
+        with open(self.filepath, mode='w') as file:
+            writer = csv.writer(file)
+            writer.writerow(['sec', 'nsec', 'temperature', 'humidity', 'light'])
+
+    def write_csv(self, ambient_state: AuxiliarySensorState):
+        # Append data as a new row in the CSV
+        with open(self.filepath, mode='a') as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                ambient_state.header.stamp.sec,
+                ambient_state.header.stamp.nanosec,
+                ambient_state.temperature,
+                ambient_state.humidity,
+                ambient_state.luminosity
+            ])
 
 def main(args=None):
     rclpy.init(args=args)
