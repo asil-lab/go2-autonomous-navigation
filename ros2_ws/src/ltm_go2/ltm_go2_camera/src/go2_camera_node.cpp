@@ -75,11 +75,11 @@ void Go2CameraNode::initializeCamera()
 {
   declare_parameter("camera_stream.address", "230.1.1.1");
   declare_parameter("camera_stream.port", 1720);
-  declare_parameter("camera_stream.running_on_go2", false);
+  declare_parameter("running_on_go2", false);
 
   // Determine which address to use depending if the script is running on Go2 or externally.
   std::string multicast_iface_address;
-  if (this->get_parameter("camera_stream.running_on_go2").as_bool()) {
+  if (this->get_parameter("running_on_go2").as_bool()) {
     multicast_iface_address = "eth0";
   } else {
     multicast_iface_address = "wlp2s0";

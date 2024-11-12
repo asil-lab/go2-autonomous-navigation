@@ -29,7 +29,7 @@ def generate_launch_description():
         executable='go2_camera_node',
         name='go2_camera_node',
         output='screen',
-        parameters=[config_filepath, {'camera_stream.running_on_go2': LaunchConfiguration('go2')}]
+        parameters=[config_filepath, {'running_on_go2': LaunchConfiguration('go2')}]
     )
 
     return LaunchDescription([
