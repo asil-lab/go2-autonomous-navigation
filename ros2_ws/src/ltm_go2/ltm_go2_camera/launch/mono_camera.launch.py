@@ -17,14 +17,9 @@ def generate_launch_description():
         'go2',
         default_value='false',
         description='Flag to indicate if the script is running on the Go2',
-        choices=['true', 'false'],
     )
 
     # Get the parameters
-    if LaunchConfiguration('go2').perform(None).lower() == 'true':
-        multicast_iface_address = 'eth0'
-    else:
-        multicast_iface_address = 'wlp2s0'
     config_directory = os.path.join(get_package_share_directory('ltm_go2_camera'), 'config')
     config_filepath = os.path.join(config_directory, 'monocamera_params.yaml')
 
@@ -34,7 +29,7 @@ def generate_launch_description():
         executable='go2_camera_node',
         name='go2_camera_node',
         output='screen',
-        parameters=[config_filepath, {'camera_stream.multicast_iface': multicast_iface_address}]
+        parameters=[config_filepath, {'camera_stream.running_on_go2': LaunchConfiguration('go2')}]
     )
 
     return LaunchDescription([
