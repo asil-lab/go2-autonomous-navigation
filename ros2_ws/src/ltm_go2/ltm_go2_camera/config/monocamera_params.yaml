@@ -1,0 +1,15 @@
+go2_camera_node:
+  ros__parameters:
+
+    stream_mode: true
+    image_pub_topic_name: "camera/raw"
+    image_pub_topic_queue_size: 10
+    image_pub_topic_rate: 24.0  # Hz
+
+    service_mode: true
+    image_service_name: "get_image"
+
+    camera_frame_id: "camera_link"
+    camera_stream: # In string
+      address: "230.1.1.1"
+      port: 1720
