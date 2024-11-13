@@ -28,6 +28,10 @@ def generate_launch_description():
         )
     ]
 
+    # Initialize the launch description
+    go2_flag = LaunchConfiguration('go2')
+    rviz_flag = LaunchConfiguration('rviz')
+
     # URDF file location
     urdf_location = os.path.join(
         get_package_share_directory("ltm_go2_description"), "urdf", "go2_description.urdf")
@@ -47,9 +51,9 @@ def generate_launch_description():
     go2_camera_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_go2_camera'), 
-                'launch', 'camera.launch.py')
+                'launch', 'mono_camera.launch.py')
         ),
-        condition=UnlessCondition(LaunchConfiguration('go2')),
+        launch_arguments=[('go2', go2_flag)],
     )
 
     # D435i camera node
@@ -58,7 +62,7 @@ def generate_launch_description():
             os.path.join(get_package_share_directory('ltm_go2_camera'),
                 'launch', 'd435i_camera.launch.py')
         ),
-        condition=IfCondition(LaunchConfiguration('go2')),
+        condition=IfCondition(go2_flag),
     )
 
     # Go2 state handler node
@@ -88,7 +92,7 @@ def generate_launch_description():
             os.path.join(get_package_share_directory('ltm_go2_description'), 
                 'launch', 'go2_rviz.launch.py')
         ),
-        condition=UnlessCondition(LaunchConfiguration('go2')),
+        condition=UnlessCondition(go2_flag),
     )
 
     return LaunchDescription(declared_arguments + [

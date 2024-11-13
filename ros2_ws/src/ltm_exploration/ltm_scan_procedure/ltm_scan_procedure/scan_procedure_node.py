@@ -15,7 +15,7 @@ from sensor_msgs.msg import PointCloud2, Image
 from std_msgs.msg import Empty, String
 
 from std_srvs.srv import Trigger
-from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose, ScanEnvironment
+from ltm_shared_msgs.srv import GetImage, GetPointCloud, NavigateToPose, ScanEnvironment, DisplayScanEnvironment
 
 import os
 from typing import Any
@@ -52,6 +52,7 @@ class ScanProcedureNode(Node):
         self.configure_navigate_to_pose_client()
         self.configure_get_image_client()
         self.configure_get_pointcloud_client()
+        self.configure_display_scan_environment_client()
         self.configure_tf_listener()
 
         self.get_logger().info('Scan procedure node has been initialized.')
@@ -119,6 +120,12 @@ class ScanProcedureNode(Node):
         self.executor.spin_until_future_complete(get_pointcloud_future)
         return get_pointcloud_future.result().point_cloud
 
+    def request_display_scan_environment(self, is_scanning: bool) -> None:
+        """Requests the display of the scan environment from the /display_scan_environment service."""
+        display_scan_environment_request = DisplayScanEnvironment.Request()
+        display_scan_environment_request.is_scanning = is_scanning
+        self.display_scan_environment_client.call_async(display_scan_environment_request)
+
     def perform_scan(self) -> None:
         """ Perform scan procedure in the following order:
         1. Get the current robot position and yaw
@@ -139,6 +146,7 @@ class ScanProcedureNode(Node):
         self.data_storage.create_storage_subdirectory(self.current_subdirectory)
 
         # Perform scan procedure at each orientation
+        self.request_display_scan_environment(is_scanning=True)
         for orientation in range(self.number_of_orientations):
             # Perform gestures at each orientation
             for gesture in self.gesture_sequence:
@@ -163,6 +171,7 @@ class ScanProcedureNode(Node):
             self.rotate_robot()
 
         self.get_logger().info('Scan procedure at x: %f, y: %f' % (self.current_robot_position.x, self.current_robot_position.y))
+        self.request_display_scan_environment(is_scanning=False)
 
     def get_current_robot_pose(self) -> None:
         """Gets the current pose representation of the robot in the map frame.
@@ -351,6 +360,15 @@ class ScanProcedureNode(Node):
         while not self.get_pointcloud_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service %s not available, waiting again...' % \
                                    (self.get_parameter('get_pointcloud_service_name').value))
+
+    def configure_display_scan_environment_client(self) -> None:
+        """Configures the client to the display_scan_environment service."""
+        self.declare_parameter('display_scan_environment_service_name', 'display_scan_environment')
+
+        self.display_scan_environment_callback_group = MutuallyExclusiveCallbackGroup()
+        self.display_scan_environment_client = self.create_client(
+            DisplayScanEnvironment, self.get_parameter('display_scan_environment_service_name').value, 
+            callback_group=self.display_scan_environment_callback_group)
 
     def configure_record_environment_service(self) -> None:
         """Configures the client to the record_environment service."""

@@ -7,8 +7,6 @@
 #include <ltm_go2_rviz_plugins/battery_management_display.hpp>
 #include <rviz_common/logging.hpp>
 
-#include <QColor>
-
 namespace LTM
 {
   BatteryManagementDisplay::BatteryManagementDisplay(QWidget * parent)

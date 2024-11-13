@@ -1249,7 +1249,7 @@ Stephen Brawner (brawner@gmail.com)
     name="d435i_camera_joint"
     type="fixed">
     <origin
-      xyz="0.345 0 0.115"
+      xyz="0.345 0 0.110"
       rpy="0 0 0" />
     <parent
       link="base" />
