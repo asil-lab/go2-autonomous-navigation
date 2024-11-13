@@ -53,7 +53,7 @@ def generate_launch_description():
             os.path.join(get_package_share_directory('ltm_go2_camera'), 
                 'launch', 'mono_camera.launch.py')
         ),
-        launch_arguments={'go2': go2_flag}.items(),
+        launch_arguments=[('go2', go2_flag)],
     )
 
     # D435i camera node
