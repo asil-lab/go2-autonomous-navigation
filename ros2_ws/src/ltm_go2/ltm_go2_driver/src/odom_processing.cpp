@@ -13,9 +13,10 @@ using namespace LTM;
 
 OdomProcessing::OdomProcessing() : Node(ODOM_PROCESSING_NODE_NAME)
 {
-  initializeROS();
+  declareInitialTranslation();
   initializeOdomTransformMsg();
   initializeBaseFootprintMsg();
+  initializeROS();
   RCLCPP_INFO(this->get_logger(), "Odom Processing Node initialized.");
 }
 
@@ -36,6 +37,15 @@ void OdomProcessing::lowStateCallback(const unitree_go::msg::LowState::SharedPtr
 void OdomProcessing::sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg)
 {
   RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 10000, "Received Sport Mode State Message.");
+
+  // Initialize initial translation to set starting position to (0, 0)
+  if (m_initial_translation[static_cast<int>(TranslationIdx::Z)] != 1.0)
+  {
+    initializeInitialTranslation(msg->position[static_cast<int>(TranslationIdx::X)], 
+      msg->position[static_cast<int>(TranslationIdx::Y)]);
+  }
+
+  // Update odom and base_footprint
   updateOdom(msg->position, msg->imu_state.quaternion);
   broadcastTransform(m_odom_msg);
   broadcastTransform(m_base_footprint_msg);
@@ -83,8 +93,8 @@ void OdomProcessing::updateOdom(const std::array<float, TRANSLATION_SIZE>& trans
 
 void OdomProcessing::updateOdomTranslation(const std::array<float, TRANSLATION_SIZE>& translation)
 {
-  m_odom_msg->transform.translation.x = translation[static_cast<int>(TranslationIdx::X)];
-  m_odom_msg->transform.translation.y = translation[static_cast<int>(TranslationIdx::Y)];
+  m_odom_msg->transform.translation.x = translation[static_cast<int>(TranslationIdx::X)] - m_initial_translation[static_cast<int>(TranslationIdx::X)];
+  m_odom_msg->transform.translation.y = translation[static_cast<int>(TranslationIdx::Y)] - m_initial_translation[static_cast<int>(TranslationIdx::Y)];
   m_odom_msg->transform.translation.z = translation[static_cast<int>(TranslationIdx::Z)];
 }
 
@@ -170,6 +180,18 @@ void OdomProcessing::initializeBaseFootprintMsg()
   m_base_footprint_msg->transform.rotation.y = 0.0;
   m_base_footprint_msg->transform.rotation.z = 0.0;
   m_base_footprint_msg->transform.rotation.w = 1.0;
+}
+
+void OdomProcessing::declareInitialTranslation()
+{
+  m_initial_translation = {0.0, 0.0, 0.0};
+}
+
+void OdomProcessing::initializeInitialTranslation(const double& x, const double& y)
+{
+  m_initial_translation[static_cast<int>(TranslationIdx::X)] = x;
+  m_initial_translation[static_cast<int>(TranslationIdx::Y)] = y;
+  m_initial_translation[static_cast<int>(TranslationIdx::Z)] = 1.0;
 }
 
 // End of file: odom_processing.cpp
