@@ -88,7 +88,7 @@ def generate_launch_description():
             'range_min': 0.0,
             'range_max': 5.0,
             'target_frame': 'base_footprint',
-            'transform_tolerance': 0.01,
+            'transform_tolerance': 0.05,
             'use_inf': True,
         }],
     )
