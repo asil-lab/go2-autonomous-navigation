@@ -4,6 +4,7 @@
 export LTM_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export LTM_ROS2_WS="${LTM_DIRECTORY}/ros2_ws"
 export LTM_RECORDINGS_DIRECTORY="${LTM_DIRECTORY}/recordings"
+export LTM_RECORDINGS_SCAN_DIRECTORY="${LTM_RECORDINGS_DIRECTORY}/scan"
 export LTM_RECORDINGS_AMBIENCE_DIRECTORY="${LTM_RECORDINGS_DIRECTORY}/ambience"
 
 # Create maps directory in ltm_mission directory if it doesn't exist

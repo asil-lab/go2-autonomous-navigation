@@ -163,9 +163,20 @@ class ScanProcedureNode(Node):
                 # Collect 2D image data
                 self.collect_image_data()
                 self.save_image_data()
+
+                # Save the data to a CSV file
+                current_timestamp = self.get_clock().now().seconds_nanoseconds()
+                self.data_storage.save_csv_data(
+                    sec=current_timestamp[0], 
+                    nsec=current_timestamp[1], 
+                    x=self.current_robot_position.x, 
+                    y=self.current_robot_position.y, 
+                    yaw=self.current_robot_yaw, 
+                    gesture=gesture
+                )
             
             # Skip if last orientation, otherwise rotate to next orientation
-            if orientation == self.number_of_orientations - 1:
+            if orientation >= self.number_of_orientations - 1:
                 break
             self.get_logger().info("Moving to next orientation...")
             self.rotate_robot()
