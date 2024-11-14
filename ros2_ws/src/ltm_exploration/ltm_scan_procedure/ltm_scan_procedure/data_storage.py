@@ -9,12 +9,13 @@ import cv2 as cv
 from ctypes import *
 
 import os
+import csv
 from datetime import datetime
 from sensor_msgs.msg import PointCloud2, PointField
 from sensor_msgs_py import point_cloud2 as pc2
 import open3d as o3d
 
-LTM_RECORDINGS_DIRECTORY = os.environ.get('LTM_RECORDINGS_DIRECTORY')
+LTM_RECORDINGS_SCAN_DIRECTORY = os.environ.get('LTM_RECORDINGS_SCAN_DIRECTORY')
 
 # The data structure of each point in ros PointCloud2: 16 bits = x + y + z + rgb
 FIELDS_XYZ = [
@@ -145,9 +146,24 @@ class DataStorage:
             os.makedirs(subdirectory_path)
             print(f'Subdirectory has been created at {subdirectory_path}.')
 
+    def save_csv_data(self, sec: int, nsec: int, x: float, y: float, yaw: float, gesture: str) -> None:
+        """ Saves the data to a CSV file.
+
+        Args:
+            sec (int): The seconds part of the timestamp.
+            nsec (int): The nanoseconds part of the timestamp.
+            x (float): The x-coordinate of the robot.
+            y (float): The y-coordinate of the robot.
+            yaw (float): The yaw angle of the robot.
+            gesture (str): The gesture of the robot.
+        """
+        with open(self.csv_file_path, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([sec, nsec, x, y, yaw, gesture])
+
     def configure_storage_directory(self) -> None:
         """ Configures the storage directory for the data. """
-        self.storage_directory = LTM_RECORDINGS_DIRECTORY
+        self.storage_directory = LTM_RECORDINGS_SCAN_DIRECTORY
 
         # Create the storage directory if it does not exist
         if not os.path.exists(self.storage_directory):
@@ -159,3 +175,12 @@ class DataStorage:
         session_directory_name = 'session_' + current_datetime
         self.create_storage_subdirectory(session_directory_name)
         self.storage_directory = os.path.join(self.storage_directory, session_directory_name)
+
+        # Create a CSV file to store all of the data
+        csv_file_name = 'data_' + current_datetime + '.csv'
+        self.csv_file_path = os.path.join(self.storage_directory, csv_file_name)
+        with open(self.csv_file_path, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['sec', 'nsec', 'x', 'y', 'yaw', 'gesture'])
+
+        print(f'Storage directory has been set to {self.storage_directory}.')
