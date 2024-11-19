@@ -9,6 +9,7 @@ scan_procedure_node:
 
     navigate_to_pose_service_name: "send_robot"
     get_image_service_name: "get_image"
+    get_pointcloud_service_name: "get_pointcloud"
     record_environment_service_name: "state_machine/scan_environment"
 
     scan_number_of_orientations: 4            # Number of orientations to scan at each waypoint

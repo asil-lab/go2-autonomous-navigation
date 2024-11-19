@@ -179,12 +179,12 @@ local_costmap:
         origin_z: 0.0
         z_resolution: 0.01
         z_voxels: 16
-        max_obstacle_height: 2.0
+        max_obstacle_height: 1.0
         mark_threshold: 0
         observation_sources: scan
         scan:
           topic: /scan
-          max_obstacle_height: 2.0
+          max_obstacle_height: 1.0
           clearing: True
           marking: True
           data_type: "LaserScan"
