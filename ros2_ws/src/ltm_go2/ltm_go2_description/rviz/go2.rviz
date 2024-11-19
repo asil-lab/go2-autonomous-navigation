@@ -288,6 +288,8 @@ Visualization Manager:
           Value: true
         imu:
           Value: true
+        map:
+          Value: true
         odom:
           Value: true
         radar:
@@ -298,6 +300,8 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
+        map:
+          {}
         odom:
           base:
             FL_hip:
@@ -739,7 +743,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:

@@ -13,6 +13,7 @@
   <depend>sensor_msgs</depend>
   <depend>sensor_msgs_py</depend>
   <depend>ltm_shared_msgs</depend>
+  <depend>ltm_go2_auxiliary_sensors</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

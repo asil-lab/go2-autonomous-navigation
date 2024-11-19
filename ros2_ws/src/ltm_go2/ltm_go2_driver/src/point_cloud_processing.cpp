@@ -68,8 +68,8 @@ void PointCloudProcessing::initializeROS()
   point_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
     POINT_CLOUD_PROCESSING_PUB_TOPIC, POINT_CLOUD_PROCESSING_PUB_QUEUE_SIZE);
 
-  get_pointcloud_service_ = this->create_service<ltm_shared_msgs::srv::GetPointCloud>(POINT_CLOUD_PROCESSING_GET_POINTCLOUD_SERVICE, 
-    std::bind(&PointCloudProcessing::serviceCallback, this, std::placeholders::_1, std::placeholders::_2));  
+  // get_pointcloud_service_ = this->create_service<ltm_shared_msgs::srv::GetPointCloud>(POINT_CLOUD_PROCESSING_GET_POINTCLOUD_SERVICE, 
+  //   std::bind(&PointCloudProcessing::serviceCallback, this, std::placeholders::_1, std::placeholders::_2));  
 }
 
 void PointCloudProcessing::initializePointcloudMsg()
