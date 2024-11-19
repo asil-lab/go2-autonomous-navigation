@@ -50,7 +50,14 @@ simultaneously,by proceeding the following instruction:
 
 1. Open VSCode
 2. Open the file `lava-tube-mapping.code-workspace`.
+3. On the bottom right of the file, press the button "Open Workspace".
 
+Another method to do is via the Command Palette (`CTRL` + `SHIFT` + `P`), select `File: Open Workspace From File`, 
+and select `lava-tube-mapping.code-workspace`.
+
+## Aliases
+
+For this project, aliases are used for quicker 
 
 ## Issue
 
