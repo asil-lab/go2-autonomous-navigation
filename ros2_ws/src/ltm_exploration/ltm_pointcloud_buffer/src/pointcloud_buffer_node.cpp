@@ -160,8 +160,8 @@ void PointCloudBufferNode::initializeROSService()
   RCLCPP_INFO(this->get_logger(), "Creating service: %s", get_pointcloud_service.c_str());
 
   // Create a service to get the buffered pointcloud
-  m_get_pointcloud_service = this->create_service<ltm_shared_msgs::srv::GetPointCloud>(get_pointcloud_service, 
-    std::bind(&PointCloudBufferNode::serviceCallback, this, std::placeholders::_1, std::placeholders::_2));
+  // m_get_pointcloud_service = this->create_service<ltm_shared_msgs::srv::GetPointCloud>(get_pointcloud_service, 
+  //   std::bind(&PointCloudBufferNode::serviceCallback, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 void PointCloudBufferNode::initializeTFListener()
