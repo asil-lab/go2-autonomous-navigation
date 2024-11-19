@@ -118,6 +118,8 @@ def generate_launch_description():
             'use_sim_time': 'false',
             'resolution': 0.005,
             'frame_id': 'map',
+            'base_frame_id': 'base_footprint',
+            'filter_ground': 'false',
         }],
         remappings=[
             ('cloud_in', 'point_cloud/cropped'),                     # Input pointcloud
