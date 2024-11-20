@@ -116,7 +116,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'use_sim_time': 'false',
-            'resolution': 0.005,
+            'resolution': 0.0001,
             'frame_id': 'map',
             'base_frame_id': 'base_footprint',
             'filter_ground': 'false',
@@ -127,6 +127,20 @@ def generate_launch_description():
         ],
     )
 
+    # Voxel grid filter node
+    pointcloud_transformer_node = Node(
+        package='ltm_pointcloud_transformer',
+        executable='pointcloud_transformer_node',
+        name='pointcloud_transformer_node',
+        output='screen',
+        parameters=[{
+            'input_pointcloud_topic_name': 'point_cloud/cropped',
+            'output_pointcloud_topic_name': 'point_cloud/sampled',
+            'source_frame_id': 'radar',
+            'target_frame_id': 'map',
+        }],
+    )
+
     # Return launch description
     return LaunchDescription([
         crop_box_filter_node,
@@ -135,5 +149,6 @@ def generate_launch_description():
         ground_plane_segmentation_node,
         pointcloud_to_laserscan_node,
         online_sync_slam_node,
-        octomap_server_node,
+        # octomap_server_node,
+        pointcloud_transformer_node,
     ])
