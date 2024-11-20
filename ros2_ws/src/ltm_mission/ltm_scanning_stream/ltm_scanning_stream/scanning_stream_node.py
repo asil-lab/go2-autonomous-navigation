@@ -64,8 +64,12 @@ class ScanningStreamNode(Node):
         self.get_logger().info('Triggered scanning stream.')
         _ = request
 
+        # Get timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
         # Create video
-        video_path = os.path.join(self.directory, 'video.avi')
+        video_filename = 'video_' + timestamp + '.avi'
+        video_path = os.path.join(self.directory, video_filename)
         video_writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'XVID'), VIDEO_STREAM_FPS, (VIDEO_STREAM_WIDTH, VIDEO_STREAM_HEIGHT))
 
         for frame, _, _ in self.frames:
@@ -74,8 +78,9 @@ class ScanningStreamNode(Node):
         video_writer.release()
 
         # Save current pointcloud as .pcd
+        pointcloud_filename = 'radar_' + timestamp + '.pcd'
         converted_pointcloud = self.convert_pointcloud2_to_open3d(self.pointcloud)
-        self.save_pointcloud(converted_pointcloud)
+        self.save_pointcloud(pointcloud_filename, converted_pointcloud)
 
         return response        
 
@@ -114,8 +119,8 @@ class ScanningStreamNode(Node):
         # return
         return o3d_cloud
     
-    def save_pointcloud(self, pointcloud: o3d.geometry.PointCloud) -> bool:
-        file_path = os.path.join(self.directory, 'radar_mapping.pcd')
+    def save_pointcloud(self, filename: str, pointcloud: o3d.geometry.PointCloud) -> bool:
+        file_path = os.path.join(self.directory, filename)
         return o3d.io.write_point_cloud(file_path, pointcloud, compressed=True)
 
     def initialize_pointcloud_subscriber(self):
