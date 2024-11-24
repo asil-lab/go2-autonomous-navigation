@@ -20,7 +20,8 @@ from ctypes import *
 
 VIDEO_STREAM_WIDTH = 1280
 VIDEO_STREAM_HEIGHT = 720
-VIDEO_STREAM_FPS = 24
+VIDEO_STREAM_FPS = 14.25
+VIDEO_STREAM_DURATION = 30.0 # s
 
 LTM_RECORDINGS_STREAM_DIRECTORY = os.environ.get('LTM_RECORDINGS_STREAM_DIRECTORY')
 
@@ -48,36 +49,57 @@ class ScanningStreamNode(Node):
     def __init__(self):
         super().__init__('scanning_stream_node')
         self.create_directory()
+        self.initialize_start_service()
         self.initialize_trigger_service()
         self.initialize_pointcloud_subscriber()
-        self.initialize_image_subscriber()
+        # self.initialize_image_subscriber()
         self.get_logger().info('Scanning stream node initialized.')
 
     def pointcloud_callback(self, msg):
-        self.pointcloud = msg
+        # self.pointcloud = msg
+        self.pointcloud += self.convert_pointcloud2_to_open3d(msg)
 
     def image_callback(self, msg):
-        frame = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, -1)
-        self.frames.append((frame, msg.header.stamp.sec, msg.header.stamp.nanosec))
+        if len(self.frames) < np.floor(VIDEO_STREAM_FPS * VIDEO_STREAM_DURATION):
+            frame = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, -1)
+            self.frames.append(frame)
+        else:
+            video_filename = 'video_' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.avi'
+            video_path = os.path.join(self.directory, video_filename)
+            video_writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'XVID'), VIDEO_STREAM_FPS, (VIDEO_STREAM_WIDTH, VIDEO_STREAM_HEIGHT))
+            for frame in self.frames:
+                video_writer.write(frame)
+            video_writer.release()
 
     def trigger_callback(self, request, response):
         self.get_logger().info('Triggered scanning stream.')
         _ = request
 
+        # Get timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
         # Create video
-        video_path = os.path.join(self.directory, 'video.avi')
-        video_writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'XVID'), VIDEO_STREAM_FPS, (VIDEO_STREAM_WIDTH, VIDEO_STREAM_HEIGHT))
-
-        for frame, _, _ in self.frames:
-            video_writer.write(frame)
-
-        video_writer.release()
+        # video_filename = 'video_' + timestamp + '.avi'
+        # video_path = os.path.join(self.directory, video_filename)
+        # video_writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'XVID'), VIDEO_STREAM_FPS, (VIDEO_STREAM_WIDTH, VIDEO_STREAM_HEIGHT))
+        # for frame, _, _ in self.frames:
+        #     video_writer.write(frame)
+        # video_writer.release()
 
         # Save current pointcloud as .pcd
-        converted_pointcloud = self.convert_pointcloud2_to_open3d(self.pointcloud)
-        self.save_pointcloud(converted_pointcloud)
+        pointcloud_filename = 'radar_' + timestamp + '.pcd'
+        # converted_pointcloud = self.convert_pointcloud2_to_open3d(self.pointcloud)
+        # self.save_pointcloud(pointcloud_filename, converted_pointcloud)
+        self.save_pointcloud(pointcloud_filename, self.pointcloud)
 
+        response.success = True
         return response        
+
+    def start_callback(self, request, response):
+        _ = request
+        self.pointcloud =o3d.geometry.PointCloud()
+        response.success = True
+        return response
 
     def convert_pointcloud2_to_open3d(self, point_cloud2: PointCloud2) -> o3d.geometry.PointCloud:
         # Get cloud data from point_cloud2
@@ -114,23 +136,28 @@ class ScanningStreamNode(Node):
         # return
         return o3d_cloud
     
-    def save_pointcloud(self, pointcloud: o3d.geometry.PointCloud) -> bool:
-        file_path = os.path.join(self.directory, 'radar_mapping.pcd')
+    def save_pointcloud(self, filename: str, pointcloud: o3d.geometry.PointCloud) -> bool:
+        file_path = os.path.join(self.directory, filename)
         return o3d.io.write_point_cloud(file_path, pointcloud, compressed=True)
 
     def initialize_pointcloud_subscriber(self):
-        self.pointcloud = None
+        self.pointcloud = o3d.geometry.PointCloud()
+        # self.pointcloud = None
         self.pointcloud_subscriber = self.create_subscription(PointCloud2,
-            'point_cloud/mapping', self.pointcloud_callback, 1)
+            'point_cloud/cropped', self.pointcloud_callback, 1)
         
     def initialize_image_subscriber(self):
         self.frames = [] # List of frames in tuple (frame, timestamp)
         self.image_subscriber = self.create_subscription(Image,
-            'camera/raw', self.image_callback, 1000)
+            'camera/raw', self.image_callback, 10)
 
     def initialize_trigger_service(self):
         self.trigger_service = self.create_service(Trigger,
             'scanning_stream/trigger', self.trigger_callback)
+
+    def initialize_start_service(self):
+        self.trigger_service = self.create_service(Trigger,
+            'scanning_stream/start', self.start_callback)
         
     def create_directory(self):
         current_datetime = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')

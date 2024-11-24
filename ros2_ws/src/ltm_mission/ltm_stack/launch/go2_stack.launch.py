@@ -39,7 +39,7 @@ def generate_launch_description():
     exploration_core_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ltm_exploration_core'), 
-                'launch', 'exploration.launch.py')
+                'launch', 'explore.launch.py')
         ),
         launch_arguments=[('mapping', LaunchConfiguration('mapping'))],
     )
