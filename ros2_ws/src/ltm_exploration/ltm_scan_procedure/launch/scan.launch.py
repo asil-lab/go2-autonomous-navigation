@@ -26,6 +26,15 @@ def generate_launch_description():
         parameters=[scan_procedure_config_filepath],
     )
 
+    # LTM Auxiliary Sensing Node
+    auxiliary_sensors_node = Node(
+        package='ltm_go2_auxiliary_sensors',
+        executable='auxiliary_sensors_node',
+        name='auxiliary_sensors_node',
+        output='screen',
+    )
+
     return LaunchDescription([
         scan_procedure_node,
+        # auxiliary_sensors_node,
     ])

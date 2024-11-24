@@ -50,7 +50,7 @@ void PointCloudTransformerNode::transformPointCloud(const sensor_msgs::msg::Poin
   sensor_msgs::msg::PointCloud2::SharedPtr cloud_output)
 {
   // Set the frame ID
-  cloud_output->header.stamp = this->get_clock()->now();
+  cloud_output->header.stamp = cloud_input->header.stamp;
   cloud_output->header.frame_id = m_target_frame;
 
   // Transform the point cloud from the source frame to the target frame

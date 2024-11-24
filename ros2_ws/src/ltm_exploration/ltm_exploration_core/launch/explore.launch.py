@@ -88,7 +88,7 @@ def generate_launch_description():
             'range_min': 0.0,
             'range_max': 5.0,
             'target_frame': 'base_footprint',
-            'transform_tolerance': 0.01,
+            'transform_tolerance': 0.05,
             'use_inf': True,
         }],
     )
@@ -108,6 +108,39 @@ def generate_launch_description():
         ],
     )
 
+    # Octomapping node
+    octomap_server_node = Node(
+        package='octomap_server',
+        executable='octomap_server_node',
+        name='octomap_server_node',
+        output='screen',
+        parameters=[{
+            'use_sim_time': 'false',
+            'resolution': 0.0001,
+            'frame_id': 'map',
+            'base_frame_id': 'base_footprint',
+            'filter_ground': 'false',
+        }],
+        remappings=[
+            ('cloud_in', 'point_cloud/cropped'),                     # Input pointcloud
+            ('octomap_point_cloud_centers', 'point_cloud/mapping')   # Output pointcloud
+        ],
+    )
+
+    # Voxel grid filter node
+    pointcloud_transformer_node = Node(
+        package='ltm_pointcloud_transformer',
+        executable='pointcloud_transformer_node',
+        name='pointcloud_transformer_node',
+        output='screen',
+        parameters=[{
+            'input_pointcloud_topic_name': 'point_cloud/cropped',
+            'output_pointcloud_topic_name': 'point_cloud/sampled',
+            'source_frame_id': 'radar',
+            'target_frame_id': 'map',
+        }],
+    )
+
     # Return launch description
     return LaunchDescription([
         crop_box_filter_node,
@@ -116,4 +149,6 @@ def generate_launch_description():
         ground_plane_segmentation_node,
         pointcloud_to_laserscan_node,
         online_sync_slam_node,
+        # octomap_server_node,
+        pointcloud_transformer_node,
     ])
