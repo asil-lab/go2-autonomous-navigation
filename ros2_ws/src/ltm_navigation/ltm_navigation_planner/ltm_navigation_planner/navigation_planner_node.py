@@ -16,9 +16,9 @@ import matplotlib.pyplot as plt
 
 from std_msgs.msg import Empty
 from nav_msgs.msg import OccupancyGrid
-from geometry_msgs.msg import Pose, PoseStamped, PoseArray, Pose2D
+from geometry_msgs.msg import Pose, PoseStamped, PoseArray
 
-from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination
+from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination, GetPose
 from nav_msgs.srv import GetMap
 from slam_toolbox.srv import DeserializePoseGraph
 
@@ -40,6 +40,7 @@ class NavigationPlannerNode(Node):
         self.configure_generate_waypoints_service()
         self.configure_check_waypoints_service()
         self.configure_check_destination_service()
+        self.configure_get_starting_pose_service()
 
         self.configure_dynamic_map_client()
         self.configure_deserialize_map_client()
@@ -48,6 +49,7 @@ class NavigationPlannerNode(Node):
 
         self.is_waiting = False
         self.current_waypoint = None
+        self.starting_pose = None
 
         # Create the subscribers
         self.waypoint_pub = self.create_publisher(PoseStamped, 'goal_pose', 10)
@@ -97,6 +99,9 @@ class NavigationPlannerNode(Node):
         self.get_logger().info('Generate waypoints has been requested.')
         _ = request
 
+        # Get the starting pose
+        self.starting_pose = self.get_robot_pose()
+
         # Generate waypoints from the map
         self.get_logger().info('Generating waypoints...')
         waypoints = self.map_reader.read()
@@ -106,8 +111,7 @@ class NavigationPlannerNode(Node):
         # # Plan the path
         self.get_logger().info('Configuring path planner...')
         self.path_planner.set_waypoints(waypoints, self.map_reader.resolution)
-        robot_x, robot_y = self.get_robot_position()
-        self.path_planner.set_start(robot_x, robot_y)
+        self.path_planner.set_start(self.starting_pose.position.x, self.starting_pose.position.y)
         self.get_logger().info('Path planner is configured.')
         self.get_logger().info('Planning a path...')
         _ = self.path_planner.plan()
@@ -156,6 +160,12 @@ class NavigationPlannerNode(Node):
             response.destination_reached = False
             self.get_logger().info('The destination has not been reached.')
 
+        return response
+
+    def get_starting_pose_callback(self, request, response) -> GetPose.Response:
+        self.get_logger().info('Get starting pose has been requested.')
+        _ = request
+        response.pose = self.starting_pose
         return response
 
     def future_callback(self, future) -> None:
@@ -213,13 +223,17 @@ class NavigationPlannerNode(Node):
             self.get_logger().error('Failed to get the robot position: %s' % str(e))
             return None
         
-    def get_robot_pose(self) -> Pose2D:
+    def get_robot_pose(self) -> Pose:
         try:
             transform = self.tf_buffer.lookup_transform('map', 'base_footprint', rclpy.time.Time())
-            pose = Pose2D()
-            pose.x = transform.transform.translation.x
-            pose.y = transform.transform.translation.y
-            pose.theta = quaternion_to_yaw(transform.transform.rotation)
+            pose = Pose()
+            pose.position.x = transform.transform.translation.x
+            pose.position.y = transform.transform.translation.y
+            pose.position.z = transform.transform.translation.z
+            pose.orientation.x = transform.transform.rotation.x
+            pose.orientation.y = transform.transform.rotation.y
+            pose.orientation.z = transform.transform.rotation.z
+            pose.orientation.w = transform.transform.rotation.w
             return pose
         except Exception as e:
             self.get_logger().error('Failed to get the robot pose: %s' % str(e))
@@ -270,6 +284,11 @@ class NavigationPlannerNode(Node):
         self.check_destination_service = self.create_service(
             CheckDestination, 'state_machine/check_destination', self.check_destination_callback, callback_group=self.check_destination_service_callback_group)
         self.get_logger().info('Check Destination service has been configured.')
+
+    def configure_get_starting_pose_service(self) -> None:
+        self.get_starting_pose_service_callback_group = MutuallyExclusiveCallbackGroup()
+        self.get_starting_pose_service = self.create_service(
+            GetPose, 'navigation_planner/get_starting_pose', self.get_starting_pose_callback, callback_group=self.get_starting_pose_service_callback_group)
 
     def configure_tf_listener(self) -> None:
         self.tf_buffer = Buffer()
