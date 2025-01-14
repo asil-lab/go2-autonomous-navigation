@@ -229,70 +229,6 @@ class TSPSolver:
         
         self.model.subtour_elimination = pyo.Constraint(self.model.U, self.model.N, rule=subtour_elimination_rule)
 
-
-# class PathPlanner:
-
-#     def __init__(self) -> None:
-#         self.graph = Graph()
-#         self.start = None
-#         self.path = None
-
-#     def set_start(self, x: float, y: float) -> None:
-#         # Set the starting position of the robot as a vertex in the graph
-#         self.start = Vertex(x, y)
-#         self.graph.add_vertex(self.start)
-
-#     def set_waypoints(self, waypoints: np.ndarray) -> None:
-#         # Convert the waypoints (y, x yaw) as vertices, and add them to the graph
-#         vertices = [Vertex(waypoint[1], waypoint[0]) for waypoint in waypoints]
-#         self.construct_graph(vertices)
-    
-#     def construct_graph(self, vertices: list) -> None:
-#         # Add the vertices to the graph
-#         for vertex in vertices:
-#             self.graph.add_vertex(vertex)
-
-#     def plan(self) -> np.ndarray:
-#         assert self.start is not None, 'The starting position of the robot has not been set'
-#         assert self.graph.get_num_vertices() > 0, 'The graph has no vertices'
-
-#         # # Solve the TSP problem for the graph
-#         # tsp_solver = TSPSolver(self.graph)
-#         # tsp_solver.solve()
-#         # self.path = deque(tsp_solver.get_path(self.start)[1:]) # Skip the first waypoint which is the starting position
-#         # return self.path
-
-#         # Hardcoded path for testing
-#         self.path = deque(self.graph.get_vertices())
-#         return self.path
-
-#     def get_next_waypoint(self) -> Vertex:
-#         if self.path is None:
-#             print('The path has not been planned.')
-#             return None
-        
-#         if len(self.path) == 0:
-#             print('The path is completed.')
-#             return None
-
-#         waypoint = self.path.popleft()
-#         return {
-#             'x': waypoint.x,
-#             'y': waypoint.y,
-#         }
-    
-#     def get_start(self) -> Vertex:
-#         return self.start
-    
-#     def get_distance_between_waypoints(self, a: Vertex, b: Vertex) -> float:
-#         return np.sqrt((b.x - a.x)**2 + (b.y - a.y)**2)
-
-#     def get_orientation_between_waypoints(self, a: Vertex, b: Vertex) -> float:
-#         return np.arctan2(b.y - a.y, b.x - a.x)
-    
-#     def get_orientation_to_waypoint(self, waypoint: Vertex) -> float:
-#         return self.get_orientation_between_waypoints(self.start, waypoint)
-
 class PathPlanner:
 
     def __init__(self) -> None:
@@ -300,11 +236,18 @@ class PathPlanner:
         self.start = None
         self.path = None
         self.waypoints = None
+        self.resolution = None
+        self.offset = None
 
-    def set_waypoints(self, waypoints: np.ndarray, resolution: float) -> None:
+    def set_waypoints(self, waypoints: np.ndarray, resolution: float, distance=0.0) -> None:
         # Set the waypoints and create a tree for the waypoints
         self.waypoints = waypoints
+        self.resolution = resolution
         tree = KDTree(waypoints)
+
+        # Set the offset for the waypoints is described as number of waypoints in a distance
+        # Default is 0.0, which means we take all the waypoints
+        self.offset = int(distance / resolution)
 
         # Initialize the graph
         self.graph = nx.Graph()
@@ -381,7 +324,7 @@ class PathPlanner:
             path = self.get_path(starting_leaf_node, next_leaf_node)
 
             # Iterate over every node in the path
-            for node in path[::5]:
+            for node in path[::self.offset]:
                 if node in visited_nodes:
                     continue
                 visited_nodes.add(node)
@@ -417,12 +360,3 @@ class PathPlanner:
         waypoint = self.path[0]
         self.path = self.path[1:]
         return waypoint
-    
-    # def get_distance_between_waypoints(self, a: np.ndarray, b: np.ndarray) -> float:
-    #     return np.linalg.norm(b - a)
-    
-    # def get_orientation_between_waypoints(self, a: np.ndarray, b: np.ndarray) -> float:
-    #     return np.arctan2(b[1] - a[1], b[0] - a[0])
-    
-    # def get_orientation_to_waypoint(self, waypoint: np.ndarray) -> float:
-    #     return self.get_orientation_between_waypoints(self.start, waypoint)
