@@ -16,7 +16,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 ## Additional cmake module path
-list(APPEND CMAKE_PREFIX_PATH "/opt/unitree_sdk2/lib/cmake")
+list(APPEND CMAKE_PREFIX_PATH "/opt/unitree_robotics/lib/cmake")
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
