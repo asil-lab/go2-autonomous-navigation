@@ -43,7 +43,7 @@ add_executable(go2_driver_node
   src/joint_state_processing.cpp
   src/odom_processing.cpp 
   src/point_cloud_processing.cpp
-  src/wireless_controller_processing.cpp
+  src/controller_processing.cpp
 )
 target_include_directories(go2_driver_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
