@@ -24,6 +24,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(unitree_api REQUIRED)
 find_package(unitree_go REQUIRED)
+find_package(nlohmann_json REQUIRED)
 find_package(urdf REQUIRED)
 find_package(ltm_go2_description REQUIRED)
 find_package(ltm_shared_msgs REQUIRED)
@@ -57,6 +58,7 @@ ament_target_dependencies(go2_driver_node
   ltm_shared_msgs
   unitree_api
   unitree_go
+  nlohmann_json
   urdf
   tf2
   tf2_ros

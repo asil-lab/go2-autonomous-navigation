@@ -13,6 +13,9 @@
 #include <geometry_msgs/msg/vector3.hpp>
 #include <std_msgs/msg/empty.hpp>
 #include <unitree_go/msg/wireless_controller.hpp>
+#include "unitree_api/msg/request.hpp"
+
+#include "nlohmann/json.hpp"
 
 #include <string>
 
@@ -24,18 +27,14 @@
 #define TOGGLE_SEARCHLIGHT_SUB_TOPIC "toggle_searchlight"
 #define TOGGLE_SEARCHLIGHT_QUEUE_SIZE 1
 
-#define CMD_VEL_PUB_TOPIC "wirelesscontroller"
-#define CMD_VEL_PUB_QUEUE_SIZE 10
+#define CMD_VEL_PUB_TOPIC "api/sport/request"
+#define CMD_VEL_PUB_QUEUE_SIZE 1
+
+#define ROBOT_SPORT_API_ID_MOVE 1008
 
 #define MAX_LINEAR_VELOCITY_X 0.80
 #define MAX_LINEAR_VELOCITY_Y 0.40
 #define MAX_ANGULAR_VELOCITY 0.80
-
-#define KEYS_SELECT       0b0000000000001000
-#define KEYS_L2           0b0000000000100000
-#define KEYS_SEARCHLIGHT  0b0000000000101000
-#define KEYS_SIT_DOWN     513
-#define KEYS_EMPTY        0b0000000000000000
 
 namespace LTM
 {
@@ -47,25 +46,14 @@ namespace LTM
 
     private:
       void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
-      void toggleSearchlightCallback(const std_msgs::msg::Empty::SharedPtr msg);
-      void publishWirelessController() const;
 
-      void mapLinearVelocity(const geometry_msgs::msg::Vector3& linear_velocity);
-      void mapAngularVelocity(const double& angular_velocity);
-
-      void setKey(uint16_t key);
-      void setSearchlightKeys();
-      void setSitDownKeys();
-      void resetKeys();
+      // void mapLinearVelocity(const geometry_msgs::msg::Vector3& linear_velocity);
+      // void mapAngularVelocity(const double& angular_velocity);
 
       void initializeROS();
-      void initializeWirelessControllerMsg();
-
-      unitree_go::msg::WirelessController::SharedPtr m_wireless_controller_msg;
 
       rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr m_cmd_vel_sub;
-      rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr m_toggle_searchlight_sub;
-      rclcpp::Publisher<unitree_go::msg::WirelessController>::SharedPtr m_wireless_controller_pub;
+      rclcpp::Publisher<unitree_api::msg::Request>::SharedPtr m_request_pub;
 
   }; // class WirelessControllerProcessing
 } // namespace LTM
