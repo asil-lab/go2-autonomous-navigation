@@ -42,6 +42,9 @@
 
 #define IMU_FRAME_ID "imu"
 
+#define ROBOT_POSE_TOPIC "robot_pose/odom"
+#define ROBOT_POSE_QUEUE_SIZE 1
+
 #define TRANSLATION_SIZE 3
 #define ORIENTATION_SIZE 4
 namespace LTM
@@ -56,6 +59,8 @@ namespace LTM
       void lowStateCallback(const unitree_go::msg::LowState::SharedPtr msg);
       void sportModeStateCallback(const unitree_go::msg::SportModeState::SharedPtr msg);
       void publishImu(const unitree_go::msg::IMUState& imu_state);
+      void publishRobotPose(const std::array<float, TRANSLATION_SIZE>& translation,
+        const std::array<float, ORIENTATION_SIZE>& orientation) const;
       void broadcastTransform(const geometry_msgs::msg::TransformStamped::SharedPtr msg) const;
 
       void updateOdom(const std::array<float, TRANSLATION_SIZE>& translation,
@@ -84,6 +89,7 @@ namespace LTM
       rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr m_sport_mode_state_sub;
       rclcpp::Subscription<unitree_go::msg::LowState>::SharedPtr m_low_state_sub;
       rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr m_imu_pub;
+      rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr m_robot_pose_pub;
 
       std::shared_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
 

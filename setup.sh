@@ -21,8 +21,9 @@ alias ltms="ltm && source install/setup.bash"
 alias ltmbp="colcon build --symlink-install --packages-skip cyclonedds"
 alias ltmbps="colcon build --symlink-install --packages-select"
 alias ltmbpu="colcon build --symlink-install --packages-up-to"
-alias ltmbc="rm -rf build/ install/ log/ && colcon build --symlink-install --packages-skip cyclonedds"
+alias ltmbc="rm -rf build/ install/ log/ && colcon build --symlink-install --packages-skip cyclonedds ltm_go2_controller"
 
 # Create aliases on Go2
 alias go2_setup="cd ${HOME}/lava-tube-mapping/ros2_ws && source /opt/ros/foxy/setup.bash"
 alias go2_source="go2_setup && source install/setup.bash"
+alias go2_ltmbc="rm -rf build/ install/ log/ && colcon build --symlink-install --packages-skip cyclonedds"

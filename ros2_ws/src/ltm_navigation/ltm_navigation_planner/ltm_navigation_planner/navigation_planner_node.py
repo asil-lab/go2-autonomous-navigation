@@ -225,7 +225,7 @@ class NavigationPlannerNode(Node):
         
     def get_robot_pose(self) -> Pose:
         try:
-            transform = self.tf_buffer.lookup_transform('map', 'base_footprint', rclpy.time.Time())
+            transform = self.tf_buffer.lookup_transform('map', 'base', rclpy.time.Time())
             pose = Pose()
             pose.position.x = transform.transform.translation.x
             pose.position.y = transform.transform.translation.y

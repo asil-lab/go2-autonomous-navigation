@@ -1,13 +1,15 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ltm_go2_controller</name>
+  <name>ltm_data_collection</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="gungnir@todo.todo">gungnir</maintainer>
   <license>TODO: License declaration</license>
 
-  <depend>unitree_go</depend>
+  <depend>rclpy</depend>
+  <depend>geometry_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

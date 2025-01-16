@@ -15,7 +15,7 @@
 #include <ltm_go2_driver/joint_state_processing.hpp>
 #include <ltm_go2_driver/odom_processing.hpp>
 #include <ltm_go2_driver/point_cloud_processing.hpp>
-#include <ltm_go2_driver/wireless_controller_processing.hpp>
+#include <ltm_go2_driver/controller_processing.hpp>
 
 int main(int argc, char **argv)
 {
@@ -28,7 +28,7 @@ int main(int argc, char **argv)
   rclcpp::Node::SharedPtr joint_state_processing_node = std::make_shared<LTM::JointStateProcessing>();
   rclcpp::Node::SharedPtr odom_processing_node = std::make_shared<LTM::OdomProcessing>();
   rclcpp::Node::SharedPtr point_cloud_processing_node = std::make_shared<LTM::PointCloudProcessing>();
-  rclcpp::Node::SharedPtr wireless_controller_processing_node = std::make_shared<LTM::WirelessControllerProcessing>();
+  rclcpp::Node::SharedPtr controller_processing_node = std::make_shared<LTM::ControllerProcessing>();
 
   // Create executor, and add nodes
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
   executor.add_node(joint_state_processing_node);
   executor.add_node(odom_processing_node);
   executor.add_node(point_cloud_processing_node);
-  executor.add_node(wireless_controller_processing_node);
+  executor.add_node(controller_processing_node);
 
   executor.spin();
   rclcpp::shutdown();
