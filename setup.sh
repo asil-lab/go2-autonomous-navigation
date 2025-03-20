@@ -26,3 +26,4 @@ alias ltmbc="ltm && rm -rf build/ install/ log/ && colcon build --symlink-instal
 # Create aliases on Go2
 alias go2_setup="cd ${HOME}/go2-autonomous-navigation/ros2_ws && source /opt/ros/foxy/setup.bash"
 alias go2_source="go2_setup && source install/setup.bash"
+alias go2_ltmbc="rm -rf build/ install/ log/ && colcon build --symlink-install --packages-skip cyclonedds"

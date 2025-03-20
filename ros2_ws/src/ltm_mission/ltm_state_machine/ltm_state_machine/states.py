@@ -9,7 +9,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import String
 from geometry_msgs.msg import Pose2D
-from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination, NavigateToPose, ScanEnvironment
+from ltm_shared_msgs.srv import LoadMap, GenerateWaypoints, CheckWaypoints, CheckDestination, NavigateToPose, ScanEnvironment, GetPose
 
 from ltm_state_machine.utils import get_snake_case, yaw_to_quaternion
 
@@ -380,13 +380,11 @@ class ManualControlState(State):
 
     def configure(self) -> bool:
         super().configure()
-
         self.get_logger().info('State ManualControl configured.')
         return True
 
     def run(self) -> None:
         super().run()
-
         self.get_logger().info('Manual control...')
 
     def transition(self):
@@ -404,19 +402,54 @@ class HomeState(State):
 
     def configure(self) -> bool:
         super().configure()
+        self.get_starting_pose_client = self.create_client(GetPose, 'navigation_planner/get_starting_pose')
+        self.navigate_to_pose_client = self.create_client(NavigateToPose, 'send_robot')
 
-        self.get_logger().info('State Home configured.')
+        # Throw an error if the client cannot find the service /navigation_planner/get_starting_pose
+        if not self.is_client_ready(self.get_starting_pose_client):
+            self.flag_error('Service navigation_planner/get_starting_pose is not available.')
+            return False
+        self.get_logger().info('Service navigation_planner/get_starting_pose found.')
+
+        # Throw an error if the client cannot find the service /send_robot
+        if not self.is_client_ready(self.navigate_to_pose_client):
+            self.flag_error('Service send_robot is not available.')
+            return False
+        self.get_logger().info('Service send_robot found.')
+
+        self.get_logger().info('State MoveToDestination configured.')
         return True
 
     def run(self) -> None:
         super().run()
 
-        self.get_logger().info('Returning home...')
+        # Get the starting pose of the robot
+        self.get_logger().info('Getting starting pose...')
+        get_starting_pose_request = GetPose.Request()
+        get_starting_pose_future = self.get_starting_pose_client.call_async(get_starting_pose_request)
+        rclpy.spin_until_future_complete(self, get_starting_pose_future)
+        if get_starting_pose_future.result() is None:
+            self.flag_error('Failed to get starting pose.')
+            return
+        starting_pose = get_starting_pose_future.result().pose
+
+        # Move the robot to the starting pose
+        self.get_logger().info('Moving to destination...')
+        navigate_to_pose_request = NavigateToPose.Request()
+        navigate_to_pose_request.goal.header.frame_id = 'map'
+        navigate_to_pose_request.goal.header.stamp = self.get_clock().now().to_msg()
+        navigate_to_pose_request.goal.pose = starting_pose
+
+        navigate_to_pose_future = self.navigate_to_pose_client.call_async(navigate_to_pose_request)
+        rclpy.spin_until_future_complete(self, navigate_to_pose_future)
+
+        if navigate_to_pose_future.result() is None:
+            self.flag_error('Failed to move to destination.')
+            return
 
     def transition(self):
         super().transition()
         return ShutdownState()
-
 
 class ShutdownState(State):
     """ Shutdown class is the state that shuts down the robot.

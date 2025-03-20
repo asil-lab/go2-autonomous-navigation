@@ -4,8 +4,11 @@ Revision: 1.0
 Date: 19-08-2024
 """
 
+import os
+from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 import cv2 as cv
 from scipy.ndimage import gaussian_filter
@@ -34,13 +37,18 @@ class MapReader:
     """
 
     def __init__(self):
+        # Metadata
         self.resolution = None
         self.origin = None
         self.width = None
         self.height = None
 
+        # Map data
         self.map = None
         self.waypoints = None
+        self.results_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), '..', 'results', 
+            datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
     def configure_metadata(self, resolution: float, origin: np.ndarray, width: int, height: int) -> None:
         self.resolution = resolution
@@ -56,30 +64,36 @@ class MapReader:
 
     def read(self, plot=False) -> np.ndarray:
         # self.plot_map(self.map, 'Original Map', plot)
+        self.save_map_as_png(self.map, 'original_map')
 
         # Adjust the map to only have free and occupied cells
         # Unknown cells are set as occupied
         adjusted_map = self.map.copy()
         adjusted_map[adjusted_map < 254] = 0
+        self.save_map_as_png(adjusted_map, 'adjusted_map')
 
         # Smooth the map
         fuzzied_map = gaussian_filter(adjusted_map, sigma=3)
         crisp_map = np.zeros_like(fuzzied_map)
         crisp_map[fuzzied_map >= 128] = 255
+        self.save_map_as_png(crisp_map, 'crisp_map')
 
         # Erode the map to remove small obstacles
         kernel = np.ones((3, 3), np.uint8)
         filtered_map = cv.erode(crisp_map, kernel, iterations=1)
+        self.save_map_as_png(filtered_map, 'filtered_map')
 
         # Get the largest area of the map by finding the largest contour
         contours, _ = cv.findContours(filtered_map, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         largest_contour = max(contours, key=cv.contourArea)
         contour_map = np.zeros_like(filtered_map)
         cv.drawContours(contour_map, [largest_contour], -1, (255), -1)
+        self.save_map_as_png(contour_map, 'contour_map')
 
         # Get the skeleton of the area
-        thinned_map = thin(contour_map) #, max_iter=25)
-        skeleton_map = skeletonize(thinned_map)
+        # thinned_map = thin(contour_map) #, max_iter=25)
+        skeleton_map = skeletonize(contour_map)
+        self.save_map_as_png(skeleton_map, 'skeleton_map')
 
         # Convert every point in the skeleton into Cartesian coordinates
         skeleton_points = np.array(np.where(skeleton_map)).T
@@ -105,3 +119,8 @@ class MapReader:
 
     def plot_current_map(self) -> None:
         self.plot_map(self.map)
+
+    def save_map_as_png(self, map: np.ndarray, title: str) -> None:
+        # Assuming the map is in grayscale
+        map = Image.fromarray(map)
+        map.save(os.path.join(self.results_dir, f'{title}.png'))

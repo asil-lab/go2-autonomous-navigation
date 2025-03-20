@@ -45,6 +45,9 @@ void OdomProcessing::sportModeStateCallback(const unitree_go::msg::SportModeStat
       msg->position[static_cast<int>(TranslationIdx::Y)]);
   }
 
+  // Publish robot pose in the odom frame
+  publishRobotPose(msg->position, msg->imu_state.quaternion);
+
   // Update odom and base_footprint
   updateOdom(msg->position, msg->imu_state.quaternion);
   broadcastTransform(m_odom_msg);
@@ -71,6 +74,25 @@ void OdomProcessing::publishImu(const unitree_go::msg::IMUState& imu_state)
   imu_msg.linear_acceleration.z = imu_state.accelerometer[static_cast<int>(TranslationIdx::Z)];
 
   m_imu_pub->publish(imu_msg);
+}
+
+void OdomProcessing::publishRobotPose(const std::array<float, TRANSLATION_SIZE>& translation,
+  const std::array<float, ORIENTATION_SIZE>& orientation) const
+{
+  geometry_msgs::msg::PoseStamped pose_msg;
+  pose_msg.header.stamp = rclcpp::Clock().now();
+  pose_msg.header.frame_id = ODOM_FRAME_ID;
+
+  pose_msg.pose.position.x = translation[static_cast<int>(TranslationIdx::X)];
+  pose_msg.pose.position.y = translation[static_cast<int>(TranslationIdx::Y)];
+  pose_msg.pose.position.z = translation[static_cast<int>(TranslationIdx::Z)];
+
+  pose_msg.pose.orientation.x = orientation[static_cast<int>(OrientationIdx::X)];
+  pose_msg.pose.orientation.y = orientation[static_cast<int>(OrientationIdx::Y)];
+  pose_msg.pose.orientation.z = orientation[static_cast<int>(OrientationIdx::Z)];
+  pose_msg.pose.orientation.w = orientation[static_cast<int>(OrientationIdx::W)];
+
+  m_robot_pose_pub->publish(pose_msg);
 }
 
 void OdomProcessing::broadcastTransform(const geometry_msgs::msg::TransformStamped::SharedPtr msg) const
@@ -122,11 +144,6 @@ void OdomProcessing::updateBaseFootprint(
   m_base_footprint_msg->transform.translation.y = rotated_translation.y();
   m_base_footprint_msg->transform.translation.z = rotated_translation.z();
 
-  // Get the yaw angle from the orientation quaternion
-  // double yaw = atan2(2 * (q.x() * q.y() + q.w() * q.z()), q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z());
-  // Eigen::Quaterniond q_reduced(cos(yaw / 2), 0, 0, sin(yaw / 2));
-  // Eigen::Quaterniond q_rotated = q_reduced * q_inverse;
-
   // Update the base_footprint frame orientation given the rotated quaternion.
   m_base_footprint_msg->transform.rotation.x = q_inverse.x();
   m_base_footprint_msg->transform.rotation.y = q_inverse.y();
@@ -146,6 +163,9 @@ void OdomProcessing::initializeROS()
 
   m_imu_pub = this->create_publisher<sensor_msgs::msg::Imu>(
     ODOM_PROCESSING_PUB_IMU_TOPIC, ODOM_PROCESSING_PUB_IMU_QUEUE_SIZE);
+
+  m_robot_pose_pub = this->create_publisher<geometry_msgs::msg::PoseStamped>(
+    ROBOT_POSE_TOPIC, ROBOT_POSE_QUEUE_SIZE);
 
   m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(this); 
 }

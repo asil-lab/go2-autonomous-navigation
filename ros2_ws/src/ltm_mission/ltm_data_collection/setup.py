@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'ltm_go2_controller'
+package_name = 'ltm_data_collection'
 
 setup(
     name=package_name,
@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'keyboard_teleop_node = ltm_go2_controller.keyboard_teleop_node:main'
+            'data_collection_node = ltm_data_collection.data_collection_node:main'
         ],
     },
 )

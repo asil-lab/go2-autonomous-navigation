@@ -28,6 +28,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/AuxiliarySensorState.msg"
   "msg/BatteryState.msg"
   "msg/FootContact.msg"
+  "srv/GetPose.srv"
   "srv/GetImage.srv"
   "srv/GetPointCloud.srv"
   "srv/NavigateToPose.srv"
