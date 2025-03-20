@@ -1,5 +1,5 @@
 {
-    "name": "Lava Tube Mapping ROS1 Dev Container",
+    "name": "Go2 Autonomous Navigation ROS2 Dev Container",
     "privileged": true,
     "remoteUser": "${env:USERNAME}",
     "build": {
