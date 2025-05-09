@@ -46,7 +46,7 @@ Please refer to the [official installation guide](https://docs.ros.org/en/foxy/I
 If you have fulfilled the prerequisites, clone the repository:
 
 ```bash
-git clone https://github.com/asil-lab/go2-autonomous-navigation.git
+git clone --recurse-submodules -j8 https://github.com/asil-lab/go2-autonomous-navigation.git
 ```
 
 ### Robot configuration
