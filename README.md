@@ -188,6 +188,25 @@ ros2 launch ltm_stack mission_planner.launch.py
 ros2 launch ltm_state_machine state_machine.launch.py
 ```
 
+## Citation
+
+If you use this repository for scientific publication, we would appreciate citation of the following paper:
+
+Becoy AJ, Khomenko K, Peternel L and Rajan RT (2025) Autonomous navigation of quadrupeds using coverage path planning with morphological skeleton maps. Front. Robot. AI 12:1601862. [doi: 10.3389/frobt.2025.1601862](https://doi.org/10.3389/frobt.2025.1601862)
+
+```bibtex
+@article{Becoy2025,
+  author={Becoy, Alexander James  and Khomenko, Kseniia  and Peternel, Luka  and Rajan, Raj Thilak },
+  title={Autonomous navigation of quadrupeds using coverage path planning with morphological skeleton maps},
+  journal={Frontiers in Robotics and AI},
+  volume={Volume 12 - 2025},
+  year={2025},
+  url={https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2025.1601862},
+  doi={10.3389/frobt.2025.1601862},
+  issn={2296-9144}
+}
+```
+
 ## Issue
 
 If you come across bugs, unintended functions, or have some points of improvement, please refer to the 
